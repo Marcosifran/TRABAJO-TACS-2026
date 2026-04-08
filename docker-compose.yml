@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+    - "8000:8000"
+    volumes:
+    - ./backend:/app #no tengo que reiniciar docker si modifico el main
+
+  frontend:
+    build: ./frontend
+    ports:
+    - "5173:5173"
+    depends_on:
+    - backend
+    volumes:
+    - ./frontend:/app #no tengo que reiniciar docker si modifico el main
+    - /app/node_modules #protege las dependencias internas del contenedor
