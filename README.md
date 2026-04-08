@@ -42,3 +42,12 @@ Para ejecutar este proyecto de forma local, es necesario tener instalado el moto
 3. Acceder a la aplicación:
    - Frontend: http://localhost:5173
    - Backend: http://localhost:8000
+
+   ## Modificar el código
+
+4. ```bash
+   git checkout -b feature/nombre-del-cambio
+   ```
+5. ```bash
+   git push origin feature/nombre-del-cambio
+   ```
