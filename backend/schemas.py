@@ -9,5 +9,6 @@ class Figurita(BaseModel):
     permite_subasta: bool
 
 class Faltante(BaseModel):
-    usuario_id: int
+    id: int | None = None
+    usuario_id: int | None = None
     numero_figurita: int

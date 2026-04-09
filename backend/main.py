@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from routers import figuritas
+from routers import figuritas, usuarios
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Mundial Figuritas TACS", version="2026.1")
@@ -17,6 +17,7 @@ app.add_middleware(
 
 
 app.include_router(figuritas.router)
+app.include_router(usuarios.router)
 
 @app.get("/")
 def read_root():
