@@ -4,6 +4,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![Python](https://img.shields.io/badge/Python_3.12-14354C?style=for-the-badge&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+[![Backend Tests](https://github.com/Marcosifran/TRABAJO-TACS-2026/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/Marcosifran/TRABAJO-TACS-2026/actions/workflows/backend-tests.yml)
 
 WebApp para la materia Tecnologías Avanzadas en Construcción de Software (TACS). Permite que los usuarios puedan publicar figuritas repetidas, registrar faltantes, y gestionar intercambios.
 
