@@ -6,8 +6,8 @@ def listar() -> list[dict]:
     return figurita_repo.get_all()
 
 
-def publicar(figurita: FiguitaCreate) -> dict:
-    return figurita_repo.create(figurita)
+def publicar(figurita: FiguitaCreate, usuario_id: int) -> dict:
+    return figurita_repo.create(figurita, usuario_id)
 
 
 def eliminar(figurita_id: int) -> bool:

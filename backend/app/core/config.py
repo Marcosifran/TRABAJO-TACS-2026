@@ -7,8 +7,13 @@ class Settings(BaseSettings):
     app_version: str = "2026.1"
     debug: bool = False
 
+    # Tokens de cada usuario. Se cargan desde .env de la raíz.
+    user_1_token: str
+    user_2_token: str
+
     class Config:
-        env_file = ".env" # Por el momento no lo vamos a usar, es para la base de datos
+        # Busca el .env primero en backend/ (ejecución local) y luego en la raíz (Docker)
+        env_file = (".env", "../.env")
 
 # Instanciamos settings.
 settings = Settings()

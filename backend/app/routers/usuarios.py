@@ -1,22 +1,31 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.faltante import FaltanteCreate
+from app.schemas.usuario import UsuarioResponse
 from app.services import usuario_service
+from app.dependencies import get_current_user
+from app.repositories import usuario_repo
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
-# Registra una figurita faltante para un usuario específico.
-@router.post("/{usuario_id}/faltantes")
-def registrar_faltante(usuario_id: int, faltante: FaltanteCreate):
-    resultado = usuario_service.registrar_faltante(usuario_id, faltante)
+# TODO: Útil en desarrollo para saber qué token le corresponde a cada usuario
+@router.get("/", response_model=list[UsuarioResponse])
+def listar_usuarios():
+    return usuario_repo.get_all()
+
+
+# Registra un faltante para el usuario autenticado vía token
+@router.post("/faltantes")
+def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
+    resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
     if resultado is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return {"mensaje": "Faltante registrado", "data": resultado}
 
 
-# Devuelve todas las figuritas faltantes de un usuario específico.
-@router.get("/{usuario_id}/faltantes")
-def listar_faltantes(usuario_id: int):
-    faltantes = usuario_service.listar_faltantes(usuario_id)
+# Devuelve los faltantes del usuario que hace el request
+@router.get("/faltantes")
+def listar_faltantes(usuario: dict = Depends(get_current_user)):
+    faltantes = usuario_service.listar_faltantes(usuario["id"])
     if faltantes is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"usuario_id": usuario_id, "faltantes": faltantes}
+    return {"usuario_id": usuario["id"], "faltantes": faltantes}

@@ -11,9 +11,11 @@ Implementación de CRUD para figuritas.
 def get_all() -> list[dict]:
     return _db
 
-def create(figurita: FiguitaCreate) -> dict:
+def create(figurita: FiguitaCreate, usuario_id: int) -> dict:
     nueva = figurita.model_dump()
     nueva["id"] = len(_db) + 1
+    # Guardamos quién publicó la figurita para poder filtrar y validar después
+    nueva["usuario_id"] = usuario_id
     _db.append(nueva)
     return nueva
 
