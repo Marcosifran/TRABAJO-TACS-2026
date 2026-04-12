@@ -1,7 +1,8 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+# from pydantic import ConfigDict
 
-''' Generamos una clase de configuración que hereda de BaseSettings de Pydantic. Esto es para poder
-cargar la configuración desde un archivo .env (en la raíz o desde variables de entorno.'''
+# Generamos una clase de configuración que hereda de BaseSettings de Pydantic.
+# Permite cargar configuración desde un archivo .env o variables de entorno.
 class Settings(BaseSettings):
     app_name: str = "Mundial Figuritas TACS"
     app_version: str = "2026.1"
@@ -11,9 +12,10 @@ class Settings(BaseSettings):
     user_1_token: str
     user_2_token: str
 
-    class Config:
-        # Busca el .env primero en backend/ (ejecución local) y luego en la raíz (Docker)
-        env_file = (".env", "../.env")
+    # Configuración moderna de Pydantic v2
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env")
+    )
 
-# Instanciamos settings.
+# Instanciamos settings
 settings = Settings()
