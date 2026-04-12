@@ -34,3 +34,10 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
 def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
     sugerencias = figurita_service.sugerir_intercambios(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
+
+@router.get("/figuritas")
+def listar_figuritas(usuario: dict = Depends(get_current_user)):
+    figuritas = usuario_service.listar_figuritas(usuario["id"])
+    if figuritas is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"usuario_id": usuario["id"], "figuritas": figuritas}

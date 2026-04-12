@@ -1,5 +1,5 @@
 from app.schemas.faltante import FaltanteCreate
-from app.repositories import usuario_repo
+from app.repositories import usuario_repo, figurita_repo
 
 
 def registrar_faltante(usuario_id: int, faltante: FaltanteCreate) -> dict | None:
@@ -16,3 +16,8 @@ def listar_faltantes(usuario_id: int) -> list[dict] | None:
     if not usuario_repo.get_by_id(usuario_id):
         return None
     return usuario_repo.get_faltantes(usuario_id)
+
+def listar_figuritas(usuario_id: int) -> list[dict] | None:
+    if not usuario_repo.get_by_id(usuario_id):
+        return None
+    return figurita_repo.figuritas_por_usuario(usuario_id)

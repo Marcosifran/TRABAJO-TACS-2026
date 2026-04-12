@@ -50,3 +50,6 @@ def delete(figurita_id: int) -> bool:
             _db.pop(index)
             return True
     return False
+
+def figuritas_por_usuario(usuario_id: int) -> list[dict]:
+    return [ f for f in _db if f["usuario_id"] == usuario_id ]
