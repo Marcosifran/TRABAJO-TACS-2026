@@ -3,15 +3,18 @@ from app.schemas.subasta import SubastaCreate
 from app.schemas.oferta import OfertaCreate
 
 def crear_subasta(subasta_data: SubastaCreate, usuario_id: int) -> dict:
+    #se verifica que la figurita exista
     figuritas = figurita_repo.get_all()
     figurita = next((f for f in figuritas if f["id"] == subasta_data.figurita_id), None)
     
     if not figurita:
         raise ValueError("Figurita inexistente")
-    
+
+        
     if figurita["usuario_id"] != usuario_id:
         raise ValueError("No podés subastar una figurita que no es tuya")
 
+    #verificamos que no esté subasta para no replicarla
     subasta_activa = subasta_repo.get_by_figurita(subasta_data.figurita_id)
     if subasta_activa:
         raise ValueError("Esta figurita ya se encuentra en subasta")

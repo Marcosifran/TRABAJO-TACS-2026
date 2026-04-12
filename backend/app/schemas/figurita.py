@@ -7,6 +7,7 @@ Esquemas para la creación y respuesta de las figuritas.
 
 
 class FiguritaCreate(BaseModel):
+    # Con ge se valida que el número sea mayor o igual a 1.
     numero: int = Field(..., ge=1, description="Número de figurita")
     equipo: str = Field(..., min_length=1, description="Selección, equipo o categoría")
     jugador: str = Field(..., min_length=1, description="Jugador o descripción de la figurita")
