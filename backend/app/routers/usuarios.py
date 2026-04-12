@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.faltante import FaltanteCreate
-from app.schemas.usuario import UsuarioResponse
+from app.schemas.faltante import FaltanteCreate, FaltanteRegistradoResponse, ListarFaltantesResponse
+from app.schemas.usuario import UsuarioResponse, SugerenciasResponse
 from app.services import usuario_service, figurita_service
 from app.dependencies import get_current_user
 from app.repositories import usuario_repo
@@ -8,7 +8,7 @@ from app.repositories import usuario_repo
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 # Registra una figurita faltante para el usuario autenticado vía token
-@router.post("/faltantes", status_code=201)
+@router.post("/faltantes", status_code=201, response_model=FaltanteRegistradoResponse)
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
     try:
         resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
@@ -20,7 +20,7 @@ def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_cur
 
 
 # Devuelve los faltantes del usuario que hace el request
-@router.get("/faltantes")
+@router.get("/faltantes", response_model=ListarFaltantesResponse)
 def listar_faltantes(usuario: dict = Depends(get_current_user)):
     faltantes = usuario_service.listar_faltantes(usuario["id"])
     if faltantes is None:
@@ -29,7 +29,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
 
 
 # Devuelve sugerencias de intercambio: figuritas de otros usuarios que cubren los faltantes del usuario autenticado
-@router.get("/sugerencias")
+@router.get("/sugerencias", response_model=SugerenciasResponse)
 def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
     sugerencias = figurita_service.sugerir_intercambios(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}

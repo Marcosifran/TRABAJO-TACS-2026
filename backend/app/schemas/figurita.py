@@ -25,3 +25,12 @@ class SugerenciaResponse(BaseModel): #Representa una sugerencia de intercambio
     figurita: FiguritaResponse
     ofrecida_por: str
     cubre_tu_faltante: int
+
+class MensajeResponse(BaseModel):
+    mensaje: str
+
+class PublicarResponse(MensajeResponse):
+    data: FiguritaResponse
+
+class BuscarFiguritasResponse(BaseModel):
+    figuritasDisponibles: list[FiguritaResponse]

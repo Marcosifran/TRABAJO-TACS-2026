@@ -11,3 +11,11 @@ class FaltanteCreate(BaseModel):
 class FaltanteResponse(FaltanteCreate):
     id: int
     usuario_id: int
+
+class FaltanteRegistradoResponse(BaseModel):
+    mensaje: str
+    data: FaltanteResponse
+
+class ListarFaltantesResponse(BaseModel):
+    usuario_id: int
+    faltantes: list[FaltanteResponse]

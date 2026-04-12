@@ -13,3 +13,10 @@ def crear_oferta(subasta_id: int, ofrecida_id:int, usuario_id: int) -> dict:
 
 def get_all() -> list[dict]:
     return _db_ofertas
+
+def count_by_ofrecida(ofrecida_id: int) -> int:
+    return sum(1 for o in _db_ofertas if o["ofrecida_id"] == ofrecida_id)
+
+def delete_by_figurita(figurita_id: int):
+    global _db_ofertas
+    _db_ofertas = [o for o in _db_ofertas if o["subasta_id"] != figurita_id and o["ofrecida_id"] != figurita_id]

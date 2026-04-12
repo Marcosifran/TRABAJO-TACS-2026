@@ -11,7 +11,7 @@ Implementación de CRUD para figuritas.
 def get_all() -> list[dict]:
     return _db
 
-def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
+def buscar(numero: int | None, equipo: str | None, jugador: str | None, skip: int = 0, limit: int = 100) -> list[dict]:
     """
     Filtra las figuritas disponibles según criterios opcionales. Si dejamos alguno vacio, no lo utiliza para filtrar
     """
@@ -22,17 +22,33 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[
         resultado = [f for f in resultado if equipo.lower() in f["equipo"].lower()]
     if jugador is not None:
         resultado = [f for f in resultado if jugador.lower() in f["jugador"].lower()]
-    return resultado
+    return resultado[skip : skip + limit]
 
 
-def get_sugerencias(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
+def get_sugerencias(faltantes: list[dict], usuario_id: int) -> list[dict]:
     """
-    Busca figuritas publicadas por otros usuarios que coincidan con los números faltantes del usuario.
+    Busca figuritas publicadas por otros usuarios que coincidan con los datos faltantes del usuario
+    (evaluando número, y opcionalmente equipo y jugador).
     """
-    return [
-        f for f in _db
-        if f["numero"] in numeros_faltantes and f["usuario_id"] != usuario_id
-    ]
+    sugerencias = []
+    for f_db in _db:
+        if f_db["usuario_id"] == usuario_id:
+            continue
+            
+        for faltante in faltantes:
+            if f_db["numero"] == faltante["numero_figurita"]:
+                equipo_match = True
+                if faltante.get("equipo"):
+                    equipo_match = faltante["equipo"].lower() in f_db["equipo"].lower()
+                
+                jugador_match = True
+                if faltante.get("jugador"):
+                    jugador_match = faltante["jugador"].lower() in f_db["jugador"].lower()
+                
+                if equipo_match and jugador_match:
+                    sugerencias.append(f_db)
+                    break 
+    return sugerencias
 
 
 def create(figurita: FiguritaCreate, usuario_id: int) -> dict:
