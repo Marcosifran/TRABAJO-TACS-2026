@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.figurita import FiguitaCreate
+from app.schemas.figurita import FiguritaCreate
 from app.services import figurita_service
 from app.dependencies import get_current_user
 
@@ -11,9 +11,12 @@ def obtener_figuritas():
 
 
 # El usuario que publica se obtiene del token, no del body
-@router.post("/")
-def publicar_figurita(figu: FiguitaCreate, usuario: dict = Depends(get_current_user)):
-    nueva = figurita_service.publicar(figu, usuario["id"])
+@router.post("/", status_code=201)
+def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_user)):
+    try:
+        nueva = figurita_service.publicar(figu, usuario["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"mensaje": "Figurita publicada", "data": nueva}
 
 

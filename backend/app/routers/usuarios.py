@@ -14,9 +14,12 @@ def listar_usuarios():
 
 
 # Registra un faltante para el usuario autenticado vía token
-@router.post("/faltantes")
+@router.post("/faltantes", status_code=201)
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
-    resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
+    try:
+        resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     if resultado is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return {"mensaje": "Faltante registrado", "data": resultado}

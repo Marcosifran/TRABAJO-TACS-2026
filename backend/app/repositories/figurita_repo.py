@@ -1,4 +1,4 @@
-from app.schemas.figurita import FiguitaCreate
+from app.schemas.figurita import FiguritaCreate
 
 _db: list[dict] = []
 
@@ -11,7 +11,7 @@ Implementación de CRUD para figuritas.
 def get_all() -> list[dict]:
     return _db
 
-def create(figurita: FiguitaCreate, usuario_id: int) -> dict:
+def create(figurita: FiguritaCreate, usuario_id: int) -> dict:
     nueva = figurita.model_dump()
     nueva["id"] = len(_db) + 1
     # Guardamos quién publicó la figurita para poder filtrar y validar después
