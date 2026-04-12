@@ -24,7 +24,4 @@ def listar_intercambios(usuario_id: int) -> dict[str, list[dict]] | None:
     enviados = intercambio_repo.buscar_intercambios_enviados(usuario_id)
     recibidos = intercambio_repo.buscar_intercambios_recibidos(usuario_id)
 
-    return {
-        "enviados": enviados,
-        "recibidos": recibidos,
-    }
+    return { "enviados": enviados, "recibidos": recibidos,} # En el futuro se pueden agregar más categorías, como por ejemplo "aceptados", "rechazados", etc.

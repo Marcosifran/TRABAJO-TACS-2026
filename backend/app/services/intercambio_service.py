@@ -45,6 +45,9 @@ def obtener_figuritas_para_intercambio(intercambio: IntercambioCreate, usuario_i
 
 
 def validar_cantidad_disponible(figurita_ofrecida: dict, figurita_solicitada: dict) -> None:
+    '''
+    Validamos que tanto la figurita ofrecida como la solicitada tengan cantidad disponible para intercambio.
+    '''
     if figurita_ofrecida["cantidad"] < 1:
         raise HTTPException(status_code=400, detail="La figurita ofrecida no tiene stock disponible")
     if figurita_solicitada["cantidad"] < 1:
@@ -52,6 +55,9 @@ def validar_cantidad_disponible(figurita_ofrecida: dict, figurita_solicitada: di
 
 
 def validar_tipo_intercambio(figurita_ofrecida: dict, figurita_solicitada: dict) -> None:
+    '''
+    Validamos que tanto la figurita ofrecida como la solicitada estén configuradas para intercambio directo.
+    '''
     if figurita_ofrecida["tipo_intercambio"] != "intercambio_directo":
         raise HTTPException(status_code=400, detail="Tu figurita ofrecida no está configurada para intercambio directo")
     if figurita_solicitada["tipo_intercambio"] != "intercambio_directo":

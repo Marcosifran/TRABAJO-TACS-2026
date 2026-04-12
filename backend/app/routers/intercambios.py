@@ -8,7 +8,14 @@ router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
 
 
 @router.post("/")
+
 def proponer_intercambio( intercambio: IntercambioCreate, usuario: dict = Depends(get_current_user)):
+    
+    # - Que el número de figurita ofrecida y solicitada no sean el mismo
+    # - Que el usuario tenga publicada la figurita que ofrece
+    # - Que el usuario destino tenga publicada la figurita que solicita
+    # - Que ambas figuritas tengan cantidad disponible para intercambio
+    # - Que ambas figuritas estén configuradas para intercambio directo
     
     intercambio_service.validar_intercambio(
         intercambio=intercambio,
