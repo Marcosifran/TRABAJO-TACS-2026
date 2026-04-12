@@ -9,7 +9,7 @@ WebApp para la materia Tecnologías Avanzadas en Construcción de Software (TACS
 
 ## Estado de Entregas
 
-- [x] **Entrega 1:** Esqueleto de aplicación, URLs REST definidas y estado en memoria mediante Docker.
+- [] **Entrega 1:** Esqueleto de aplicación, URLs REST definidas y estado en memoria mediante Docker.
 - [ ] **Entrega 2:** (Próximamente)
 - [ ] **Entrega 3:** (Próximamente)
 
@@ -26,7 +26,7 @@ Proyecto diseñado bajo una arquitectura orientada a microservicios y completame
 
 Para ejecutar este proyecto de forma local, es necesario tener instalado el motor de contenedores:
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (o Docker Engine) activo y corriendo.
+- [Docker Desktop o CLI](https://www.docker.com/products/docker-desktop/) (o Docker Engine) activo y corriendo.
 
 ## Cómo ejecutar el proyecto (Modo Local)
 
