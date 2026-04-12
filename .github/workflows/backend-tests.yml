@@ -30,3 +30,6 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -v
+        env:
+          USER_1_TOKEN: test-token-user1
+          USER_2_TOKEN: test-token-user2
