@@ -7,13 +7,7 @@ from app.repositories import usuario_repo
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
-# TODO: Útil en desarrollo para saber qué token le corresponde a cada usuario
-@router.get("/", response_model=list[UsuarioResponse])
-def listar_usuarios():
-    return usuario_repo.get_all()
-
-
-# Registra un faltante para el usuario autenticado vía token
+# Registra una figurita faltante para el usuario autenticado vía token
 @router.post("/faltantes", status_code=201)
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
     try:

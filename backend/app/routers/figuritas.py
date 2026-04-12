@@ -7,7 +7,7 @@ router = APIRouter(prefix="/figuritas", tags=["Figuritas"])
 
 @router.get("/")
 def obtener_figuritas():
-    return {"disponibles": figurita_service.listar()}
+    return {"figuritasDisponibles": figurita_service.listar()}
 
 
 # El usuario que publica se obtiene del token, no del body
@@ -17,7 +17,7 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
         nueva = figurita_service.publicar(figu, usuario["id"])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return {"mensaje": "Figurita publicada", "data": nueva}
+    return {"mensaje": "Figurita a intercambiar publicada", "data": nueva}
 
 
 @router.delete("/{figurita_id}")
