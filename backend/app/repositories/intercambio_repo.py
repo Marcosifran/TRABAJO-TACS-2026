@@ -1,0 +1,40 @@
+# intercambio_repo.py
+from app.schemas.intercambio_sch import IntercambioCreate
+
+_db: list[dict] = []
+
+
+def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
+    nuevo = {
+        "id": len(_db) + 1,
+        "propuesto_por": propuesto_por,
+        "solicitado_a": solicitado_a,
+        "figurita_ofrecida": intercambio.figurita_ofrecida_numero,
+        "figurita_solicitada": intercambio.figurita_solicitada_numero,
+        "estado": "pendiente",
+    }
+    _db.append(nuevo)
+    return nuevo
+
+def listar_intercambios() -> list[dict]:
+    return _db
+
+
+def buscar_intercambio_por_id(intercambio_id: int) -> dict:
+    for intercambio in _db:
+        if intercambio["id"] == intercambio_id:
+            return intercambio
+    return None
+
+def buscar_intercambios_por_usuario(usuario_id: int) -> list[dict]:
+    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
+
+
+def buscar_intercambios_enviados(usuario_id: int) -> list[dict]:
+    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
+
+
+def buscar_intercambios_recibidos(usuario_id: int) -> list[dict]:
+    return [intercambio for intercambio in _db if intercambio["solicitado_a"] == usuario_id]
+
+

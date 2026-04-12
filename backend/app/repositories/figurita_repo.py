@@ -50,3 +50,7 @@ def delete(figurita_id: int) -> bool:
             _db.pop(index)
             return True
     return False
+
+
+# /1/intercambios/
+# 
