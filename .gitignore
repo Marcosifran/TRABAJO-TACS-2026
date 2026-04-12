@@ -17,6 +17,9 @@ build/
 # IDEs
 .vscode/
 .idea/
+
+# Claude Code
+.claude/
 *.suo
 *.user
 
