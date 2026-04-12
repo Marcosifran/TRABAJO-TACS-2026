@@ -20,3 +20,8 @@ class FiguritaCreate(BaseModel):
 class FiguritaResponse(FiguritaCreate):
     id: int
     usuario_id: int
+
+class SugerenciaResponse(BaseModel): #Representa una sugerencia de intercambio
+    figurita: FiguritaResponse
+    ofrecida_por: str
+    cubre_tu_faltante: int

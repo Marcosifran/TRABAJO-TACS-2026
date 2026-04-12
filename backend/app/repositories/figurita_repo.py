@@ -11,6 +11,30 @@ Implementación de CRUD para figuritas.
 def get_all() -> list[dict]:
     return _db
 
+def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
+    """
+    Filtra las figuritas disponibles según criterios opcionales. Si dejamos alguno vacio, no lo utiliza para filtrar
+    """
+    resultado = _db
+    if numero is not None:
+        resultado = [f for f in resultado if f["numero"] == numero]
+    if equipo is not None:
+        resultado = [f for f in resultado if equipo.lower() in f["equipo"].lower()]
+    if jugador is not None:
+        resultado = [f for f in resultado if jugador.lower() in f["jugador"].lower()]
+    return resultado
+
+
+def get_sugerencias(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
+    """
+    Busca figuritas publicadas por otros usuarios que coincidan con los números faltantes del usuario.
+    """
+    return [
+        f for f in _db
+        if f["numero"] in numeros_faltantes and f["usuario_id"] != usuario_id
+    ]
+
+
 def create(figurita: FiguritaCreate, usuario_id: int) -> dict:
     nueva = figurita.model_dump()
     nueva["id"] = len(_db) + 1

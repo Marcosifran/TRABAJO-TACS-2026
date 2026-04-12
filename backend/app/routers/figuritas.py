@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
 from app.schemas.figurita import FiguritaCreate
 from app.services import figurita_service
 from app.dependencies import get_current_user
@@ -6,8 +7,17 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/figuritas", tags=["Figuritas"])
 
 @router.get("/")
-def obtener_figuritas():
-    return {"figuritasDisponibles": figurita_service.listar()}
+def buscar_figuritas(
+    numero: Optional[int] = Query(None, ge=1, description="Número exacto de la figurita"),
+    equipo: Optional[str] = Query(None, min_length=1, description="Nombre del equipo o selección (búsqueda parcial)"),
+    jugador: Optional[str] = Query(None, min_length=1, description="Nombre del jugador (búsqueda parcial)"),
+):
+    """
+    Devuelve las figuritas disponibles. Permite filtrar opcionalmente por número, equipo y/o jugador.
+    Si no se proporciona ningún filtro, devuelve todas las figuritas publicadas.
+    """
+    resultado = figurita_service.buscar(numero, equipo, jugador)
+    return {"figuritasDisponibles": resultado}
 
 
 # El usuario que publica se obtiene del token, no del body
