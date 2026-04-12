@@ -1,4 +1,3 @@
-from _typeshed import importlib
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from app.schemas.figurita import FiguritaCreate
