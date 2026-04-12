@@ -35,19 +35,57 @@ Para ejecutar este proyecto de forma local, es necesario tener instalado el moto
    git clone [https://github.com/Marcosifran/TRABAJO-TACS-2026.git](https://github.com/Marcosifran/TRABAJO-TACS-2026.git)
    cd TRABAJO-TACS-2026
    ```
-2. Ejecutar el proyecto:
+
+2. Crear el archivo `.env` a partir del ejemplo y completarlo con tokens reales (ver sección [Identificación de Usuarios](#identificación-de-usuarios)):
+   ```bash
+   cp .env.example .env
+   # Editar .env y completar USER_1_TOKEN y USER_2_TOKEN
+   ```
+
+3. Ejecutar el proyecto:
    ```bash
    docker compose up --build
    ```
-3. Acceder a la aplicación:
+
+4. Acceder a la aplicación:
    - Frontend: http://localhost:5173
    - Backend: http://localhost:8000
+   - Documentación interactiva (Swagger): http://localhost:8000/docs
 
-   ## Modificar el código
+## Modificar el código
 
-4. ```bash
-   git checkout -b feature/nombre-del-cambio
-   ```
-5. ```bash
-   git push origin feature/nombre-del-cambio
-   ```
+```bash
+git checkout -b feature/nombre-del-cambio
+git push origin feature/nombre-del-cambio
+```
+
+---
+
+## Identificación de Usuarios
+
+El TP no requiere autenticación completa, pero los usuarios deben poder diferenciarse para atacar los casos de uso. La solución implementada usa **tokens fijos por usuario** distribuidos fuera del repositorio.
+
+### Cómo funciona
+
+Cada request a un endpoint protegido debe incluir el header `X-User-Token` con el token correspondiente al usuario. El backend resuelve la identidad a partir de ese token sin necesidad de login.
+
+```
+POST /api/v1/figuritas/
+X-User-Token: <token-del-usuario>
+```
+
+Si el header está ausente o el token no corresponde a ningún usuario, el backend responde `401 Unauthorized`.
+
+### Configuración del .env
+
+Los tokens se definen en un archivo `.env` en la raíz del proyecto:
+
+```env
+USER_1_TOKEN=<uuid-del-usuario-1>
+USER_2_TOKEN=<uuid-del-usuario-2>
+```
+
+**Cómo generar un token de ejemplo para el .env:**
+```bash
+# Python
+python -c "import uuid; print(uuid.uuid4())"

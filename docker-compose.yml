@@ -3,6 +3,8 @@ services:
     build: ./backend
     ports:
     - "8000:8000"
+    # Las variables vienen del .env raíz y se pasan al contenedor
+    env_file: .env
     volumes:
     - ./backend:/app #no tengo que reiniciar docker si modifico el main
 
