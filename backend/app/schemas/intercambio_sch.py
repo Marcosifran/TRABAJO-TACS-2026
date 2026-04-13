@@ -14,8 +14,12 @@ class IntercambioCreate(BaseModel):
 class IntercambioDecision(BaseModel):
     estado: EstadoRespuestaIntercambio = Field(..., description="Respuesta del receptor: aceptado o rechazado")
 
-class IntercambioResponse(IntercambioCreate):
+
+class IntercambioResponse(BaseModel):
     id: int
     propuesto_por: int
+    solicitado_a: int
+    figurita_ofrecida: int
+    figurita_solicitada: int
     estado: EstadoRespuestaIntercambio
 
