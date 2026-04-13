@@ -17,11 +17,3 @@ def listar_faltantes(usuario_id: int) -> list[dict] | None:
         return None
     return usuario_repo.get_faltantes(usuario_id)
 
-def listar_intercambios(usuario_id: int) -> dict[str, list[dict]] | None:
-    if not usuario_repo.get_by_id(usuario_id):
-        return None
-
-    enviados = intercambio_repo.buscar_intercambios_enviados(usuario_id)
-    recibidos = intercambio_repo.buscar_intercambios_recibidos(usuario_id)
-
-    return { "enviados": enviados, "recibidos": recibidos,} # En el futuro se pueden agregar más categorías, como por ejemplo "aceptados", "rechazados", etc.
