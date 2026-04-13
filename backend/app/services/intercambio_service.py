@@ -68,6 +68,14 @@ def validar_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> tupl
     '''
     Validamos que un intercambio propuesto cumpla con las reglas de negocio
     Devuelve las figuritas involucradas en el intercambio para que puedan ser utilizadas posteriormente en la creación del mismo.
+
+    Reglas: 
+        - Que el número de figurita ofrecida y solicitada no sean el mismo
+        - Que el usuario tenga publicada la figurita que ofrece
+        - Que el usuario destino tenga publicada la figurita que solicita
+        - Que ambas figuritas tengan cantidad disponible para intercambio
+        - Que ambas figuritas estén configuradas para intercambio directo
+    
     '''
     validar_numeros_distintos(intercambio)
     validar_usuario_destino(intercambio, usuario_id)
@@ -78,6 +86,11 @@ def validar_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> tupl
 
 
 def realizar_intercambio_aceptado(intercambio: dict) -> None:
+    '''
+    Realiza el intercambio entre los usuarios, actualizando la propiedad usuario_id de las figuritas ofrecida y solicitada.
+    Además, si las figuritas recibidas estaban marcadas como faltantes por alguno de los usuarios, las removemos de su lista de faltantes.
+    '''
+
     # Obtengo la figurita ofrecida
     figurita_ofrecida = figurita_repo.buscar_por_numero_y_usuario(
         numero=intercambio["figurita_ofrecida"],
