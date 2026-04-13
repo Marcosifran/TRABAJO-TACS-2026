@@ -1,0 +1,73 @@
+from fastapi import HTTPException
+
+from app.repositories import figurita_repo
+from app.schemas.intercambio_sch import IntercambioCreate
+
+
+def validar_numeros_distintos(intercambio: IntercambioCreate) -> None:
+    '''
+    Validamos que el número de figurita ofrecida y solicitada no sean el mismo, ya que no tendría sentido un intercambio directo en ese caso.
+    '''
+    if intercambio.figurita_ofrecida_numero == intercambio.figurita_solicitada_numero:
+        raise HTTPException(status_code=400, detail="La figurita ofrecida y solicitada no pueden ser la misma")
+
+
+def validar_usuario_destino(intercambio: IntercambioCreate, usuario_id: int) -> None:
+    if intercambio.solicitado_a_id == usuario_id:
+        raise HTTPException(status_code=400, detail="No podés proponerte un intercambio a vos mismo")
+
+
+def obtener_figuritas_para_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> tuple[dict, dict]: 
+    '''
+    Obtiene de los repositorios las figuritas ofrecida y solicitada para un intercambio.
+    '''   
+    todas = figurita_repo.get_all()
+    figurita_ofrecida = next(
+        (f for f in todas if f["numero"] == intercambio.figurita_ofrecida_numero and f["usuario_id"] == usuario_id),
+        None, # Si no encuentra la figurita ofrecida del usuario, devuelve None
+    )
+    figurita_solicitada = next(
+        (
+            f
+            for f in todas
+            if f["numero"] == intercambio.figurita_solicitada_numero
+            and f["usuario_id"] == intercambio.solicitado_a_id
+        ),
+        None, # Si no encuentra la figurita ofrecida del usuario, devuelve None
+    )
+
+    if not figurita_ofrecida:
+        raise HTTPException(status_code=404, detail="No tenés publicada la figurita que ofrecés")
+    if not figurita_solicitada:
+        raise HTTPException(status_code=404, detail="El usuario destino no tiene publicada la figurita solicitada")
+
+    return figurita_ofrecida, figurita_solicitada
+
+
+def validar_cantidad_disponible(figurita_ofrecida: dict, figurita_solicitada: dict) -> None:
+    '''
+    Validamos que tanto la figurita ofrecida como la solicitada tengan cantidad disponible para intercambio.
+    '''
+    if figurita_ofrecida["cantidad"] < 1:
+        raise HTTPException(status_code=400, detail="La figurita ofrecida no tiene stock disponible")
+    if figurita_solicitada["cantidad"] < 1:
+        raise HTTPException(status_code=400, detail="La figurita solicitada no tiene stock disponible")
+
+
+def validar_tipo_intercambio(figurita_ofrecida: dict, figurita_solicitada: dict) -> None:
+    '''
+    Validamos que tanto la figurita ofrecida como la solicitada estén configuradas para intercambio directo.
+    '''
+    if figurita_ofrecida["tipo_intercambio"] != "intercambio_directo":
+        raise HTTPException(status_code=400, detail="Tu figurita ofrecida no está configurada para intercambio directo")
+    if figurita_solicitada["tipo_intercambio"] != "intercambio_directo":
+        raise HTTPException(status_code=400, detail="La figurita solicitada no está configurada para intercambio directo")
+
+
+def validar_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> tuple[dict, dict]:
+    validar_numeros_distintos(intercambio)
+    validar_usuario_destino(intercambio, usuario_id)
+    figurita_ofrecida, figurita_solicitada = obtener_figuritas_para_intercambio(intercambio, usuario_id)
+    validar_cantidad_disponible(figurita_ofrecida, figurita_solicitada)
+    validar_tipo_intercambio(figurita_ofrecida, figurita_solicitada)
+    return figurita_ofrecida, figurita_solicitada

@@ -32,3 +32,4 @@ def create_faltante(faltante_data: dict) -> dict:
     faltante_data["id"] = len(_db_faltantes) + 1
     _db_faltantes.append(faltante_data)
     return faltante_data
+
