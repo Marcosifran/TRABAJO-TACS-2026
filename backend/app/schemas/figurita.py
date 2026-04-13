@@ -16,6 +16,7 @@ class FiguritaCreate(BaseModel):
     jugador: str = Field(..., min_length=1, description="Jugador o descripción de la figurita")
     cantidad: int = Field(..., ge=1, description="Cantidad disponible")
     tipo_intercambio: TipoIntercambio = Field(..., description="Modalidad de intercambio: intercambio_directo o subasta")
+
 class FiguritaResponse(FiguritaCreate):
     id: int
     usuario_id: int

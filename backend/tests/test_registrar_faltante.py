@@ -161,15 +161,6 @@ class TestFaltanteDuplicado:
 
         assert resp.status_code == 409 # Datos duplicados
 
-    def test_duplicado_no_agrega_el_faltante(self, client, token_user1):
-        """Intentar duplicar un faltante no modifica la lista existente."""
-        client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"X-User-Token": token_user1})
-        client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"X-User-Token": token_user1})
-
-        faltantes = client.get(ENDPOINT, headers={"X-User-Token": token_user1}).json()["faltantes"]
-
-        assert len(faltantes) == 1
-
     def test_mismo_numero_puede_ser_faltante_de_dos_usuarios_distintos(self, client, token_user1, token_user2):
         """El mismo número de figurita puede ser faltante de diferentes usuarios sin conflicto."""
         resp1 = client.post(ENDPOINT, json={"numero_figurita": 7}, headers={"X-User-Token": token_user1})

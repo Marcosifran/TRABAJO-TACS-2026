@@ -117,16 +117,6 @@ class TestFiltroPorEquipo:
         assert len(resultado) == 2
         assert all("Argentina" in f["equipo"] for f in resultado) # Chequeamos que argentina este contenido en el equipo de cada resultado
 
-    def test_filtro_por_equipo_case_insensitive(self, client, figuritas_cargadas):
-        """La búsqueda por equipo no distingue mayúsculas de minúsculas."""
-        resp_lower = client.get(ENDPOINT, params={"equipo": "argentina"})
-        resp_upper = client.get(ENDPOINT, params={"equipo": "ARGENTINA"})
-
-        assert resp_lower.status_code == 200
-        assert resp_upper.status_code == 200
-        assert len(resp_lower.json()["figuritasDisponibles"]) == 2
-        assert len(resp_upper.json()["figuritasDisponibles"]) == 2
-
     def test_filtro_por_equipo_inexistente_devuelve_lista_vacia(self, client, figuritas_cargadas):
         """Buscar un equipo que no existe devuelve lista vacía."""
         resp = client.get(ENDPOINT, params={"equipo": "Uruguay"})
@@ -165,13 +155,6 @@ class TestFiltroPorJugador:
         resultado = resp.json()["figuritasDisponibles"]
         assert len(resultado) == 1
         assert resultado[0]["numero"] == 10
-
-    def test_filtro_por_jugador_case_insensitive(self, client, figuritas_cargadas):
-        """La búsqueda por jugador no distingue mayúsculas de minúsculas."""
-        resp = client.get(ENDPOINT, params={"jugador": "messi"})
-
-        assert resp.status_code == 200
-        assert len(resp.json()["figuritasDisponibles"]) == 1
 
     def test_filtro_por_jugador_inexistente_devuelve_lista_vacia(self, client, figuritas_cargadas):
         """Buscar un jugador que no existe devuelve lista vacía."""

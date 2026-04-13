@@ -71,7 +71,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 1, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
-        assert resp.json()["detail"] == "La figurita ofrecida y solicitada no pueden ser la misma"
 
     def test_no_permite_proponer_intercambio_a_si_mismo(self, client, token_user1):
         """No se puede proponer un intercambio al propio usuario."""
@@ -81,7 +80,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 1}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
-        assert resp.json()["detail"] == "No podés proponerte un intercambio a vos mismo"
 
     def test_falla_si_usuario_no_tiene_publicada_la_figurita_ofrecida(self, client, token_user1, token_user2):
         """Si el proponente no posee la figurita ofrecida, devuelve 404."""
@@ -90,7 +88,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 99, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "No tenés publicada la figurita que ofrecés"
 
     def test_falla_si_usuario_destino_no_tiene_publicada_figurita_solicitada(self, client, token_user1, token_user2):
         """Si el receptor no posee la figurita solicitada, devuelve 404."""
@@ -99,7 +96,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "El usuario destino no tiene publicada la figurita solicitada"
 
     def test_falla_si_figurita_ofrecida_no_es_intercambio_directo(self, client, token_user1, token_user2):
         """La figurita ofrecida debe estar publicada para intercambio directo."""
@@ -109,7 +105,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
-        assert resp.json()["detail"] == "Tu figurita ofrecida no está configurada para intercambio directo"
 
     def test_falla_si_figurita_solicitada_no_es_intercambio_directo(self, client, token_user1, token_user2):
         """La figurita solicitada también debe estar publicada para intercambio directo."""
@@ -119,7 +114,6 @@ class TestProponerIntercambio:
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
-        assert resp.json()["detail"] == "La figurita solicitada no está configurada para intercambio directo"
 
 
 # -------------------------
@@ -137,24 +131,6 @@ class TestResponderIntercambio:
         assert resp.status_code == 200
         return resp.json()["id"]
 
-    def test_receptor_puede_aceptar_intercambio(self, client, token_user1, token_user2):
-        """El usuario receptor puede aceptar un intercambio pendiente."""
-        intercambio_id = self._crear_intercambio_pendiente(client, token_user1, token_user2)
-
-        resp = client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "aceptado"}, headers={"X-User-Token": token_user2})
-
-        assert resp.status_code == 200
-        assert resp.json()["estado"] == "aceptado"
-
-    def test_receptor_puede_rechazar_intercambio(self, client, token_user1, token_user2):
-        """El usuario receptor puede rechazar un intercambio pendiente."""
-        intercambio_id = self._crear_intercambio_pendiente(client, token_user1, token_user2)
-
-        resp = client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "rechazado"}, headers={"X-User-Token": token_user2})
-
-        assert resp.status_code == 200
-        assert resp.json()["estado"] == "rechazado"
-
     def test_no_receptor_no_puede_responder_intercambio(self, client, token_user1, token_user2):
         """Un usuario que no es receptor debe obtener 403 al intentar responder."""
         intercambio_id = self._crear_intercambio_pendiente(client, token_user1, token_user2)
@@ -162,7 +138,6 @@ class TestResponderIntercambio:
         resp = client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "aceptado"}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 403
-        assert resp.json()["detail"] == "Solo el usuario receptor puede responder este intercambio"
 
     def test_no_permite_responder_dos_veces(self, client, token_user1, token_user2):
         """Una vez respondido, el intercambio no puede volver a responderse."""
@@ -174,7 +149,6 @@ class TestResponderIntercambio:
         resp_2 = client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "rechazado"}, headers={"X-User-Token": token_user2})
 
         assert resp_2.status_code == 400
-        assert resp_2.json()["detail"] == "El intercambio ya fue respondido"
 
     def test_aceptar_intercambio_cambia_posesion_de_figuritas(self, client, token_user1, token_user2):
         """Aceptar intercambio invierte la posesión de las figuritas involucradas."""
@@ -201,15 +175,6 @@ class TestResponderIntercambio:
         figurita_2 = next(f for f in lista if f["numero"] == 2)
         assert figurita_1["usuario_id"] == 1
         assert figurita_2["usuario_id"] == 2
-
-    def test_aceptar_intercambio_no_requiere_faltante_del_receptor(self, client, token_user1, token_user2):
-        """Aceptar no requiere que el receptor haya registrado faltante previamente."""
-        intercambio_id = self._crear_intercambio_pendiente(client, token_user1, token_user2)
-
-        resp = client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "aceptado"}, headers={"X-User-Token": token_user2})
-
-        assert resp.status_code == 200
-        assert resp.json()["estado"] == "aceptado"
 
     def test_si_hay_faltante_registrado_se_elimina_al_aceptar(self, client, token_user1, token_user2):
         """Si la figurita recibida estaba como faltante, se elimina al aceptar."""

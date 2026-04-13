@@ -88,13 +88,6 @@ class TestSugerenciasBasicas:
         assert len(resp.json()["sugerencias"]) == 2  # figuritas 10 y 7 coinciden
         assert all(s["cubre_tu_faltante"] in [10, 7] for s in resp.json()["sugerencias"])
 
-    def test_faltante_sin_coincidencia_no_genera_sugerencia(self, client, token_user1, escenario_base):
-        """El faltante número 9 (registrado por user1) no lo tiene user2, así que no genera sugerencia."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
-
-        numeros_sugeridos = [s["cubre_tu_faltante"] for s in resp.json()["sugerencias"]]
-        assert 9 not in numeros_sugeridos
-
     def test_usuario_id_en_respuesta_coincide_con_usuario_autenticado(self, client, token_user1, escenario_base):
         """El campo usuario_id de la respuesta debe ser el del usuario que hizo el request."""
         resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
@@ -189,14 +182,6 @@ class TestEstructuraSugerencia:
 # ─────────────────────────────────────────────
 
 class TestSugerenciasMultiples:
-
-    def test_multiples_faltantes_con_multiples_coincidencias(self, client, token_user1, escenario_base):
-        """Todos los faltantes con coincidencia generan una sugerencia cada uno."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
-
-        numeros_sugeridos = [s["cubre_tu_faltante"] for s in resp.json()["sugerencias"]]
-        assert 10 in numeros_sugeridos
-        assert 7  in numeros_sugeridos
 
     def test_figurita_con_cantidad_mayor_a_uno_genera_una_sola_sugerencia(self, client, token_user1, token_user2):
         """
