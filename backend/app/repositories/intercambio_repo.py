@@ -20,11 +20,19 @@ def listar_intercambios() -> list[dict]:
     return _db
 
 
-# def buscar_intercambio_por_id(intercambio_id: int) -> dict:
-#     for intercambio in _db:
-#         if intercambio["id"] == intercambio_id:
-#             return intercambio
-#     return None
+def buscar_intercambio_por_id(intercambio_id: int) -> dict | None:
+    for intercambio in _db:
+        if intercambio["id"] == intercambio_id:
+            return intercambio
+    return {None: None}
+
+
+def responder_intercambio(intercambio_id: int, estado: str) -> dict:
+    intercambio = buscar_intercambio_por_id(intercambio_id)
+    if not intercambio:
+        return {None: None}
+    intercambio["estado"] = estado
+    return intercambio
 
 def buscar_intercambios_por_usuario(usuario_id: int) -> list[dict]:
     return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
