@@ -35,18 +35,7 @@ def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
     sugerencias = figurita_service.sugerir_intercambios(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 
-@router.get("/intercambios")
-def listar_intercambios(usuario: dict = Depends(get_current_user)):
-    intercambios = usuario_service.listar_intercambios(usuario["id"])
-    if intercambios is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"usuario_id": usuario["id"], **intercambios}
 
 
-@router.get("/intercambios")
-def listar_intercambios_por_usuario(usuario: dict = Depends(get_current_user)):
-    intercambios = usuario_service.listar_intercambios(usuario["id"])
-    if intercambios is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"usuario_id": usuario["id"], **intercambios}
+
 

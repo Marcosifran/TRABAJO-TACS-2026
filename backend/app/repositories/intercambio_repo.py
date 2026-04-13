@@ -37,4 +37,7 @@ def buscar_intercambios_enviados(usuario_id: int) -> list[dict]:
 def buscar_intercambios_recibidos(usuario_id: int) -> list[dict]:
     return [intercambio for intercambio in _db if intercambio["solicitado_a"] == usuario_id]
 
-
+def listar_intercambios_por_usuario(usuario_id: int) -> dict[str, list[dict]]:
+    enviados = buscar_intercambios_enviados(usuario_id)
+    recibidos = buscar_intercambios_recibidos(usuario_id)
+    return {"enviados": enviados, "recibidos": recibidos}

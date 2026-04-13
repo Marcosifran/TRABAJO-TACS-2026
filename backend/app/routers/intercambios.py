@@ -30,3 +30,8 @@ def proponer_intercambio( intercambio: IntercambioCreate, usuario: dict = Depend
 
     return intercambio_propuesto
 
+
+@router.get("/")
+def listar_intercambios(usuario: dict = Depends(get_current_user)):
+    intercambios = intercambio_repo.listar_intercambios_por_usuario(usuario["id"])
+    return intercambios
