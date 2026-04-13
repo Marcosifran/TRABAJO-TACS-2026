@@ -3,6 +3,12 @@ from app.schemas.intercambio_sch import IntercambioCreate
 
 _db: list[dict] = []
 
+'''
+Repositorio para manejar datos de intercambios. Se usan listas en memoria para simular
+una base de datos, pero luego se implementará MongoDB.
+Implementación de CRUD para intercambios.
+'''
+
 
 def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
     nuevo = {

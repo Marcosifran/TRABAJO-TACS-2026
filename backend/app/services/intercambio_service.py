@@ -77,6 +77,39 @@ def validar_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> tupl
     return figurita_ofrecida, figurita_solicitada
 
 
+def realizar_intercambio_aceptado(intercambio: dict) -> None:
+    # Obtengo la figurita ofrecida
+    figurita_ofrecida = figurita_repo.buscar_por_numero_y_usuario(
+        numero=intercambio["figurita_ofrecida"],
+        usuario_id=intercambio["propuesto_por"],
+    )
+    # Obtengo la figurita solicitada
+    figurita_solicitada = figurita_repo.buscar_por_numero_y_usuario(
+        numero=intercambio["figurita_solicitada"],
+        usuario_id=intercambio["solicitado_a"],
+    )
+
+    if not figurita_ofrecida or not figurita_solicitada:
+        raise HTTPException(
+            status_code=404,
+            detail="No se pudo concretar el intercambio porque faltan figuritas publicadas",
+        )
+
+    # Las intercambio entre los usuarios
+    figurita_ofrecida["usuario_id"] = intercambio["solicitado_a"]
+    figurita_solicitada["usuario_id"] = intercambio["propuesto_por"]
+
+    # Si las figuritas recibidas estaban marcadas como faltantes, las removemos.
+    usuario_repo.remove_faltante(
+        usuario_id=intercambio["solicitado_a"],
+        numero_figurita=intercambio["figurita_ofrecida"],
+    )
+    usuario_repo.remove_faltante(
+        usuario_id=intercambio["propuesto_por"],
+        numero_figurita=intercambio["figurita_solicitada"],
+    )
+
+
 def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario_id: int) -> dict:
     '''
     Permite al usuario receptor de un intercambio responderlo, aceptándolo o rechazándolo.
@@ -99,38 +132,8 @@ def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, us
         raise HTTPException(status_code=400, detail="El intercambio ya fue respondido")
 
     if decision.estado.value == "aceptado":
-        # Obtengo la figurita ofrecida
-        figurita_ofrecida = figurita_repo.buscar_por_numero_y_usuario(
-            numero=intercambio["figurita_ofrecida"],
-            usuario_id=intercambio["propuesto_por"],
-        )
-        # Obtengo la figurita solicitada
-        figurita_solicitada = figurita_repo.buscar_por_numero_y_usuario(
-            numero=intercambio["figurita_solicitada"],
-            usuario_id=intercambio["solicitado_a"],
-        )
+        realizar_intercambio_aceptado(intercambio)
 
-        if not figurita_ofrecida or not figurita_solicitada:
-            raise HTTPException(
-                status_code=404,
-                detail="No se pudo concretar el intercambio porque faltan figuritas publicadas",
-            )
-
-        # Las intercambio entre los usuarios
-        figurita_ofrecida["usuario_id"] = intercambio["solicitado_a"]
-        figurita_solicitada["usuario_id"] = intercambio["propuesto_por"]
-
-        # Si las figuritas recibidas estaban marcadas como faltantes, las removemos.
-        usuario_repo.remove_faltante(
-            usuario_id=intercambio["solicitado_a"],
-            numero_figurita=intercambio["figurita_ofrecida"],
-        )
-        usuario_repo.remove_faltante(
-            usuario_id=intercambio["propuesto_por"],
-            numero_figurita=intercambio["figurita_solicitada"],
-        )
-
-        
 
     intercambio_actualizado = intercambio_repo.responder_intercambio(intercambio_id, decision.estado.value)
 
