@@ -11,6 +11,9 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[
 
     return figurita_repo.buscar(numero, equipo, jugador)
 
+def buscar_por_usuario(usuario_id: int) -> list[dict]:
+    # Busca figuritas publicadas por un usuario específico.
+    return figurita_repo.get_by_usuario_id(usuario_id)
 
 def sugerir_intercambios(usuario_id: int) -> list[dict]:
     """
