@@ -7,6 +7,16 @@ from app.repositories import usuario_repo
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
+
+@router.get("/figuritas")
+def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
+    """
+    Devuelve las figuritas publicadas por el usuario autenticado.
+    """
+    figuritas = figurita_service.buscar_por_usuario(usuario["id"])
+    return {"usuario_id": usuario["id"], "figuritas": figuritas}
+
+
 # Registra una figurita faltante para el usuario autenticado vía token
 @router.post("/faltantes", status_code=201)
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):

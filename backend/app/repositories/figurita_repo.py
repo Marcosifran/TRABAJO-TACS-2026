@@ -28,6 +28,10 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[
         resultado = [f for f in resultado if jugador.lower() in f["jugador"].lower()]
     return resultado
 
+def get_by_usuario_id(usuario_id: int) -> list[dict]:
+    # Busca figuritas publicadas por un usuario específico.
+    return [f for f in _db if f["usuario_id"] == usuario_id]
+
 
 def get_sugerencias(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
     """
