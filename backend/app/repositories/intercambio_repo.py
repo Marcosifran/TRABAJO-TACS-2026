@@ -24,13 +24,13 @@ def buscar_intercambio_por_id(intercambio_id: int) -> dict | None:
     for intercambio in _db:
         if intercambio["id"] == intercambio_id:
             return intercambio
-    return {None: None}
+    return None
 
 
-def responder_intercambio(intercambio_id: int, estado: str) -> dict:
+def responder_intercambio(intercambio_id: int, estado: str) -> dict | None:
     intercambio = buscar_intercambio_por_id(intercambio_id)
     if not intercambio:
-        return {None: None}
+        return None
     intercambio["estado"] = estado
     return intercambio
 

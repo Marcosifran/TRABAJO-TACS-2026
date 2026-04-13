@@ -11,6 +11,10 @@ Implementación de CRUD para figuritas.
 def get_all() -> list[dict]:
     return _db
 
+
+def buscar_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
+    return next((f for f in _db if f["numero"] == numero and f["usuario_id"] == usuario_id), None)
+
 def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
     """
     Filtra las figuritas disponibles según criterios opcionales. Si dejamos alguno vacio, no lo utiliza para filtrar

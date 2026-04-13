@@ -33,3 +33,11 @@ def create_faltante(faltante_data: dict) -> dict:
     _db_faltantes.append(faltante_data)
     return faltante_data
 
+
+def remove_faltante(usuario_id: int, numero_figurita: int) -> bool:
+    for index, faltante in enumerate(_db_faltantes):
+        if faltante["usuario_id"] == usuario_id and faltante["numero_figurita"] == numero_figurita:
+            _db_faltantes.pop(index)
+            return True
+    return False
+
