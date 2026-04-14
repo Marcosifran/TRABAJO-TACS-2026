@@ -13,3 +13,6 @@ def crear_oferta(subasta_id: int, ofrecidas:list[int], usuario_id: int) -> dict:
 
 def get_all() -> list[dict]:
     return _db_ofertas
+
+def get_by_subasta(subasta_id: int) -> list[dict]:
+    return [o for o in _db_ofertas if o["subasta_id"] == subasta_id]
