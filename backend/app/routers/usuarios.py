@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.faltante import FaltanteCreate
 from app.schemas.usuario import UsuarioResponse
-from app.services import usuario_service, figurita_service
+from app.schemas.calificacion_sch import ReputacionResponse
+from app.services import usuario_service, figurita_service, calificacion_service
 from app.dependencies import get_current_user
 from app.repositories import usuario_repo
 
@@ -46,6 +47,8 @@ def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 
 
-
+@router.get("/{usuario_id}/reputacion", response_model=ReputacionResponse)
+def obtener_reputacion(usuario_id: int):
+    return calificacion_service.obtener_reputacion(usuario_id)
 
 
