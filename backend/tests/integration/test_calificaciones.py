@@ -39,7 +39,7 @@ def _intercambio_aceptado(client, token_user1, token_user2) -> int:
     resp = client.post(
         ENDPOINT_INTERCAMBIOS,
         json={
-            "figurita_ofrecida_numero": 1,
+            "figuritas_ofrecidas_numero": [1],
             "figurita_solicitada_numero": 2,
             "solicitado_a_id": 2,
         },
@@ -90,7 +90,7 @@ class TestCalificarTrasIntercambio:
     def test_no_calificar_intercambio_no_aceptado_400(self, client, token_user1, token_user2, estado_final):
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "J1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "J2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
         assert resp.status_code == 201
         intercambio_id = resp.json()["id"]
         if estado_final == "rechazado":
@@ -179,7 +179,7 @@ class TestReputacion:
         resp_prop = client.post(
             ENDPOINT_INTERCAMBIOS,
             json={
-                "figurita_ofrecida_numero": 3,
+                "figuritas_ofrecidas_numero": [3],
                 "figurita_solicitada_numero": 4,
                 "solicitado_a_id": 2,
             },

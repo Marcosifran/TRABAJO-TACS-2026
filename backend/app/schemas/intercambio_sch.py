@@ -6,7 +6,7 @@ class EstadoRespuestaIntercambio(str, Enum):
     RECHAZADO = "rechazado"
 
 class IntercambioCreate(BaseModel):
-    figurita_ofrecida_numero: int = Field(..., description="Numero de la figurita que se ofrece")
+    figuritas_ofrecidas_numero: list[int] = Field(..., description="Numeros de las figuritas que se ofrecen")
     figurita_solicitada_numero: int = Field(..., description="Numero de la figurita que se solicita")
     solicitado_a_id: int = Field(..., description="ID del usuario al que se propone el intercambio")
 
@@ -19,7 +19,7 @@ class IntercambioResponse(BaseModel):
     id: int
     propuesto_por: int
     solicitado_a: int
-    figurita_ofrecida: int
+    figuritas_ofrecidas: list[int]
     figurita_solicitada: int
     estado: EstadoRespuestaIntercambio
 

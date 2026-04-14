@@ -15,7 +15,7 @@ def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solici
         "id": len(_db) + 1,
         "propuesto_por": propuesto_por,
         "solicitado_a": solicitado_a,
-        "figurita_ofrecida": intercambio.figurita_ofrecida_numero,
+        "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
         "figurita_solicitada": intercambio.figurita_solicitada_numero,
         "estado": "pendiente",
     }
