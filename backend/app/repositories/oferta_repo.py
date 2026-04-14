@@ -1,10 +1,10 @@
 _db_ofertas: list[dict] = []
 
-def crear_oferta(subasta_id: int, ofrecida_id:int, usuario_id: int) -> dict:
+def crear_oferta(subasta_id: int, ofrecidas:list[int], usuario_id: int) -> dict:
     nueva_oferta = {
         "id": len(_db_ofertas) + 1,
         "subasta_id": subasta_id,   #figurita que se subasta
-        "ofrecida_id": ofrecida_id, #figurita que se ofrece
+        "ofrecidas": ofrecidas, #figurita que se ofrece
         "usuario_id": usuario_id    #usuario que ofrece
     }
 
@@ -13,3 +13,6 @@ def crear_oferta(subasta_id: int, ofrecida_id:int, usuario_id: int) -> dict:
 
 def get_all() -> list[dict]:
     return _db_ofertas
+
+def get_by_subasta(subasta_id: int) -> list[dict]:
+    return [o for o in _db_ofertas if o["subasta_id"] == subasta_id]

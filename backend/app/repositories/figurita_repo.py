@@ -47,7 +47,7 @@ def create(figurita: FiguritaCreate, usuario_id: int) -> dict:
     nueva = figurita.model_dump()
     nueva["id"] = len(_db) + 1
     # Guardamos quién publicó la figurita para poder filtrar y validar después
-    nueva["usuario_id"] = usuario_id
+    nueva["usuario_id"] = usuario_id #Si la figurita conoce a su dueño va a existir una instancia de cada una por usuario 
     _db.append(nueva)
     return nueva
 
