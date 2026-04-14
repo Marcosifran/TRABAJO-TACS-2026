@@ -55,7 +55,7 @@ class TestProponerIntercambio:
         }
         resp_intercambio = client.post(ENDPOINT_INTERCAMBIOS, json=propuesta, headers={"X-User-Token": token_user1})
 
-        assert resp_intercambio.status_code == 200
+        assert resp_intercambio.status_code == 201
         data = resp_intercambio.json()
         assert data["propuesto_por"] == 1
         assert data["solicitado_a"] == 2
@@ -128,7 +128,7 @@ class TestResponderIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
 
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         return resp.json()["id"]
 
     def test_no_receptor_no_puede_responder_intercambio(self, client, token_user1, token_user2):

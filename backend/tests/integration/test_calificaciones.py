@@ -45,7 +45,7 @@ def _intercambio_aceptado(client, token_user1, token_user2) -> int:
         },
         headers={"X-User-Token": token_user1},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 201
     intercambio_id = resp.json()["id"]
     resp_patch = client.patch(
         f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
@@ -91,7 +91,7 @@ class TestCalificarTrasIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "J1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "J2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
         resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         intercambio_id = resp.json()["id"]
         if estado_final == "rechazado":
             client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "rechazado"}, headers={"X-User-Token": token_user2})
@@ -185,7 +185,7 @@ class TestReputacion:
             },
             headers={"X-User-Token": token_user1},
         )
-        assert resp_prop.status_code == 200
+        assert resp_prop.status_code == 201
         i2 = resp_prop.json()["id"]
         client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{i2}/estado",
