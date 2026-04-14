@@ -12,6 +12,10 @@ def get_all() -> list[dict]:
     return _db
 
 
+def get_by_id(figurita_id: int) -> dict | None:
+    return next((f for f in _db if f["id"] == figurita_id), None)
+
+
 def buscar_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
     return next((f for f in _db if f["numero"] == numero and f["usuario_id"] == usuario_id), None)
 

@@ -352,16 +352,41 @@ class TestFiguritaServiceDelegacion:
         mock_create.assert_called_once_with(figurita, 5)
         assert resultado == fake_result
 
-    def test_eliminar_llama_a_repo_delete(self):
+    def test_eliminar_llama_a_repo_delete_cuando_es_duenio(self):
         """
-        Caso de uso: Eliminar figurita.
-        figurita_service.eliminar() debe delegar en figurita_repo.delete() y retornar su resultado.
+        Caso de uso: Eliminar figurita propia.
+        figurita_service.eliminar() verifica propiedad y delega en figurita_repo.delete().
         """
-        with patch("app.services.figurita_service.figurita_repo.delete", return_value=True) as mock_delete:
-            resultado = figurita_service.eliminar(figurita_id=7)
+        figurita_del_usuario = {"id": 7, "usuario_id": 3, "numero": 10}
+        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=figurita_del_usuario):
+            with patch("app.services.figurita_service.figurita_repo.delete", return_value=True) as mock_delete:
+                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
 
         mock_delete.assert_called_once_with(7)
         assert resultado is True
+
+    def test_eliminar_retorna_none_cuando_no_es_duenio(self):
+        """
+        figurita_service.eliminar() retorna None si la figurita pertenece a otro usuario.
+        """
+        figurita_de_otro = {"id": 7, "usuario_id": 99, "numero": 10}
+        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=figurita_de_otro):
+            with patch("app.services.figurita_service.figurita_repo.delete") as mock_delete:
+                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
+
+        mock_delete.assert_not_called()
+        assert resultado is None
+
+    def test_eliminar_retorna_false_cuando_no_existe(self):
+        """
+        figurita_service.eliminar() retorna False si la figurita no existe.
+        """
+        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=None):
+            with patch("app.services.figurita_service.figurita_repo.delete") as mock_delete:
+                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
+
+        mock_delete.assert_not_called()
+        assert resultado is False
 
     def test_buscar_llama_a_repo_buscar(self):
         """

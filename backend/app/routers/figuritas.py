@@ -49,11 +49,15 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
     responses={
         200: {"description": "Figurita eliminada exitosamente"},
         401: {"description": "Token ausente o inválido"},
+        403: {"description": "No tenés permiso para eliminar esta figurita"},
         404: {"description": "Figurita no encontrada"},
     },
 )
 def eliminar_figurita(figurita_id: int, usuario: dict = Depends(get_current_user)):
-    if not figurita_service.eliminar(figurita_id):
+    resultado = figurita_service.eliminar(figurita_id, usuario["id"])
+    if resultado is False:
         raise HTTPException(status_code=404, detail="Figurita no encontrada")
+    if resultado is None:
+        raise HTTPException(status_code=403, detail="No tenés permiso para eliminar esta figurita")
     return {"mensaje": "Figurita eliminada"}
 
