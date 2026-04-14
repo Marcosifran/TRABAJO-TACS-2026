@@ -49,7 +49,7 @@ class TestProponerIntercambio:
         assert resp_faltante.json()["data"]["usuario_id"] == 1
 
         propuesta = {
-            "figurita_ofrecida_numero": 1,
+            "figuritas_ofrecidas_numero": [1],
             "figurita_solicitada_numero": 2,
             "solicitado_a_id": 2,
         }
@@ -59,16 +59,33 @@ class TestProponerIntercambio:
         data = resp_intercambio.json()
         assert data["propuesto_por"] == 1
         assert data["solicitado_a"] == 2
-        assert data["figurita_ofrecida"] == 1
+        assert data["figuritas_ofrecidas"] == [1]
         assert data["figurita_solicitada"] == 2
         assert data["estado"] == "pendiente"
+
+    def test_permite_proponer_multiples_figuritas_por_una(self, client, token_user1, token_user2):
+        """El proponente puede ofrecer varias figuritas y pedir una sola."""
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 3, "equipo": "Uruguay", "jugador": "Jugador 3", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
+
+        resp = client.post(
+            ENDPOINT_INTERCAMBIOS,
+            json={"figuritas_ofrecidas_numero": [1, 3], "figurita_solicitada_numero": 2, "solicitado_a_id": 2},
+            headers={"X-User-Token": token_user1},
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["figuritas_ofrecidas"] == [1, 3]
+        assert data["figurita_solicitada"] == 2
 
     def test_no_permite_intercambiar_misma_figurita(self, client, token_user1, token_user2):
         """No se puede proponer intercambio usando el mismo número ofrecido y solicitado."""
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 1, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 1, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
 
@@ -77,7 +94,7 @@ class TestProponerIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Argentina", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 1}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 1}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
 
@@ -85,7 +102,7 @@ class TestProponerIntercambio:
         """Si el proponente no posee la figurita ofrecida, devuelve 404."""
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 99, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [99], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404
 
@@ -93,7 +110,7 @@ class TestProponerIntercambio:
         """Si el receptor no posee la figurita solicitada, devuelve 404."""
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404
 
@@ -102,7 +119,7 @@ class TestProponerIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "subasta"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 400
 
@@ -111,7 +128,17 @@ class TestProponerIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "subasta"}, headers={"X-User-Token": token_user2})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+
+        assert resp.status_code == 400
+
+    def test_falla_si_lista_ofrecidas_esta_vacia(self, client, token_user1, token_user2):
+        """La propuesta debe incluir al menos una figurita ofrecida."""
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
+
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+
+        assert resp.status_code == 400
 
         assert resp.status_code == 400
 
@@ -127,7 +154,7 @@ class TestResponderIntercambio:
         client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "Jugador 1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
         client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "Jugador 2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
 
-        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
         assert resp.status_code == 200
         return resp.json()["id"]
 
