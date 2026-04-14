@@ -17,6 +17,10 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+// TODO: token hardcodeado temporalmente para desarrollo. Reemplazar por login real.
+const API_BASE = "http://localhost:8000/api/v1";
+const DEV_TOKEN = "test-token-user1";
+
 function App() {
   const [figuritas, setFiguritas] = useState([]);
   const [nuevaFigurita, setNuevaFigurita] = useState({
@@ -28,25 +32,28 @@ function App() {
   });
 
   useEffect(() => {
-    fetch("http://localhost:8000/figuritas/")
+    fetch(`${API_BASE}/figuritas/`)
       .then((respuesta) => respuesta.json())
-      .then((datos) => setFiguritas(datos.disponibles))
+      .then((datos) => setFiguritas(datos.figuritasDisponibles))
       .catch((error) => console.error("Error al cargar:", error));
   }, []);
 
   const handleSubmit = async (evento) => {
     evento.preventDefault();
-    const respuesta = await fetch("http://localhost:8000/figuritas/", {
+    const respuesta = await fetch(`${API_BASE}/figuritas/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Token": DEV_TOKEN,
+      },
       body: JSON.stringify(nuevaFigurita),
     });
 
     if (respuesta.ok) {
-      const datosNuevos = await fetch("http://localhost:8000/figuritas/").then(
+      const datosNuevos = await fetch(`${API_BASE}/figuritas/`).then(
         (res) => res.json(),
       );
-      setFiguritas(datosNuevos.disponibles);
+      setFiguritas(datosNuevos.figuritasDisponibles);
       alert("¡Figurita guardada con éxito!");
       setNuevaFigurita({
         numero: "",
@@ -60,14 +67,15 @@ function App() {
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de que querés borrar esta figurita?")) {
-      const respuesta = await fetch(`http://localhost:8000/figuritas/${id}`, {
+      const respuesta = await fetch(`${API_BASE}/figuritas/${id}`, {
         method: "DELETE",
+        headers: { "X-User-Token": DEV_TOKEN },
       });
       if (respuesta.ok) {
-        const datosNuevos = await fetch(
-          "http://localhost:8000/figuritas/",
-        ).then((res) => res.json());
-        setFiguritas(datosNuevos.disponibles);
+        const datosNuevos = await fetch(`${API_BASE}/figuritas/`).then(
+          (res) => res.json(),
+        );
+        setFiguritas(datosNuevos.figuritasDisponibles);
       } else {
         alert("Error al borrar");
       }
