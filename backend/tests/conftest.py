@@ -10,7 +10,7 @@ Define fixtures compartidas entre todos los módulos de test:
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.repositories import figurita_repo, usuario_repo, intercambio_repo, calificacion_repo
+from app.repositories import figurita_repo, usuario_repo, intercambio_repo, subasta_repo, oferta_repo, calificacion_repo
 
 # Con fixture autouse ejecutamos entre tests el método limpiar_db.
 @pytest.fixture(autouse=True)
@@ -23,6 +23,8 @@ def limpiar_db():
     usuario_repo._db_faltantes.clear()
     intercambio_repo._db.clear()
     calificacion_repo._db.clear()
+    subasta_repo._db_subastas.clear()
+    oferta_repo._db_ofertas.clear()
     yield # Ejecutamos el test
 
 

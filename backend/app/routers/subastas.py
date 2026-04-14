@@ -24,6 +24,17 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
         raise HTTPException(status_code=400, detail=str(e))
     return {"mensaje": "Subasta creada exitosamente", "subasta": nueva_subasta}
 
+@router.get("/{subasta_id}/ofertas")
+def listar_ofertas(subasta_id: int):
+    """
+    Devuelve todas las ofertas recibidas para una subasta.
+    """
+    try:
+        ofertas = subasta_service.listar_ofertas(subasta_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return {"ofertas": ofertas}
+
 @router.post("/{subasta_id}/ofertar", status_code=201)
 def ofertar_en_subasta(
     subasta_id: int,
