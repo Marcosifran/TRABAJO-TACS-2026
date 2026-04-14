@@ -8,16 +8,16 @@ from app.repositories import figurita_repo
 from app.schemas.figurita import FiguritaCreate, TipoIntercambio
 
 
-# ─────────────────────────────────────────────
-# Tests de repositorio — figurita_repo.create()
-# ─────────────────────────────────────────────
+# ────────────────────
+# Tests de repositorio
+# ────────────────────
 
 class TestFiguritaRepoCreate:
 
     def test_create_agrega_figurita_con_campos_correctos(self):
         """
         Caso de uso: Publicar figurita.
-        create() debe persistir la figurita en _db con todos sus campos originales.
+        create() debe persistir la figurita en memoria con todos sus campos originales.
         """
         figurita = FiguritaCreate(
             numero=10,
@@ -66,9 +66,9 @@ class TestFiguritaRepoCreate:
         assert resultado["usuario_id"] == 42
 
 
-# ───────────────────────────────────────────────────────
-# Tests de repositorio — figurita_repo.get_all / delete()
-# ───────────────────────────────────────────────────────
+# ────────────────────
+# Tests de repositorio
+# ────────────────────
 
 class TestFiguritaRepoGetAllYDelete:
 
@@ -82,7 +82,7 @@ class TestFiguritaRepoGetAllYDelete:
     def test_get_all_retorna_todas_las_figuritas_creadas(self):
         """
         Caso de uso: Listar figuritas.
-        get_all() debe devolver todas las figuritas en _db.
+        get_all() debe devolver todas las figuritas en memoria.
         """
         figurita = FiguritaCreate(
             numero=1, equipo="Argentina", jugador="Messi",
@@ -112,16 +112,16 @@ class TestFiguritaRepoGetAllYDelete:
     def test_delete_retorna_false_si_no_existe(self):
         """
         Caso de uso: Eliminar figurita.
-        delete() con un ID inexistente debe devolver False sin modificar _db.
+        delete() con un ID inexistente debe devolver False sin modificar en memoria.
         """
         resultado = figurita_repo.delete(999)
 
         assert resultado is False
 
 
-# ──────────────────────────────────────────────
-# Tests de repositorio — figurita_repo.buscar()
-# ──────────────────────────────────────────────
+# ───────────────────────────────
+# Tests de repositorio — búsqueda
+# ───────────────────────────────
 
 class TestFiguritaRepoBuscar:
 
@@ -195,9 +195,9 @@ class TestFiguritaRepoBuscar:
         assert resultado == []
 
 
-# ──────────────────────────────────────────────────────
-# Tests de repositorio — figurita_repo.get_sugerencias()
-# ──────────────────────────────────────────────────────
+# ──────────────────────────────────
+# Tests de repositorio — sugerencias
+# ──────────────────────────────────
 
 class TestFiguritaRepoGetSugerencias:
 
@@ -244,9 +244,9 @@ class TestFiguritaRepoGetSugerencias:
         assert resultado == []
 
 
-# ──────────────────────────────────────────────────────────────
-# Tests de servicio — figurita_service (con dependencias mockeadas)
-# ──────────────────────────────────────────────────────────────
+# ─────────────────
+# Tests de servicio
+# ─────────────────
 
 from app.services import figurita_service
 

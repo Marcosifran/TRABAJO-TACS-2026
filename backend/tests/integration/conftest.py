@@ -1,5 +1,5 @@
 """
-Fixtures exclusivas para tests de integración (HTTP via TestClient).
+Fixtures exclusivas para tests de integración.
 """
 
 import pytest

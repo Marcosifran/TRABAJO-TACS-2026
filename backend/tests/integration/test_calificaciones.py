@@ -2,6 +2,7 @@
 Tests de calificaciones tras intercambio aceptado y consulta de reputación.
 """
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.dependencies import get_current_user
@@ -85,92 +86,16 @@ class TestCalificarTrasIntercambio:
         assert resp.json()["calificador_id"] == 1
         assert resp.json()["calificado_id"] == 2
 
-    def test_no_calificar_intercambio_pendiente_400(self, client, token_user1, token_user2):
-        client.post(
-            ENDPOINT_FIGURITAS,
-            json={
-                "numero": 1,
-                "equipo": "Argentina",
-                "jugador": "J1",
-                "cantidad": 1,
-                "tipo_intercambio": "intercambio_directo",
-            },
-            headers={"X-User-Token": token_user1},
-        )
-        client.post(
-            ENDPOINT_FIGURITAS,
-            json={
-                "numero": 2,
-                "equipo": "Brasil",
-                "jugador": "J2",
-                "cantidad": 1,
-                "tipo_intercambio": "intercambio_directo",
-            },
-            headers={"X-User-Token": token_user2},
-        )
-        resp = client.post(
-            ENDPOINT_INTERCAMBIOS,
-            json={
-                "figurita_ofrecida_numero": 1,
-                "figurita_solicitada_numero": 2,
-                "solicitado_a_id": 2,
-            },
-            headers={"X-User-Token": token_user1},
-        )
+    @pytest.mark.parametrize("estado_final", ["pendiente", "rechazado"])
+    def test_no_calificar_intercambio_no_aceptado_400(self, client, token_user1, token_user2, estado_final):
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 1, "equipo": "Argentina", "jugador": "J1", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT_FIGURITAS, json={"numero": 2, "equipo": "Brasil", "jugador": "J2", "cantidad": 1, "tipo_intercambio": "intercambio_directo"}, headers={"X-User-Token": token_user2})
+        resp = client.post(ENDPOINT_INTERCAMBIOS, json={"figurita_ofrecida_numero": 1, "figurita_solicitada_numero": 2, "solicitado_a_id": 2}, headers={"X-User-Token": token_user1})
         assert resp.status_code == 200
         intercambio_id = resp.json()["id"]
-        url = f"/api/v1/intercambios/{intercambio_id}/calificaciones"
-        resp_cal = client.post(
-            url,
-            json={"puntuacion": 3},
-            headers={"X-User-Token": token_user2},
-        )
-        assert resp_cal.status_code == 400
-
-    def test_no_calificar_intercambio_rechazado_400(self, client, token_user1, token_user2):
-        client.post(
-            ENDPOINT_FIGURITAS,
-            json={
-                "numero": 1,
-                "equipo": "Argentina",
-                "jugador": "J1",
-                "cantidad": 1,
-                "tipo_intercambio": "intercambio_directo",
-            },
-            headers={"X-User-Token": token_user1},
-        )
-        client.post(
-            ENDPOINT_FIGURITAS,
-            json={
-                "numero": 2,
-                "equipo": "Brasil",
-                "jugador": "J2",
-                "cantidad": 1,
-                "tipo_intercambio": "intercambio_directo",
-            },
-            headers={"X-User-Token": token_user2},
-        )
-        resp = client.post(
-            ENDPOINT_INTERCAMBIOS,
-            json={
-                "figurita_ofrecida_numero": 1,
-                "figurita_solicitada_numero": 2,
-                "solicitado_a_id": 2,
-            },
-            headers={"X-User-Token": token_user1},
-        )
-        intercambio_id = resp.json()["id"]
-        client.patch(
-            f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
-            json={"estado": "rechazado"},
-            headers={"X-User-Token": token_user2},
-        )
-        url = f"/api/v1/intercambios/{intercambio_id}/calificaciones"
-        resp_cal = client.post(
-            url,
-            json={"puntuacion": 3},
-            headers={"X-User-Token": token_user2},
-        )
+        if estado_final == "rechazado":
+            client.patch(f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado", json={"estado": "rechazado"}, headers={"X-User-Token": token_user2})
+        resp_cal = client.post(f"/api/v1/intercambios/{intercambio_id}/calificaciones", json={"puntuacion": 3}, headers={"X-User-Token": token_user2})
         assert resp_cal.status_code == 400
 
     def test_usuario_no_participa_403(self, client, token_user1, token_user2):
