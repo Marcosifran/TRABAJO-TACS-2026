@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, IntercambioDecision
+from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
 from app.dependencies import get_current_user
-from app.services import intercambio_service
+from app.services import intercambio_service, calificacion_service
 from app.repositories import intercambio_repo
     
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
@@ -43,3 +44,20 @@ def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, us
         raise HTTPException(status_code=404, detail="Intercambio no encontrado o no tenés permisos para responderlo")
 
     return intercambio_actualizado
+
+
+@router.post(
+    "/{intercambio_id}/calificaciones",
+    response_model=CalificacionResponse,
+    status_code=201,
+)
+def calificar_tras_intercambio(
+    intercambio_id: int,
+    body: CalificacionCreate,
+    usuario: dict = Depends(get_current_user),
+):
+    return calificacion_service.crear_calificacion(
+        intercambio_id=intercambio_id,
+        calificador_id=usuario["id"],
+        data=body,
+    )
