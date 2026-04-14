@@ -3,16 +3,34 @@ from app.repositories import figurita_repo, usuario_repo
 
 
 def listar() -> list[dict]:
+    """
+    Retorna todas las figuritas publicadas en el sistema.
+    """
     return figurita_repo.get_all()
 
 
 def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
-    # Busca figuritas disponibles aplicando filtros opcionales.
+    """
+    Busca figuritas disponibles aplicando filtros opcionales.
+    Los parámetros que se dejen en None no se utilizan como criterio de filtrado.
 
+    Args:
+        numero: Número exacto de la figurita.
+        equipo: Nombre del equipo (búsqueda parcial, case-insensitive).
+        jugador: Nombre del jugador (búsqueda parcial, case-insensitive).
+
+    Returns:
+        Lista de figuritas que coinciden con los filtros aplicados.
+    """
     return figurita_repo.buscar(numero, equipo, jugador)
 
 def buscar_por_usuario(usuario_id: int) -> list[dict]:
-    # Busca figuritas publicadas por un usuario específico.
+    """
+    Retorna las figuritas publicadas por un usuario específico.
+
+    Args:
+        usuario_id: ID del usuario dueño de las figuritas.
+    """
     return figurita_repo.get_by_usuario_id(usuario_id)
 
 def sugerir_intercambios(usuario_id: int) -> list[dict]:
@@ -40,8 +58,27 @@ def sugerir_intercambios(usuario_id: int) -> list[dict]:
 
 
 def publicar(figurita: FiguritaCreate, usuario_id: int) -> dict:
+    """
+    Publica una figurita para intercambio, asociándola al usuario que la registra.
+
+    Args:
+        figurita: Datos de la figurita a publicar.
+        usuario_id: ID del usuario que publica la figurita.
+
+    Returns:
+        Diccionario con los datos de la figurita creada, incluyendo su ID asignado.
+    """
     return figurita_repo.create(figurita, usuario_id)
 
 
 def eliminar(figurita_id: int) -> bool:
+    """
+    Elimina una figurita del sistema por su ID.
+
+    Args:
+        figurita_id: ID de la figurita a eliminar.
+
+    Returns:
+        True si la figurita fue encontrada y eliminada, False si no existía.
+    """
     return figurita_repo.delete(figurita_id)

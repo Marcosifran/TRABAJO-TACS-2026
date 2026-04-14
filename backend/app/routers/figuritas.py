@@ -7,7 +7,12 @@ from app.repositories import figurita_repo
 
 router = APIRouter(prefix="/figuritas", tags=["Figuritas"])
 
-@router.get("/")
+@router.get(
+    "/",
+    responses={
+        200: {"description": "Lista de figuritas que coinciden con los filtros aplicados"},
+    },
+)
 def buscar_figuritas(
     numero: Optional[int] = Query(None, ge=1, description="Número exacto de la figurita"),
     equipo: Optional[str] = Query(None, min_length=1, description="Nombre del equipo o selección (búsqueda parcial)"),
@@ -22,7 +27,15 @@ def buscar_figuritas(
 
 
 # El usuario que publica se obtiene del token, no del body
-@router.post("/", status_code=201)
+@router.post(
+    "/",
+    status_code=201,
+    responses={
+        201: {"description": "Figurita publicada exitosamente"},
+        400: {"description": "Datos inválidos para la figurita"},
+        401: {"description": "Token ausente o inválido"},
+    },
+)
 def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_user)):
     try:
         nueva = figurita_service.publicar(figu, usuario["id"])
@@ -31,7 +44,14 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
     return {"mensaje": "Figurita a intercambiar publicada", "data": nueva}
 
 
-@router.delete("/{figurita_id}")
+@router.delete(
+    "/{figurita_id}",
+    responses={
+        200: {"description": "Figurita eliminada exitosamente"},
+        401: {"description": "Token ausente o inválido"},
+        404: {"description": "Figurita no encontrada"},
+    },
+)
 def eliminar_figurita(figurita_id: int, usuario: dict = Depends(get_current_user)):
     if not figurita_service.eliminar(figurita_id):
         raise HTTPException(status_code=404, detail="Figurita no encontrada")
