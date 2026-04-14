@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.faltante import FaltanteCreate
 from app.schemas.usuario import UsuarioResponse
 from app.schemas.calificacion_sch import ReputacionResponse
-from app.services import usuario_service, figurita_service, calificacion_service
+from app.services import usuario_service, figurita_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
 from app.repositories import usuario_repo
 
@@ -86,4 +86,16 @@ def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
 def obtener_reputacion(usuario_id: int):
     return calificacion_service.obtener_reputacion(usuario_id)
 
-
+@router.get(
+    "/subastas",
+    responses={
+        200: {"description": "Subastas creadas por el usuario autenticado"},
+        401: {"description": "Token ausente o inválido"},
+    },
+)
+def listar_subastas_usuario(usuario: dict = Depends(get_current_user)):
+    """
+    Devuelve las subastas creadas de forma activa por el usuario autenticado.
+    """
+    subastas = subasta_service.listar_subastas_usuario(usuario["id"])
+    return {"usuario_id": usuario["id"], "subastas": subastas}

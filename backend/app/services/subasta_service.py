@@ -123,3 +123,9 @@ def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict
         "mensaje": "Oferta realizada",
         "detalle": f"Ofreciste a {[f['jugador'] for f in ofrecidas]} por {subastada['jugador'] if subastada else 'la figurita subastada'}"
     }
+
+def listar_subastas_usuario(usuario_id: int) -> list[dict]:
+    """
+    Retorna todas las subastas activas creadas por un usuario específico
+    """
+    return subasta_repo.get_by_usuario(usuario_id)
