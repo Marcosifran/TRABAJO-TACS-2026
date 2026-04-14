@@ -119,6 +119,89 @@ class TestFiguritaRepoGetAllYDelete:
         assert resultado is False
 
 
+# ────────────────────────────────────────────────
+# Tests de repositorio — búsqueda por número y usuario
+# ────────────────────────────────────────────────
+
+class TestFiguritaRepoBuscarPorNumeroYUsuario:
+
+    def _crear(self, numero, usuario_id):
+        f = FiguritaCreate(
+            numero=numero, equipo="Equipo", jugador="Jugador",
+            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
+        )
+        return figurita_repo.create(f, usuario_id=usuario_id)
+
+    def test_retorna_figurita_cuando_numero_y_usuario_coinciden(self):
+        """
+        buscar_por_numero_y_usuario() debe devolver la figurita cuando el número
+        y el usuario_id corresponden a una figurita existente.
+        """
+        self._crear(numero=10, usuario_id=1)
+
+        resultado = figurita_repo.buscar_por_numero_y_usuario(10, 1)
+
+        assert resultado is not None
+        assert resultado["numero"] == 10
+        assert resultado["usuario_id"] == 1
+
+    def test_retorna_none_si_el_numero_pertenece_a_otro_usuario(self):
+        """
+        buscar_por_numero_y_usuario() debe devolver None si la figurita con ese número
+        existe pero pertenece a un usuario distinto.
+        """
+        self._crear(numero=10, usuario_id=2)
+
+        resultado = figurita_repo.buscar_por_numero_y_usuario(10, 1)
+
+        assert resultado is None
+
+    def test_retorna_none_si_el_numero_no_existe(self):
+        """
+        buscar_por_numero_y_usuario() debe devolver None si no hay ninguna figurita
+        con ese número en la base de datos.
+        """
+        resultado = figurita_repo.buscar_por_numero_y_usuario(99, 1)
+
+        assert resultado is None
+
+
+# ────────────────────────────────────────────
+# Tests de repositorio — figuritas por usuario
+# ────────────────────────────────────────────
+
+class TestFiguritaRepoGetByUsuarioId:
+
+    def _crear(self, numero, usuario_id):
+        f = FiguritaCreate(
+            numero=numero, equipo="Equipo", jugador="Jugador",
+            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
+        )
+        return figurita_repo.create(f, usuario_id=usuario_id)
+
+    def test_retorna_solo_las_figuritas_del_usuario(self):
+        """
+        get_by_usuario_id() debe devolver únicamente las figuritas publicadas
+        por el usuario indicado, ignorando las de otros usuarios.
+        """
+        self._crear(numero=1, usuario_id=1)
+        self._crear(numero=2, usuario_id=1)
+        self._crear(numero=3, usuario_id=2)
+
+        resultado = figurita_repo.get_by_usuario_id(1)
+
+        assert len(resultado) == 2
+        assert all(f["usuario_id"] == 1 for f in resultado)
+
+    def test_retorna_lista_vacia_si_el_usuario_no_tiene_figuritas(self):
+        """
+        get_by_usuario_id() debe devolver lista vacía si el usuario no publicó nada.
+        """
+        resultado = figurita_repo.get_by_usuario_id(99)
+
+        assert resultado == []
+
+
 # ───────────────────────────────
 # Tests de repositorio — búsqueda
 # ───────────────────────────────
@@ -307,6 +390,33 @@ class TestFiguritaServiceDelegacion:
         mock_faltantes.assert_called_once_with(1)
         mock_sugerencias.assert_not_called()
         assert resultado == []
+
+    def test_listar_llama_a_repo_get_all(self):
+        """
+        Caso de uso: Listar figuritas.
+        figurita_service.listar() debe delegar en figurita_repo.get_all() y retornar su resultado.
+        """
+        fake_lista = [{"id": 1, "numero": 10}]
+
+        with patch("app.services.figurita_service.figurita_repo.get_all", return_value=fake_lista) as mock_get_all:
+            resultado = figurita_service.listar()
+
+        mock_get_all.assert_called_once()
+        assert resultado == fake_lista
+
+    def test_buscar_por_usuario_llama_a_repo_get_by_usuario_id(self):
+        """
+        Caso de uso: Ver mis figuritas publicadas.
+        figurita_service.buscar_por_usuario() debe delegar en figurita_repo.get_by_usuario_id()
+        y retornar su resultado.
+        """
+        fake_lista = [{"id": 1, "numero": 5, "usuario_id": 3}]
+
+        with patch("app.services.figurita_service.figurita_repo.get_by_usuario_id", return_value=fake_lista) as mock_get:
+            resultado = figurita_service.buscar_por_usuario(usuario_id=3)
+
+        mock_get.assert_called_once_with(3)
+        assert resultado == fake_lista
 
     def test_sugerir_intercambios_arma_sugerencias_con_info_del_oferente(self):
         """
