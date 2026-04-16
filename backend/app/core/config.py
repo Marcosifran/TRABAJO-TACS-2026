@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Tokens de cada usuario. Se cargan desde .env de la raíz.
-    user_1_token: str
-    user_2_token: str
+    user_1_token: str = ""
+    user_2_token: str = ""
 
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
