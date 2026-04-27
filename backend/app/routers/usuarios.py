@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.faltante import FaltanteCreate
 from app.schemas.usuario import UsuarioResponse
 from app.schemas.calificacion_sch import ReputacionResponse
-from app.services import usuario_service, figurita_service, calificacion_service, subasta_service
+from app.services import usuario_service, album_service,publicacion_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
 from app.repositories import usuario_repo
 
@@ -20,7 +20,7 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
     """
     Devuelve las figuritas publicadas por el usuario autenticado.
     """
-    figuritas = figurita_service.buscar_por_usuario(usuario["id"])
+    figuritas = album_service.listar_album(usuario["id"])
     return {"usuario_id": usuario["id"], "figuritas": figuritas}
 
 
@@ -71,7 +71,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     },
 )
 def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
-    sugerencias = figurita_service.sugerir_intercambios(usuario["id"])
+    sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 
 

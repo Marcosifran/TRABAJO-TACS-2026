@@ -1,232 +1,93 @@
-import { useState, useEffect } from "react";
-import {
-  Container,
-  Typography,
-  TextField,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-  Box,
-  Paper,
-  IconButton,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-
-// TODO: token hardcodeado temporalmente para desarrollo. Reemplazar por login real.
-const API_BASE = "http://localhost:8000/api/v1";
-const DEV_TOKEN = "test-token-user1";
+import { useState, useEffect, useCallback } from "react";
+import Navbar from "./components/NavBar";
+import Hero from "./components/Hero";
+import StatCards from "./components/StatCards";
+import FormFigurita from "./components/FormFigurita";
+import GrillaFiguritas from "./components/GrillaFiguritas";
+import { getMiAlbum, getMisPublicaciones, getMisFaltantes } from "./api/figuritas";
+import SeccionFaltantes from "./components/SeccionFaltantes";
+import SeccionBusqueda from "./components/SeccionBusqueda";
 
 function App() {
-  const [figuritas, setFiguritas] = useState([]);
-  const [nuevaFigurita, setNuevaFigurita] = useState({
-    numero: "",
-    equipo: "",
-    jugador: "",
-    cantidad: 1,
-    permite_subasta: false,
-  });
+  const [tabActiva, setTabActiva] = useState("Mi Álbum");
+  const [miAlbum, setMiAlbum] = useState([]);
+  const [misPublicaciones, setMisPublicaciones] = useState([]);
+  const [misFaltantes, setMisFaltantes] = useState([]);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/figuritas/`)
-      .then((respuesta) => respuesta.json())
-      .then((datos) => setFiguritas(datos.figuritasDisponibles))
-      .catch((error) => console.error("Error al cargar:", error));
+  const cargarDatos = useCallback(() => {
+    getMiAlbum()
+      .then(setMiAlbum)
+      .catch((err) => console.error("Error cargando álbum:", err));
+
+    getMisPublicaciones()
+      .then(setMisPublicaciones)
+      .catch((err) => console.error("Error cargando publicaciones:", err));
+
+    getMisFaltantes()
+      .then((data) => setMisFaltantes(data.faltantes))
+      .catch((err) => console.error("Error cargando faltantes:", err));
   }, []);
 
-  const handleSubmit = async (evento) => {
-    evento.preventDefault();
-    const respuesta = await fetch(`${API_BASE}/figuritas/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Token": DEV_TOKEN,
-      },
-      body: JSON.stringify(nuevaFigurita),
-    });
+  useEffect(() => {
+    cargarDatos();
+  }, [cargarDatos]);
 
-    if (respuesta.ok) {
-      const datosNuevos = await fetch(`${API_BASE}/figuritas/`).then(
-        (res) => res.json(),
-      );
-      setFiguritas(datosNuevos.figuritasDisponibles);
-      alert("¡Figurita guardada con éxito!");
-      setNuevaFigurita({
-        numero: "",
-        equipo: "",
-        jugador: "",
-        cantidad: 1,
-        permite_subasta: false,
-      });
-    }
-  };
+  const duplicadas = miAlbum.filter((f) => f.cantidad > 1);
+  const publicadas = miAlbum.filter((f) => f.en_intercambio);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("¿Estás seguro de que querés borrar esta figurita?")) {
-      const respuesta = await fetch(`${API_BASE}/figuritas/${id}`, {
-        method: "DELETE",
-        headers: { "X-User-Token": DEV_TOKEN },
-      });
-      if (respuesta.ok) {
-        const datosNuevos = await fetch(`${API_BASE}/figuritas/`).then(
-          (res) => res.json(),
-        );
-        setFiguritas(datosNuevos.figuritasDisponibles);
-      } else {
-        alert("Error al borrar");
-      }
-    }
-  };
 
   return (
-    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
-      <Container maxWidth="lg">
-        <Paper
-          elevation={3}
-          sx={{
-            p: 3,
-            mb: 4,
-            textAlign: "center",
-            bgcolor: "#1976d2",
-            color: "white",
-          }}
-        >
-          <Typography variant="h3" fontWeight="bold">
-            🏆 Mundial Figuritas
-          </Typography>
-          <Typography variant="subtitle1">Plataforma de intercambio</Typography>
-        </Paper>
+    <div>
+      <Navbar tabActiva={tabActiva} onTabChange={setTabActiva} />
+      <Hero
+        totalPublicadas={miAlbum.length}
+        totalFaltantes={misFaltantes.length}
+        totalIntercambios={0}
+      />
+      <StatCards
+        totalAlbum={miAlbum.length}
+        totalPublicadas={publicadas.length}
+        totalFaltantes={misFaltantes.length}
+        totalIntercambios={0}
+        onTabChange={setTabActiva}
+      />
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={5}>
-            <Card elevation={4} sx={{ borderRadius: 2 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography
-                  variant="h5"
-                  color="primary"
-                  fontWeight="bold"
-                  gutterBottom
-                >
-                  Publicar Repetida
-                </Typography>
-                <Box
-                  component="form"
-                  onSubmit={handleSubmit}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    mt: 2,
-                  }}
-                >
-                  <TextField
-                    label="Número de figurita"
-                    type="number"
-                    variant="outlined"
-                    required
-                    value={nuevaFigurita.numero}
-                    onChange={(e) =>
-                      setNuevaFigurita({
-                        ...nuevaFigurita,
-                        numero: parseInt(e.target.value) || "",
-                      })
-                    }
-                  />
-                  <TextField
-                    label="Equipo"
-                    variant="outlined"
-                    required
-                    value={nuevaFigurita.equipo}
-                    onChange={(e) =>
-                      setNuevaFigurita({
-                        ...nuevaFigurita,
-                        equipo: e.target.value,
-                      })
-                    }
-                  />
-                  <TextField
-                    label="Jugador"
-                    variant="outlined"
-                    required
-                    value={nuevaFigurita.jugador}
-                    onChange={(e) =>
-                      setNuevaFigurita({
-                        ...nuevaFigurita,
-                        jugador: e.target.value,
-                      })
-                    }
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    sx={{ mt: 1, py: 1.5 }}
-                  >
-                    Guardar Figurita
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+      <div style={{
+        display: "flex",
+        gap: "24px",
+        padding: "24px 32px",
+        alignItems: "flex-start",
+      }}>
+        <div style={{ flex: 1 }}>
+          {tabActiva === "Mi Álbum" && (
+            <GrillaFiguritas
+              figuritas={miAlbum}
+              publicaciones={misPublicaciones}
+              onCambio={cargarDatos}
+            />
+          )}
+          {tabActiva === "Duplicadas" && (
+            <GrillaFiguritas
+              figuritas={duplicadas}
+              publicaciones={misPublicaciones}
+              onCambio={cargarDatos}
+            />
+          )}
+          {tabActiva === "Faltantes" && (
+            <SeccionFaltantes onChange={cargarDatos} />
+          )}
+          {tabActiva === "Intercambios" && (
+            <SeccionBusqueda />
+          )}
+        </div>
 
-          <Grid item xs={12} md={7}>
-            <Card elevation={4} sx={{ borderRadius: 2 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography
-                  variant="h5"
-                  color="primary"
-                  fontWeight="bold"
-                  gutterBottom
-                >
-                  Disponibles para Intercambio
-                </Typography>
-                {figuritas.length === 0 ? (
-                  <Typography color="text.secondary" sx={{ mt: 2 }}>
-                    No hay figuritas cargadas todavía.
-                  </Typography>
-                ) : (
-                  <List sx={{ mt: 1 }}>
-                    {figuritas.map((figu, index) => (
-                      <div key={figu.id}>
-                        <ListItem
-                          secondaryAction={
-                            <IconButton
-                              edge="end"
-                              color="error"
-                              onClick={() => handleDelete(figu.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          }
-                        >
-                          <ListItemText
-                            primary={
-                              <Typography variant="h6">
-                                #{figu.numero} - {figu.jugador}
-                              </Typography>
-                            }
-                            secondary={
-                              <Typography color="text.secondary">
-                                Equipo: {figu.equipo}
-                              </Typography>
-                            }
-                          />
-                        </ListItem>
-                        {index !== figuritas.length - 1 && <Divider />}
-                      </div>
-                    ))}
-                  </List>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+        <div style={{ width: "320px", flexShrink: 0 }}>
+          {tabActiva === "Mi Álbum" && (
+            <FormFigurita onFiguritaPublicada={cargarDatos} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

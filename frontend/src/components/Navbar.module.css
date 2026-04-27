@@ -1,0 +1,70 @@
+.nav {
+  background-color: #f5f0e8;
+  border-bottom: 3px solid #1a1a2e;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoIcono {
+  font-size: 24px;
+}
+
+.logoNombre {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 16px;
+  color: #1a1a2e;
+  line-height: 1.1;
+}
+
+.logoSub {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: #6b6b80;
+  letter-spacing: 1px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 16px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tab:hover {
+  background-color: rgba(230, 57, 70, 0.1);
+}
+
+.tabActiva {
+  composes: tab;
+  border-color: #1a1a2e;
+  background-color: #e63946;
+  color: #f5f0e8;
+  box-shadow: 2px 2px 0px #1a1a2e;
+}
+
+.tabActiva:hover {
+  background-color: #c1121f;
+}

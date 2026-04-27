@@ -9,165 +9,187 @@ Cubre el endpoint POST /api/v1/figuritas/ verificando:
 import pytest
 
 
-ENDPOINT = "/api/v1/figuritas/"
+ENDPOINT_ALBUM = "/api/v1/album/"
+ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones/"
 
-# -----------------
-# Caminos correctos
-# -----------------
+def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo="intercambio_directo"):
+    """Agrega al álbum y publica para intercambio. Retorna la respuesta del POST a publicaciones."""
+    resp_album = client.post(
+        ENDPOINT_ALBUM,
+        json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
+        headers={"X-User-Token": token},
+    )
+    assert resp_album.status_code == 201
+    figurita_id = resp_album.json()["id"]
 
-class TestPublicarFiguritaExitosa:
+    return client.post(
+        ENDPOINT_PUBLICACIONES,
+        json={
+            "figurita_personal_id": figurita_id,
+            "tipo_intercambio": tipo,
+            "cantidad_disponible": 1,
+        },
+        headers={"X-User-Token": token},
+    )
 
-    def test_publicar_con_intercambio_directo(self, client, token_user1, figurita_valida):
-        """Publicar una figurita con tipo intercambio_directo devuelve 201 y los datos correctos."""
-        figurita_valida["tipo_intercambio"] = "intercambio_directo"
+class TestAgregarAlbum:
 
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
+    def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad, tipo):
+        """
+        Helper que ejecuta el flujo completo en dos pasos:
+        1. Agrega la figurita al álbum.
+        2. La publica para intercambio.
+        Retorna la publicación creada.
+        """
+        resp_album = client.post(
+            ENDPOINT_ALBUM,
+            json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
+            headers={"X-User-Token": token},
+        )
+        assert resp_album.status_code == 201
+        figurita_id = resp_album.json()["id"]
+
+        resp_pub = client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": tipo, "cantidad_disponible": 1},
+            headers={"X-User-Token": token},
+        )
+        return resp_pub
+
+    def test_agregar_figurita_al_album_devuelve_201(self, client, token_user1):
+            """Agregar una figurita al álbum devuelve 201 con los datos correctos."""
+            resp = client.post(
+                ENDPOINT_ALBUM,
+                json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2},
+                headers={"X-User-Token": token_user1},
+            )
+
+            assert resp.status_code == 201
+            data = resp.json()
+            assert data["numero"] == 10
+            assert data["equipo"] == "Argentina"
+            assert data["jugador"] == "Messi"
+            assert data["cantidad"] == 2
+            assert "id" in data
+            assert data["usuario_id"] is not None
+            assert data["en_intercambio"] is False
+
+    def test_numero_es_requerido(self, client, token_user1):
+            """Omitir el número devuelve 422."""
+            resp = client.post(
+                ENDPOINT_ALBUM,
+                json={"equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
+                headers={"X-User-Token": token_user1},
+            )
+            assert resp.status_code == 422
+
+    def test_numero_no_puede_ser_cero(self, client, token_user1):
+            """El número debe ser >= 1."""
+            resp = client.post(
+                ENDPOINT_ALBUM,
+                json={"numero": 0, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
+                headers={"X-User-Token": token_user1},
+            )
+            assert resp.status_code == 422
+
+    def test_cantidad_no_puede_ser_cero(self, client, token_user1):
+            """La cantidad debe ser >= 1."""
+            resp = client.post(
+                ENDPOINT_ALBUM,
+                json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 0},
+                headers={"X-User-Token": token_user1},
+            )
+            assert resp.status_code == 422
+
+
+class TestPublicarParaIntercambio:
+
+    def test_publicar_con_intercambio_directo_devuelve_201(self, client, token_user1):
+        """Publicar una figurita del álbum para intercambio directo devuelve 201."""
+        resp = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", 2, "intercambio_directo")
 
         assert resp.status_code == 201
-        data = resp.json()["data"]
-        # Chequeamos que los datos devueltos sean correctos.
-        assert data["numero"] == figurita_valida["numero"]
-        assert data["equipo"] == figurita_valida["equipo"]
-        assert data["jugador"] == figurita_valida["jugador"]
-        assert data["cantidad"] == figurita_valida["cantidad"]
+        data = resp.json()
+        assert data["numero"] == 10
         assert data["tipo_intercambio"] == "intercambio_directo"
         assert "id" in data
-        assert data["usuario_id"] is not None
 
-    def test_publicar_con_subasta(self, client, token_user1, figurita_valida):
-        """Publicar una figurita con tipo subasta devuelve 201."""
-        figurita_valida["tipo_intercambio"] = "subasta"
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
+    def test_publicar_con_subasta_devuelve_201(self, client, token_user1):
+        """Publicar para subasta devuelve 201."""
+        resp = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", 2, "subasta")
 
         assert resp.status_code == 201
-        assert resp.json()["data"]["tipo_intercambio"] == "subasta"
+        assert resp.json()["tipo_intercambio"] == "subasta"
 
-    def test_figurita_publicada_aparece_en_busqueda(self, client, token_user1, figurita_valida):
-        """Después de publicar, la figurita es recuperable por GET /figuritas/."""
-        client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
+    def test_no_se_puede_publicar_figurita_ajena(self, client, token_user1, token_user2):
+        """No se puede publicar una figurita que pertenece a otro usuario."""
+        resp_album = client.post(
+            ENDPOINT_ALBUM,
+            json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
+            headers={"X-User-Token": token_user1},
+        )
+        figurita_id = resp_album.json()["id"]
 
-        resp = client.get(ENDPOINT)
+        resp = client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 1},
+            headers={"X-User-Token": token_user2},
+        )
 
-        assert resp.status_code == 200
-        disponibles = resp.json()["figuritasDisponibles"]
-        assert len(disponibles) == 1
-        assert disponibles[0]["numero"] == figurita_valida["numero"]
+        assert resp.status_code == 403
 
-    def test_usuario_id_queda_asociado_a_la_figurita(self, client, token_user1, figurita_valida):
-        """El usuario_id registrado en la figurita corresponde al usuario que la publicó."""
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
+    def test_no_se_puede_publicar_dos_veces_la_misma_figurita(self, client, token_user1):
+        """Una figurita ya publicada no puede volver a publicarse sin retirar la oferta."""
+        resp_album = client.post(
+            ENDPOINT_ALBUM,
+            json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2},
+            headers={"X-User-Token": token_user1},
+        )
+        figurita_id = resp_album.json()["id"]
 
-        usuario_id_esperado = 1  # user1 tiene id=1
-        assert resp.json()["data"]["usuario_id"] == usuario_id_esperado
+        client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 1},
+            headers={"X-User-Token": token_user1},
+        )
+        resp = client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": "subasta", "cantidad_disponible": 1},
+            headers={"X-User-Token": token_user1},
+        )
 
-    def test_publicar_multiples_figuritas(self, client, token_user1):
-        """Un mismo usuario puede publicar varias figuritas distintas en varias solicitudes."""
-        figuritas = [
-            {"numero": 1, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1, "tipo_intercambio": "intercambio_directo"},
-            {"numero": 2, "equipo": "Brasil", "jugador": "Vinicius", "cantidad": 3, "tipo_intercambio": "subasta"},
-            {"numero": 3, "equipo": "Francia", "jugador": "Mbappé", "cantidad": 2, "tipo_intercambio": "intercambio_directo"},
-        ]
-        for f in figuritas:
-            resp = client.post(ENDPOINT, json=f, headers={"X-User-Token": token_user1})
-            assert resp.status_code == 201
+        assert resp.status_code == 409
 
-        disponibles = client.get(ENDPOINT).json()["figuritasDisponibles"]
-        assert len(disponibles) == 3
+    def test_cantidad_disponible_no_puede_superar_cantidad_en_album(self, client, token_user1):
+        """No se puede ofrecer más figuritas de las que tenés en el álbum."""
+        resp_album = client.post(
+            ENDPOINT_ALBUM,
+            json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
+            headers={"X-User-Token": token_user1},
+        )
+        figurita_id = resp_album.json()["id"]
 
+        resp = client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 5},
+            headers={"X-User-Token": token_user1},
+        )
 
-# --------------------------------
-# Validaciones de campos del body
-# --------------------------------
+        assert resp.status_code == 400
 
-class TestValidacionCampos:
+    def test_tipo_intercambio_invalido_devuelve_422(self, client, token_user1):
+        """Un tipo de intercambio fuera del enum devuelve 422."""
+        resp_album = client.post(
+            ENDPOINT_ALBUM,
+            json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
+            headers={"X-User-Token": token_user1},
+        )
+        figurita_id = resp_album.json()["id"]
 
-    def test_numero_de_figurita_es_requerido(self, client, token_user1, figurita_valida):
-        """Omitir el número de figurita devuelve 422."""
-        del figurita_valida["numero"]
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_numero_de_figurita_no_puede_ser_cero(self, client, token_user1, figurita_valida):
-        """El número de figurita debe ser >= 1. Enviar 0 devuelve 422."""
-        figurita_valida["numero"] = 0
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_numero_de_figurita_no_puede_ser_negativo(self, client, token_user1, figurita_valida):
-        """El número de figurita no puede ser negativo. Devuelve 422."""
-        figurita_valida["numero"] = -5
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_equipo_es_requerido(self, client, token_user1, figurita_valida):
-        """Omitir el equipo devuelve 422."""
-        del figurita_valida["equipo"]
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_equipo_no_puede_ser_string_vacio(self, client, token_user1, figurita_valida):
-        """El equipo no puede ser un string vacío (min_length=1). Devuelve 422."""
-        figurita_valida["equipo"] = ""
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
+        resp = client.post(
+            ENDPOINT_PUBLICACIONES,
+            json={"figurita_personal_id": figurita_id, "tipo_intercambio": "invalido", "cantidad_disponible": 1},
+            headers={"X-User-Token": token_user1},
+        )
 
         assert resp.status_code == 422
-
-    def test_jugador_es_requerido(self, client, token_user1, figurita_valida):
-        """Omitir el jugador devuelve 422."""
-        del figurita_valida["jugador"]
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_jugador_no_puede_ser_string_vacio(self, client, token_user1, figurita_valida):
-        """El jugador no puede ser un string vacío (min_length=1). Devuelve 422."""
-        figurita_valida["jugador"] = ""
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_cantidad_es_requerida(self, client, token_user1, figurita_valida):
-        """Omitir la cantidad devuelve 422."""
-        del figurita_valida["cantidad"]
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_cantidad_no_puede_ser_cero(self, client, token_user1, figurita_valida):
-        """La cantidad debe ser >= 1. Enviar 0 devuelve 422."""
-        figurita_valida["cantidad"] = 0
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_tipo_intercambio_es_requerido(self, client, token_user1, figurita_valida):
-        """Omitir tipo_intercambio devuelve 422."""
-        del figurita_valida["tipo_intercambio"]
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-    def test_tipo_intercambio_valor_invalido(self, client, token_user1, figurita_valida):
-        """Un tipo_intercambio fuera del enum devuelve 422."""
-        figurita_valida["tipo_intercambio"] = "ambas"
-
-        resp = client.post(ENDPOINT, json=figurita_valida, headers={"X-User-Token": token_user1})
-
-        assert resp.status_code == 422
-
-

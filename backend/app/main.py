@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import figuritas, usuarios, intercambios, subastas
+from app.routers import album, publicaciones, usuarios, intercambios, subastas
 
 # Creamos la aplicación FastAPI. El título y versión los toma desde config.py
 app = FastAPI(title=settings.app_name, version=settings.app_version)
@@ -16,7 +16,8 @@ app.add_middleware(
 )
 
 # Registramos los routers con el prefijo /api/v1.
-app.include_router(figuritas.router, prefix="/api/v1")
+app.include_router(album.router, prefix="/api/v1")
+app.include_router(publicaciones.router, prefix="/api/v1")
 app.include_router(usuarios.router, prefix="/api/v1")
 app.include_router(intercambios.router, prefix="/api/v1")
 app.include_router(subastas.router, prefix="/api/v1")

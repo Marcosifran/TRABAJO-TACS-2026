@@ -1,0 +1,6 @@
+.fila {
+  display: flex;
+  gap: 16px;
+  padding: 16px 32px;
+  flex-wrap: wrap;
+}

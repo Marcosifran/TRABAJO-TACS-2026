@@ -1,470 +1,538 @@
 """
-Tests unitarios — Figuritas
+Tests unitarios — Álbum personal y Publicaciones
 
+Testea directamente los repositorios y services sin pasar por HTTP.
+Cubre:
+- album_repo: create, get_by_id, get_by_usuario, buscar, delete, update_cantidad
+- publicacion_repo: create, get_by_id, get_by_usuario, get_by_figurita_personal, buscar, delete
+- album_service: agregar, listar, eliminar, campo en_intercambio
+- publicacion_service: publicar, listar, retirar, sugerencias
 """
+
 import pytest
 from unittest.mock import patch
-from app.repositories import figurita_repo
-from app.schemas.figurita import FiguritaCreate, TipoIntercambio
+
+from app.repositories import album_repo, publicacion_repo
+from app.schemas.album_sch import FiguritaAlbumCreate
+from app.schemas.publicacion_sch import PublicacionCreate, TipoIntercambio
 
 
-# ────────────────────
-# Tests de repositorio
-# ────────────────────
+# ══════════════════════════════════════════
+# Helpers para no repetir código en los tests
+# ══════════════════════════════════════════
 
-class TestFiguritaRepoCreate:
+def _album_create(numero=10, equipo="Argentina", jugador="Messi", cantidad=2):
+    return FiguritaAlbumCreate(
+        numero=numero,
+        equipo=equipo,
+        jugador=jugador,
+        cantidad=cantidad,
+    )
+
+def _publicacion_create(figurita_personal_id=1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO, cantidad=1):
+    return PublicacionCreate(
+        figurita_personal_id=figurita_personal_id,
+        tipo_intercambio=tipo,
+        cantidad_disponible=cantidad,
+    )
+
+
+# ══════════════════════════════════════════
+# album_repo
+# ══════════════════════════════════════════
+
+class TestAlbumRepoCreate:
 
     def test_create_agrega_figurita_con_campos_correctos(self):
-        """
-        Caso de uso: Publicar figurita.
-        create() debe persistir la figurita en memoria con todos sus campos originales.
-        """
-        figurita = FiguritaCreate(
-            numero=10,
-            equipo="Argentina",
-            jugador="Messi",
-            cantidad=2,
-            tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
+        """create() persiste la figurita con todos sus campos."""
+        figurita = _album_create()
 
-        resultado = figurita_repo.create(figurita, usuario_id=1)
+        resultado = album_repo.create(figurita, usuario_id=1)
 
         assert resultado["numero"] == 10
         assert resultado["equipo"] == "Argentina"
         assert resultado["jugador"] == "Messi"
         assert resultado["cantidad"] == 2
-        assert resultado["tipo_intercambio"] == "intercambio_directo"
+        assert resultado["usuario_id"] == 1
 
     def test_create_asigna_id_autoincrementado(self):
-        """
-        Caso de uso: Publicar figurita.
-        El ID asignado debe ser secuencial (1 para la primera, 2 para la segunda, etc.).
-        """
-        figurita = FiguritaCreate(
-            numero=1, equipo="Brasil", jugador="Vinicius",
-            cantidad=1, tipo_intercambio=TipoIntercambio.SUBASTA,
-        )
+        """Los IDs asignados son secuenciales y únicos."""
+        figurita = _album_create()
 
-        primera = figurita_repo.create(figurita, usuario_id=1)
-        segunda = figurita_repo.create(figurita, usuario_id=2)
+        primera = album_repo.create(figurita, usuario_id=1)
+        segunda = album_repo.create(figurita, usuario_id=2)
 
         assert primera["id"] == 1
         assert segunda["id"] == 2
 
     def test_create_asocia_usuario_id(self):
-        """
-        Caso de uso: Publicar figurita.
-        La figurita debe quedar vinculada al usuario que la publicó.
-        """
-        figurita = FiguritaCreate(
-            numero=5, equipo="Francia", jugador="Mbappé",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
+        """La figurita queda vinculada al usuario que la agregó."""
+        figurita = _album_create()
 
-        resultado = figurita_repo.create(figurita, usuario_id=42)
+        resultado = album_repo.create(figurita, usuario_id=42)
 
         assert resultado["usuario_id"] == 42
 
 
-# ────────────────────
-# Tests de repositorio
-# ────────────────────
+class TestAlbumRepoGetYDelete:
 
-class TestFiguritaRepoGetAllYDelete:
+    def test_get_all_retorna_lista_vacia_al_inicio(self):
+        assert album_repo.get_all() == []
 
-    def test_get_all_retorna_lista_vacia_si_no_hay_figuritas(self):
-        """
-        Caso de uso: Listar figuritas.
-        get_all() sobre una DB vacía debe devolver una lista vacía.
-        """
-        assert figurita_repo.get_all() == []
+    def test_get_all_retorna_todas_las_figuritas(self):
+        figurita = _album_create()
+        album_repo.create(figurita, usuario_id=1)
+        album_repo.create(figurita, usuario_id=2)
 
-    def test_get_all_retorna_todas_las_figuritas_creadas(self):
-        """
-        Caso de uso: Listar figuritas.
-        get_all() debe devolver todas las figuritas en memoria.
-        """
-        figurita = FiguritaCreate(
-            numero=1, equipo="Argentina", jugador="Messi",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
-        figurita_repo.create(figurita, usuario_id=1)
-        figurita_repo.create(figurita, usuario_id=2)
+        assert len(album_repo.get_all()) == 2
 
-        assert len(figurita_repo.get_all()) == 2
+    def test_get_by_id_retorna_figurita_correcta(self):
+        figurita = _album_create(numero=7)
+        creada = album_repo.create(figurita, usuario_id=1)
 
-    def test_delete_elimina_figurita_existente(self):
-        """
-        Caso de uso: Eliminar figurita.
-        delete() debe eliminar la figurita y devolver True.
-        """
-        figurita = FiguritaCreate(
-            numero=7, equipo="Italia", jugador="Del Piero",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
-        creada = figurita_repo.create(figurita, usuario_id=1)
-
-        resultado = figurita_repo.delete(creada["id"])
-
-        assert resultado is True
-        assert figurita_repo.get_all() == []
-
-    def test_delete_retorna_false_si_no_existe(self):
-        """
-        Caso de uso: Eliminar figurita.
-        delete() con un ID inexistente debe devolver False sin modificar en memoria.
-        """
-        resultado = figurita_repo.delete(999)
-
-        assert resultado is False
-
-
-# ────────────────────────────────────────────────
-# Tests de repositorio — búsqueda por número y usuario
-# ────────────────────────────────────────────────
-
-class TestFiguritaRepoBuscarPorNumeroYUsuario:
-
-    def _crear(self, numero, usuario_id):
-        f = FiguritaCreate(
-            numero=numero, equipo="Equipo", jugador="Jugador",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
-        return figurita_repo.create(f, usuario_id=usuario_id)
-
-    def test_retorna_figurita_cuando_numero_y_usuario_coinciden(self):
-        """
-        buscar_por_numero_y_usuario() debe devolver la figurita cuando el número
-        y el usuario_id corresponden a una figurita existente.
-        """
-        self._crear(numero=10, usuario_id=1)
-
-        resultado = figurita_repo.buscar_por_numero_y_usuario(10, 1)
+        resultado = album_repo.get_by_id(creada["id"])
 
         assert resultado is not None
-        assert resultado["numero"] == 10
-        assert resultado["usuario_id"] == 1
+        assert resultado["numero"] == 7
 
-    def test_retorna_none_si_el_numero_pertenece_a_otro_usuario(self):
-        """
-        buscar_por_numero_y_usuario() debe devolver None si la figurita con ese número
-        existe pero pertenece a un usuario distinto.
-        """
-        self._crear(numero=10, usuario_id=2)
+    def test_get_by_id_retorna_none_si_no_existe(self):
+        assert album_repo.get_by_id(999) is None
 
-        resultado = figurita_repo.buscar_por_numero_y_usuario(10, 1)
+    def test_get_by_usuario_retorna_solo_las_del_usuario(self):
+        album_repo.create(_album_create(numero=1), usuario_id=1)
+        album_repo.create(_album_create(numero=2), usuario_id=1)
+        album_repo.create(_album_create(numero=3), usuario_id=2)
 
-        assert resultado is None
-
-    def test_retorna_none_si_el_numero_no_existe(self):
-        """
-        buscar_por_numero_y_usuario() debe devolver None si no hay ninguna figurita
-        con ese número en la base de datos.
-        """
-        resultado = figurita_repo.buscar_por_numero_y_usuario(99, 1)
-
-        assert resultado is None
-
-
-# ────────────────────────────────────────────
-# Tests de repositorio — figuritas por usuario
-# ────────────────────────────────────────────
-
-class TestFiguritaRepoGetByUsuarioId:
-
-    def _crear(self, numero, usuario_id):
-        f = FiguritaCreate(
-            numero=numero, equipo="Equipo", jugador="Jugador",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
-        return figurita_repo.create(f, usuario_id=usuario_id)
-
-    def test_retorna_solo_las_figuritas_del_usuario(self):
-        """
-        get_by_usuario_id() debe devolver únicamente las figuritas publicadas
-        por el usuario indicado, ignorando las de otros usuarios.
-        """
-        self._crear(numero=1, usuario_id=1)
-        self._crear(numero=2, usuario_id=1)
-        self._crear(numero=3, usuario_id=2)
-
-        resultado = figurita_repo.get_by_usuario_id(1)
+        resultado = album_repo.get_by_usuario(1)
 
         assert len(resultado) == 2
         assert all(f["usuario_id"] == 1 for f in resultado)
 
-    def test_retorna_lista_vacia_si_el_usuario_no_tiene_figuritas(self):
-        """
-        get_by_usuario_id() debe devolver lista vacía si el usuario no publicó nada.
-        """
-        resultado = figurita_repo.get_by_usuario_id(99)
+    def test_get_by_usuario_retorna_lista_vacia_si_no_tiene_figuritas(self):
+        assert album_repo.get_by_usuario(99) == []
 
-        assert resultado == []
+    def test_delete_elimina_figurita_existente(self):
+        creada = album_repo.create(_album_create(), usuario_id=1)
+
+        resultado = album_repo.delete(creada["id"])
+
+        assert resultado is True
+        assert album_repo.get_all() == []
+
+    def test_delete_retorna_false_si_no_existe(self):
+        assert album_repo.delete(999) is False
 
 
-# ───────────────────────────────
-# Tests de repositorio — búsqueda
-# ───────────────────────────────
-
-class TestFiguritaRepoBuscar:
+class TestAlbumRepoBuscar:
 
     def _crear(self, numero, equipo, jugador, usuario_id=1):
-        f = FiguritaCreate(
-            numero=numero, equipo=equipo, jugador=jugador,
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
+        return album_repo.create(
+            _album_create(numero=numero, equipo=equipo, jugador=jugador),
+            usuario_id=usuario_id,
         )
-        return figurita_repo.create(f, usuario_id=usuario_id)
 
     def test_buscar_sin_filtros_retorna_todas(self):
-        """
-        Caso de uso: Buscar figuritas.
-        Sin filtros, buscar() devuelve todas las figuritas disponibles.
-        """
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Vinicius")
 
-        resultado = figurita_repo.buscar(None, None, None)
-
-        assert len(resultado) == 2
+        assert len(album_repo.buscar(None, None, None)) == 2
 
     def test_buscar_por_numero_exacto(self):
-        """
-        Caso de uso: Buscar figuritas por número.
-        buscar(numero=1) solo devuelve figuritas con ese número exacto.
-        """
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Neymar")
 
-        resultado = figurita_repo.buscar(1, None, None)
+        resultado = album_repo.buscar(1, None, None)
 
         assert len(resultado) == 1
         assert resultado[0]["numero"] == 1
 
     def test_buscar_por_equipo_parcial_case_insensitive(self):
-        """
-        Caso de uso: Buscar figuritas por equipo.
-        La búsqueda por equipo es parcial y no distingue mayúsculas/minúsculas.
-        """
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Francia", "Mbappé")
 
-        resultado = figurita_repo.buscar(None, "argen", None)
+        resultado = album_repo.buscar(None, "argen", None)
 
         assert len(resultado) == 1
         assert resultado[0]["equipo"] == "Argentina"
 
     def test_buscar_por_jugador_parcial(self):
-        """
-        Caso de uso: Buscar figuritas por jugador.
-        La búsqueda por jugador es parcial: 'mess' encuentra 'Messi'.
-        """
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Vinicius")
 
-        resultado = figurita_repo.buscar(None, None, "mess")
+        resultado = album_repo.buscar(None, None, "mess")
 
         assert len(resultado) == 1
         assert resultado[0]["jugador"] == "Messi"
 
+    def test_buscar_filtra_por_usuario_si_se_pasa(self):
+        self._crear(1, "Argentina", "Messi", usuario_id=1)
+        self._crear(2, "Brasil", "Vinicius", usuario_id=2)
+
+        resultado = album_repo.buscar(None, None, None, usuario_id=1)
+
+        assert len(resultado) == 1
+        assert resultado[0]["usuario_id"] == 1
+
     def test_buscar_numero_inexistente_retorna_lista_vacia(self):
-        """
-        Caso de uso: Buscar figuritas.
-        Si ninguna figurita cumple el filtro, devuelve lista vacía.
-        """
         self._crear(1, "Argentina", "Messi")
 
-        resultado = figurita_repo.buscar(99, None, None)
-
-        assert resultado == []
+        assert album_repo.buscar(99, None, None) == []
 
 
-# ──────────────────────────────────
-# Tests de repositorio — sugerencias
-# ──────────────────────────────────
+class TestAlbumRepoGetPorNumeroYUsuario:
 
-class TestFiguritaRepoGetSugerencias:
+    def test_retorna_figurita_cuando_coinciden(self):
+        album_repo.create(_album_create(numero=10), usuario_id=1)
 
-    def _crear(self, numero, usuario_id):
-        f = FiguritaCreate(
-            numero=numero, equipo="Equipo", jugador="Jugador",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
+        resultado = album_repo.get_por_numero_y_usuario(10, 1)
+
+        assert resultado is not None
+        assert resultado["numero"] == 10
+
+    def test_retorna_none_si_pertenece_a_otro_usuario(self):
+        album_repo.create(_album_create(numero=10), usuario_id=2)
+
+        assert album_repo.get_por_numero_y_usuario(10, 1) is None
+
+    def test_retorna_none_si_numero_no_existe(self):
+        assert album_repo.get_por_numero_y_usuario(99, 1) is None
+
+
+# ══════════════════════════════════════════
+# publicacion_repo
+# ══════════════════════════════════════════
+
+class TestPublicacionRepoCreate:
+
+    def test_create_guarda_publicacion_con_datos_aplanados(self):
+        """create() guarda los datos de la figurita aplanados en la publicación."""
+        pub = _publicacion_create(figurita_personal_id=1)
+
+        resultado = publicacion_repo.create(
+            publicacion=pub,
+            usuario_id=1,
+            numero=10,
+            equipo="Argentina",
+            jugador="Messi",
         )
-        return figurita_repo.create(f, usuario_id=usuario_id)
 
-    def test_retorna_figuritas_de_otros_usuarios_que_cubren_faltantes(self):
-        """
-        Caso de uso: Sugerencias de intercambio.
-        Solo deben aparecer figuritas publicadas por otros usuarios que coincidan con los números faltantes.
-        """
-        self._crear(numero=10, usuario_id=2)  # otro usuario tiene la #10
-        self._crear(numero=5,  usuario_id=2)  # otro usuario tiene la #5
+        assert resultado["numero"] == 10
+        assert resultado["equipo"] == "Argentina"
+        assert resultado["jugador"] == "Messi"
+        assert resultado["figurita_personal_id"] == 1
+        assert resultado["tipo_intercambio"] == "intercambio_directo"
+        assert resultado["usuario_id"] == 1
 
-        resultado = figurita_repo.get_sugerencias(numeros_faltantes=[10], usuario_id=1)
+    def test_create_asigna_id_autoincrementado(self):
+        pub = _publicacion_create()
+
+        primera = publicacion_repo.create(pub, usuario_id=1, numero=1, equipo="A", jugador="J1")
+        segunda = publicacion_repo.create(pub, usuario_id=2, numero=2, equipo="B", jugador="J2")
+
+        assert primera["id"] == 1
+        assert segunda["id"] == 2
+
+
+class TestPublicacionRepoGetYDelete:
+
+    def _crear(self, figurita_personal_id=1, usuario_id=1, numero=10, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
+        return publicacion_repo.create(
+            _publicacion_create(figurita_personal_id=figurita_personal_id, tipo=tipo),
+            usuario_id=usuario_id,
+            numero=numero,
+            equipo="Argentina",
+            jugador="Messi",
+        )
+
+    def test_get_all_retorna_lista_vacia_al_inicio(self):
+        assert publicacion_repo.get_all() == []
+
+    def test_get_by_id_retorna_publicacion_correcta(self):
+        creada = self._crear()
+
+        resultado = publicacion_repo.get_by_id(creada["id"])
+
+        assert resultado is not None
+        assert resultado["id"] == creada["id"]
+
+    def test_get_by_id_retorna_none_si_no_existe(self):
+        assert publicacion_repo.get_by_id(999) is None
+
+    def test_get_by_usuario_retorna_solo_las_del_usuario(self):
+        self._crear(figurita_personal_id=1, usuario_id=1, numero=10)
+        self._crear(figurita_personal_id=2, usuario_id=2, numero=20)
+
+        resultado = publicacion_repo.get_by_usuario(1)
+
+        assert len(resultado) == 1
+        assert resultado[0]["usuario_id"] == 1
+
+    def test_get_by_figurita_personal_retorna_publicacion_activa(self):
+        self._crear(figurita_personal_id=5)
+
+        resultado = publicacion_repo.get_by_figurita_personal(5)
+
+        assert resultado is not None
+        assert resultado["figurita_personal_id"] == 5
+
+    def test_get_by_figurita_personal_retorna_none_si_no_esta_publicada(self):
+        assert publicacion_repo.get_by_figurita_personal(99) is None
+
+    def test_delete_elimina_publicacion_existente(self):
+        creada = self._crear()
+
+        resultado = publicacion_repo.delete(creada["id"])
+
+        assert resultado is True
+        assert publicacion_repo.get_all() == []
+
+    def test_delete_retorna_false_si_no_existe(self):
+        assert publicacion_repo.delete(999) is False
+
+
+class TestPublicacionRepoBuscar:
+
+    def _crear(self, numero, usuario_id=1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
+        return publicacion_repo.create(
+            _publicacion_create(tipo=tipo),
+            usuario_id=usuario_id,
+            numero=numero,
+            equipo="Argentina",
+            jugador="Messi",
+        )
+
+    def test_buscar_sin_filtros_retorna_todas(self):
+        self._crear(1)
+        self._crear(2, usuario_id=2)
+
+        assert len(publicacion_repo.buscar(None, None, None)) == 2
+
+    def test_buscar_excluye_publicaciones_del_usuario_si_se_pasa_usuario_id(self):
+        self._crear(1, usuario_id=1)
+        self._crear(2, usuario_id=2)
+
+        resultado = publicacion_repo.buscar(None, None, None, usuario_id=1)
+
+        assert len(resultado) == 1
+        assert resultado[0]["usuario_id"] == 2
+
+    def test_buscar_por_numero_exacto(self):
+        self._crear(10)
+        self._crear(20)
+
+        resultado = publicacion_repo.buscar(10, None, None)
 
         assert len(resultado) == 1
         assert resultado[0]["numero"] == 10
 
-    def test_excluye_figuritas_del_propio_usuario(self):
-        """
-        Caso de uso: Sugerencias de intercambio.
-        No tiene sentido sugerir una figurita que el propio usuario ya publicó.
-        """
-        self._crear(numero=10, usuario_id=1)  # el propio usuario tiene la #10
+    def test_buscar_por_tipo_intercambio(self):
+        self._crear(1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO)
+        self._crear(2, usuario_id=2, tipo=TipoIntercambio.SUBASTA)
 
-        resultado = figurita_repo.get_sugerencias(numeros_faltantes=[10], usuario_id=1)
+        resultado = publicacion_repo.buscar(None, None, None, tipo_intercambio="intercambio_directo")
 
-        assert resultado == []
-
-    def test_retorna_lista_vacia_si_nadie_tiene_los_faltantes(self):
-        """
-        Caso de uso: Sugerencias de intercambio.
-        Si ningún otro usuario publicó figuritas que cubran los faltantes, devuelve vacío.
-        """
-        self._crear(numero=99, usuario_id=2)
-
-        resultado = figurita_repo.get_sugerencias(numeros_faltantes=[10, 20], usuario_id=1)
-
-        assert resultado == []
+        assert len(resultado) == 1
+        assert resultado[0]["tipo_intercambio"] == "intercambio_directo"
 
 
-# ─────────────────
-# Tests de servicio
-# ─────────────────
+# ══════════════════════════════════════════
+# album_service
+# ══════════════════════════════════════════
 
-from app.services import figurita_service
+from app.services import album_service
 
-class TestFiguritaServiceDelegacion:
+class TestAlbumService:
 
-    def test_publicar_llama_a_repo_create(self):
-        """
-        Caso de uso: Publicar figurita.
-        figurita_service.publicar() debe delegar en figurita_repo.create() y retornar su resultado.
-        """
-        figurita = FiguritaCreate(
-            numero=1, equipo="Argentina", jugador="Messi",
-            cantidad=1, tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
-        )
-        fake_result = {"id": 1, "numero": 1, "usuario_id": 5}
+    def test_agregar_al_album_llama_a_repo_create(self):
+        """agregar_al_album() delega en album_repo.create()."""
+        figurita = _album_create()
+        fake_result = {"id": 1, "numero": 10, "usuario_id": 1, "en_intercambio": False}
 
-        with patch("app.services.figurita_service.figurita_repo.create", return_value=fake_result) as mock_create:
-            resultado = figurita_service.publicar(figurita, usuario_id=5)
+        with patch("app.services.album_service.album_repo.create", return_value=fake_result) as mock:
+            resultado = album_service.agregar_al_album(figurita, usuario_id=1)
 
-        mock_create.assert_called_once_with(figurita, 5)
+        mock.assert_called_once_with(figurita, 1)
         assert resultado == fake_result
 
-    def test_eliminar_llama_a_repo_delete_cuando_es_duenio(self):
+    def test_listar_album_agrega_campo_en_intercambio(self):
         """
-        Caso de uso: Eliminar figurita propia.
-        figurita_service.eliminar() verifica propiedad y delega en figurita_repo.delete().
+        listar_album() enriquece cada figurita con el campo en_intercambio.
+        Si la figurita tiene publicación activa, en_intercambio es True.
         """
-        figurita_del_usuario = {"id": 7, "usuario_id": 3, "numero": 10}
-        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=figurita_del_usuario):
-            with patch("app.services.figurita_service.figurita_repo.delete", return_value=True) as mock_delete:
-                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
+        figurita_en_repo = {"id": 1, "numero": 10, "usuario_id": 1}
+        publicacion_activa = {"id": 1, "figurita_personal_id": 1}
 
-        mock_delete.assert_called_once_with(7)
-        assert resultado is True
+        with patch("app.services.album_service.album_repo.get_by_usuario", return_value=[figurita_en_repo]), \
+             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion_activa):
 
-    def test_eliminar_retorna_none_cuando_no_es_duenio(self):
-        """
-        figurita_service.eliminar() retorna None si la figurita pertenece a otro usuario.
-        """
-        figurita_de_otro = {"id": 7, "usuario_id": 99, "numero": 10}
-        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=figurita_de_otro):
-            with patch("app.services.figurita_service.figurita_repo.delete") as mock_delete:
-                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
+            resultado = album_service.listar_album(usuario_id=1)
 
-        mock_delete.assert_not_called()
+        assert resultado[0]["en_intercambio"] is True
+
+    def test_listar_album_en_intercambio_false_si_no_tiene_publicacion(self):
+        figurita_en_repo = {"id": 1, "numero": 10, "usuario_id": 1}
+
+        with patch("app.services.album_service.album_repo.get_by_usuario", return_value=[figurita_en_repo]), \
+             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+
+            resultado = album_service.listar_album(usuario_id=1)
+
+        assert resultado[0]["en_intercambio"] is False
+
+    def test_eliminar_falla_con_409_si_tiene_publicacion_activa(self):
+        """No se puede eliminar una figurita que está publicada."""
+        from fastapi import HTTPException
+
+        figurita = {"id": 1, "usuario_id": 1, "numero": 10}
+        publicacion = {"id": 1, "figurita_personal_id": 1}
+
+        with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita), \
+             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion):
+
+            with pytest.raises(HTTPException) as exc:
+                album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
+
+        assert exc.value.status_code == 409
+
+    def test_eliminar_retorna_none_si_no_es_duenio(self):
+        figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10}
+
+        with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita_de_otro), \
+             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+
+            resultado = album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
+
         assert resultado is None
 
-    def test_eliminar_retorna_false_cuando_no_existe(self):
-        """
-        figurita_service.eliminar() retorna False si la figurita no existe.
-        """
-        with patch("app.services.figurita_service.figurita_repo.get_by_id", return_value=None):
-            with patch("app.services.figurita_service.figurita_repo.delete") as mock_delete:
-                resultado = figurita_service.eliminar(figurita_id=7, usuario_id=3)
+    def test_eliminar_retorna_false_si_no_existe(self):
+        with patch("app.services.album_service.album_repo.get_by_id", return_value=None):
+            resultado = album_service.eliminar_del_album(figurita_id=999, usuario_id=1)
 
-        mock_delete.assert_not_called()
         assert resultado is False
 
-    def test_buscar_llama_a_repo_buscar(self):
-        """
-        Caso de uso: Buscar figuritas.
-        figurita_service.buscar() debe delegar en figurita_repo.buscar() con los mismos filtros.
-        """
-        fake_lista = [{"id": 1, "numero": 10}]
 
-        with patch("app.services.figurita_service.figurita_repo.buscar", return_value=fake_lista) as mock_buscar:
-            resultado = figurita_service.buscar(numero=10, equipo=None, jugador=None)
+# ══════════════════════════════════════════
+# publicacion_service
+# ══════════════════════════════════════════
 
-        mock_buscar.assert_called_once_with(10, None, None)
-        assert resultado == fake_lista
+from app.services import publicacion_service
 
-    def test_sugerir_intercambios_retorna_vacio_si_usuario_no_tiene_faltantes(self):
-        """
-        Caso de uso: Sugerencias de intercambio.
-        Si el usuario no tiene faltantes registrados, el servicio devuelve lista vacía
-        sin consultar las figuritas disponibles.
-        """
-        with patch("app.services.figurita_service.usuario_repo.get_faltantes", return_value=[]) as mock_faltantes, \
-             patch("app.services.figurita_service.figurita_repo.get_sugerencias") as mock_sugerencias:
+class TestPublicacionService:
 
-            resultado = figurita_service.sugerir_intercambios(usuario_id=1)
+    def test_publicar_falla_404_si_figurita_no_existe_en_album(self):
+        from fastapi import HTTPException
+
+        pub = _publicacion_create(figurita_personal_id=999)
+
+        with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=None):
+            with pytest.raises(HTTPException) as exc:
+                publicacion_service.publicar_figurita(pub, usuario_id=1)
+
+        assert exc.value.status_code == 404
+
+    def test_publicar_falla_403_si_figurita_no_pertenece_al_usuario(self):
+        from fastapi import HTTPException
+
+        pub = _publicacion_create(figurita_personal_id=1)
+        figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10, "cantidad": 1}
+
+        with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita_de_otro):
+            with pytest.raises(HTTPException) as exc:
+                publicacion_service.publicar_figurita(pub, usuario_id=1)
+
+        assert exc.value.status_code == 403
+
+    def test_publicar_falla_409_si_ya_esta_publicada(self):
+        from fastapi import HTTPException
+
+        pub = _publicacion_create(figurita_personal_id=1)
+        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 2}
+        publicacion_existente = {"id": 1}
+
+        with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
+             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion_existente):
+
+            with pytest.raises(HTTPException) as exc:
+                publicacion_service.publicar_figurita(pub, usuario_id=1)
+
+        assert exc.value.status_code == 409
+
+    def test_publicar_falla_400_si_cantidad_supera_album(self):
+        from fastapi import HTTPException
+
+        pub = _publicacion_create(figurita_personal_id=1, cantidad=5)
+        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 1}
+
+        with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
+             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+
+            with pytest.raises(HTTPException) as exc:
+                publicacion_service.publicar_figurita(pub, usuario_id=1)
+
+        assert exc.value.status_code == 400
+
+    def test_publicar_llama_a_repo_create_con_datos_aplanados(self):
+        """publicar_figurita() crea la publicación con los datos de la figurita aplanados."""
+        pub = _publicacion_create(figurita_personal_id=1, cantidad=1)
+        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2}
+        fake_result = {"id": 1}
+
+        with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
+             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=None), \
+             patch("app.services.publicacion_service.publicacion_repo.create", return_value=fake_result) as mock_create:
+
+            publicacion_service.publicar_figurita(pub, usuario_id=1)
+
+        mock_create.assert_called_once_with(
+            publicacion=pub,
+            usuario_id=1,
+            numero=10,
+            equipo="Argentina",
+            jugador="Messi",
+        )
+
+    def test_retirar_retorna_none_si_no_es_duenio(self):
+        publicacion_de_otro = {"id": 1, "usuario_id": 99}
+
+        with patch("app.services.publicacion_service.publicacion_repo.get_by_id", return_value=publicacion_de_otro):
+            resultado = publicacion_service.retirar_publicacion(publicacion_id=1, usuario_id=1)
+
+        assert resultado is None
+
+    def test_retirar_retorna_false_si_no_existe(self):
+        with patch("app.services.publicacion_service.publicacion_repo.get_by_id", return_value=None):
+            resultado = publicacion_service.retirar_publicacion(publicacion_id=999, usuario_id=1)
+
+        assert resultado is False
+
+    def test_obtener_sugerencias_retorna_vacio_si_no_hay_faltantes(self):
+        """Sin faltantes registrados, no hay sugerencias posibles."""
+        with patch("app.services.publicacion_service.usuario_repo.get_faltantes", return_value=[]) as mock_faltantes, \
+             patch("app.services.publicacion_service.publicacion_repo.buscar") as mock_buscar:
+
+            resultado = publicacion_service.obtener_sugerencias(usuario_id=1)
 
         mock_faltantes.assert_called_once_with(1)
-        mock_sugerencias.assert_not_called()
+        mock_buscar.assert_not_called()
         assert resultado == []
 
-    def test_listar_llama_a_repo_get_all(self):
-        """
-        Caso de uso: Listar figuritas.
-        figurita_service.listar() debe delegar en figurita_repo.get_all() y retornar su resultado.
-        """
-        fake_lista = [{"id": 1, "numero": 10}]
-
-        with patch("app.services.figurita_service.figurita_repo.get_all", return_value=fake_lista) as mock_get_all:
-            resultado = figurita_service.listar()
-
-        mock_get_all.assert_called_once()
-        assert resultado == fake_lista
-
-    def test_buscar_por_usuario_llama_a_repo_get_by_usuario_id(self):
-        """
-        Caso de uso: Ver mis figuritas publicadas.
-        figurita_service.buscar_por_usuario() debe delegar en figurita_repo.get_by_usuario_id()
-        y retornar su resultado.
-        """
-        fake_lista = [{"id": 1, "numero": 5, "usuario_id": 3}]
-
-        with patch("app.services.figurita_service.figurita_repo.get_by_usuario_id", return_value=fake_lista) as mock_get:
-            resultado = figurita_service.buscar_por_usuario(usuario_id=3)
-
-        mock_get.assert_called_once_with(3)
-        assert resultado == fake_lista
-
-    def test_sugerir_intercambios_arma_sugerencias_con_info_del_oferente(self):
-        """
-        Caso de uso: Sugerencias de intercambio.
-        Si el usuario tiene faltantes y otros usuarios tienen esas figuritas,
-        el servicio debe devolver las sugerencias con la figurita, el nombre del oferente
-        y el número que cubre el faltante.
-        """
-        faltantes = [{"usuario_id": 1, "numero_figurita": 10}]
-        figurita_candidata = {
-            "id": 5, "numero": 10, "equipo": "Brasil", "jugador": "Neymar",
-            "cantidad": 1, "tipo_intercambio": "intercambio_directo", "usuario_id": 2,
+    def test_obtener_sugerencias_cruza_faltantes_con_publicaciones(self):
+        """Con faltantes y publicaciones que coinciden, devuelve las sugerencias correctas."""
+        faltantes = [{"numero_figurita": 10}]
+        publicacion_candidata = {
+            "id": 1, "numero": 10, "equipo": "Brasil",
+            "jugador": "Neymar", "usuario_id": 2,
+            "tipo_intercambio": "intercambio_directo",
         }
         oferente = {"id": 2, "nombre": "jeronimo"}
 
-        with patch("app.services.figurita_service.usuario_repo.get_faltantes", return_value=faltantes), \
-             patch("app.services.figurita_service.figurita_repo.get_sugerencias", return_value=[figurita_candidata]), \
-             patch("app.services.figurita_service.usuario_repo.get_by_id", return_value=oferente):
+        with patch("app.services.publicacion_service.usuario_repo.get_faltantes", return_value=faltantes), \
+             patch("app.services.publicacion_service.publicacion_repo.buscar", return_value=[publicacion_candidata]), \
+             patch("app.services.publicacion_service.usuario_repo.get_by_id", return_value=oferente):
 
-            resultado = figurita_service.sugerir_intercambios(usuario_id=1)
+            resultado = publicacion_service.obtener_sugerencias(usuario_id=1)
 
         assert len(resultado) == 1
-        sugerencia = resultado[0]
-        assert sugerencia["figurita"] == figurita_candidata
-        assert sugerencia["ofrecida_por"] == "jeronimo"
-        assert sugerencia["cubre_tu_faltante"] == 10
+        assert resultado[0]["publicacion"] == publicacion_candidata
+        assert resultado[0]["ofrecida_por"] == "jeronimo"
+        assert resultado[0]["cubre_tu_faltante"] == 10
