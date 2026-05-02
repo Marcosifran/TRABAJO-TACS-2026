@@ -4,7 +4,8 @@ Configuración global de pytest — compartida entre tests unitarios y de integr
 
 import pytest
 from app.repositories import (
-    figurita_repo,
+    album_repo,
+    publicacion_repo,
     usuario_repo,
     intercambio_repo,
     subasta_repo,
@@ -19,7 +20,10 @@ def limpiar_db():
     Se ejecuta automáticamente antes y después de cada test.
     Limpia el estado en memoria para garantizar aislamiento entre tests.
     """
-    figurita_repo._db.clear()
+    album_repo._db.clear()
+    album_repo._next_id = 1
+    publicacion_repo._db.clear()
+    publicacion_repo._next_id = 1
     usuario_repo._db_faltantes.clear()
     intercambio_repo._db.clear()
     calificacion_repo._db.clear()

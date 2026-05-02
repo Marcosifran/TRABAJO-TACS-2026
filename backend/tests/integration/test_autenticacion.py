@@ -6,7 +6,7 @@ que es transversal a todos los endpoints protegidos de la aplicación.
 """
 
 # Para testear usamos cualquier endpoint protegido.
-ENDPOINT_PROTEGIDO = "/api/v1/figuritas/"
+ENDPOINT_PROTEGIDO = "/api/v1/album/"
 
 class TestAutenticacion:
 

@@ -30,12 +30,29 @@ def token_user2():
 
 
 @pytest.fixture
-def figurita_valida():
-    """Payload base para publicar una figurita válida y no repetir código."""
+def figurita_album_valida():
+    """
+    Payload base para agregar una figurita al álbum personal.
+    No incluye tipo_intercambio — eso va en la publicación.
+    """
     return {
         "numero": 10,
         "equipo": "Argentina",
         "jugador": "Lionel Messi",
         "cantidad": 2,
-        "tipo_intercambio": "intercambio_directo",
+    }
+
+
+@pytest.fixture
+def figurita_valida():
+    """
+    Payload base completo para el flujo completo:
+    agregar al álbum + publicar para intercambio.
+    Se mantiene por compatibilidad con tests de autenticación.
+    """
+    return {
+        "numero": 10,
+        "equipo": "Argentina",
+        "jugador": "Lionel Messi",
+        "cantidad": 2,
     }
