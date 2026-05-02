@@ -3,6 +3,7 @@ import Icon from './ui/Icon'
 import Badge from './ui/Badge'
 import Avatar from './ui/Avatar'
 import { useTheme } from '../context/ThemeContext'
+import { useUser } from '../context/UserContext'
 
 const NAV = [
   { to: '/',             icon: 'dashboard',            label: 'Inicio' },
@@ -15,11 +16,11 @@ const NAV = [
   { to: '/admin',        icon: 'admin_panel_settings',  label: 'Admin' },
 ]
 
-const PLACEHOLDER_USER = { nombre: 'Tu Usuario', email: 'usuario@test.com' }
 const UNREAD_COUNT = 0
 
 export default function AppShell({ children }) {
   const { dark, toggleDark } = useTheme()
+  const { user, users, switchUser } = useUser()
   const location = useLocation()
 
   return (
@@ -90,11 +91,19 @@ export default function AppShell({ children }) {
             {dark ? 'Modo claro' : 'Modo oscuro'}
           </button>
           <div className="flex items-center gap-2.5 px-1">
-            <Avatar name={PLACEHOLDER_USER.nombre} size={32} />
-            <div>
-              <div className="text-[13px] font-semibold text-on-surface">{PLACEHOLDER_USER.nombre}</div>
-              <div className="text-[11px] text-on-surface-variant">{PLACEHOLDER_USER.email}</div>
+            <Avatar name={user.nombre} size={32} />
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold text-on-surface truncate">{user.nombre}</div>
+              <div className="text-[11px] text-on-surface-variant truncate">{user.email}</div>
             </div>
+            {/* Selector de usuario para desarrollo */}
+            <button
+              onClick={() => switchUser(users.indexOf(user) === 0 ? 1 : 0)}
+              className="p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent shrink-0"
+              title="Cambiar usuario (dev)"
+            >
+              <Icon name="switch_account" size={18} className="text-on-surface-variant" />
+            </button>
           </div>
         </div>
       </nav>

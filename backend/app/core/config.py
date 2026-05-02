@@ -14,7 +14,8 @@ class Settings(BaseSettings):
 
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
-        env_file=(".env", "../.env")
+        env_file=(".env", "../.env"),
+        extra="ignore",
     )
 
 # Instanciamos settings

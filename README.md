@@ -8,12 +8,6 @@
 
 WebApp para la materia Tecnologías Avanzadas en Construcción de Software (TACS). Permite que los usuarios puedan publicar figuritas repetidas, registrar faltantes, y gestionar intercambios.
 
-## Estado de Entregas
-
-- [] **Entrega 1:** Esqueleto de aplicación, URLs REST definidas y estado en memoria mediante Docker.
-- [ ] **Entrega 2:** (Próximamente)
-- [ ] **Entrega 3:** (Próximamente)
-
 ## Arquitectura y Tecnologías
 
 Proyecto diseñado bajo una arquitectura orientada a microservicios y completamente Dockerizada para asegurar portabilidad en cualquier entorno.
@@ -85,6 +79,8 @@ Los tokens se definen en un archivo `.env` en la raíz del proyecto:
 USER_1_TOKEN=<uuid-del-usuario-1>
 USER_2_TOKEN=<uuid-del-usuario-2>
 ```
+
+Adicionalmente, se deben indicar los tokens para el front (proximamente se implementará un sistema de login y register)
 
 **Cómo generar un token de ejemplo para el .env:**
 ```bash

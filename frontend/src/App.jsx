@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
+import { UserProvider } from './context/UserContext'
 import AppShell from './components/AppShell'
 import HomePage from './pages/HomePage'
 import CollectionPage from './pages/CollectionPage'
@@ -13,6 +14,7 @@ import AdminPage from './pages/AdminPage'
 export default function App() {
   return (
     <ThemeProvider>
+      <UserProvider>
       <BrowserRouter>
         <AppShell>
           <Routes>
@@ -28,6 +30,7 @@ export default function App() {
           </Routes>
         </AppShell>
       </BrowserRouter>
+      </UserProvider>
     </ThemeProvider>
   )
 }
