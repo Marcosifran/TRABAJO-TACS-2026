@@ -16,27 +16,18 @@ def agregar_al_album(
 
 @router.get("/", response_model=list[FiguritaAlbumResponse])
 def listar_album(
+    numero: int | None = Query(default=None),
+    equipo: str | None = Query(default=None),
+    jugador: str | None = Query(default=None),
     usuario: dict = Depends(get_current_user)
 ):
-    """Retorna las figuritas del album personal del usuario"""
-
-    return album_service.listar_album(usuario["id"])
-
-@router.get("/buscar", response_model=list[FiguritaAlbumResponse])
-def buscar_en_album(
-    numero: int | None = Query(default=None, description="Número de la figurita"),
-    equipo: str | None = Query(default=None, description="Equipo de la figurita"),
-    jugador: str | None = Query(default=None, description="Jugador de la figurita"),
-    usuario: dict = Depends(get_current_user)
-):
-    """Busca figuritas en el album personal del usuario según los criterios dados"""
-
     return album_service.buscar_en_album(
         usuario_id=usuario["id"],
         numero=numero,
         equipo=equipo,
         jugador=jugador
     )
+
 
 @router.delete("/{figurita_id}", status_code=204)
 def eliminar_del_album(
