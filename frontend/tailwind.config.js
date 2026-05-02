@@ -1,0 +1,52 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary:                  'var(--color-primary)',
+        'on-primary':             'var(--color-on-primary)',
+        'primary-container':      'var(--color-primary-container)',
+        'on-primary-container':   'var(--color-on-primary-container)',
+        secondary:                'var(--color-secondary)',
+        'on-secondary':           'var(--color-on-secondary)',
+        'secondary-container':    'var(--color-secondary-container)',
+        'on-secondary-container': 'var(--color-on-secondary-container)',
+        tertiary:                 'var(--color-tertiary)',
+        'on-tertiary':            'var(--color-on-tertiary)',
+        'tertiary-container':     'var(--color-tertiary-container)',
+        'on-tertiary-container':  'var(--color-on-tertiary-container)',
+        surface:                  'var(--color-surface)',
+        'on-surface':             'var(--color-on-surface)',
+        'surface-variant':        'var(--color-surface-variant)',
+        'on-surface-variant':     'var(--color-on-surface-variant)',
+        'surface-container':      'var(--color-surface-container)',
+        'surface-container-high': 'var(--color-surface-container-high)',
+        'surface-container-low':  'var(--color-surface-container-low)',
+        'surface-dim':            'var(--color-surface-dim)',
+        outline:                  'var(--color-outline)',
+        'outline-variant':        'var(--color-outline-variant)',
+        gold:                     'var(--color-gold)',
+        error:                    'var(--color-error)',
+      },
+      fontFamily: {
+        sans: ["'Google Sans'", "'Segoe UI'", 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        '2xl': '16px',
+        '3xl': '24px',
+        '4xl': '28px',
+      },
+      boxShadow: {
+        'elev-1': '0 1px 2px rgba(0,0,0,0.08), 0 1px 3px 1px rgba(0,0,0,0.08)',
+        'elev-2': '0 1px 2px rgba(0,0,0,0.08), 0 2px 6px 2px rgba(0,0,0,0.08)',
+        'elev-3': '0 4px 8px 3px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.08)',
+        'elev-1-dark': '0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.3)',
+        'elev-2-dark': '0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.3)',
+        'elev-3-dark': '0 4px 8px 3px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.3)',
+      },
+    },
+  },
+  plugins: [],
+}
