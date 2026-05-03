@@ -3,7 +3,7 @@ import datetime as dt
 _db_subastas: list[dict] = []
 
 def create(figurita_id: int, usuario_id: int, inicio:dt.datetime, fin:dt.datetime) -> dict:
-    estado = "activa" if inicio <= dt.datetime.now() <= fin else "inactiva"
+    estado = "activa" if inicio <= dt.datetime.now(dt.timezone.utc) <= fin else "inactiva"
     nueva_subasta = {
         "id": len(_db_subastas) + 1,
         "figurita_id": figurita_id,
