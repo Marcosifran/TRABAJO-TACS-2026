@@ -45,10 +45,10 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=2, tipo=
 
 
 def _payload_subasta(publicacion_id, horas=1):
-    ahora = dt.datetime.now()
+    ahora = dt.datetime.now(dt.timezone.utc)
     return {
         "figurita_id": publicacion_id,
-        "inicio": ahora.isoformat(),
+        "inicio": (ahora - dt.timedelta(minutes=5)).isoformat(),
         "fin": (ahora + dt.timedelta(hours=horas)).isoformat(),
     }
 
