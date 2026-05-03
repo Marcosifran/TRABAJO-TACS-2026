@@ -109,7 +109,7 @@ export default function AppShell({ children }) {
       </nav>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto" key={user.nombre}>
         {children}
       </main>
     </div>
