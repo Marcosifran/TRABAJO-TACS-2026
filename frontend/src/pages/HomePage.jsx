@@ -60,7 +60,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Acciones Publicar FIgurita - Buscar Figuritas - Ver Subastas */}
+      {/* Acciones Publicar Figurita - Buscar Figuritas - Ver Subastas */}
       <div className="flex gap-2.5 mb-8">
         <Button icon="add" onClick={() => navigate('/coleccion')}>Publicar figurita</Button>
         <Button variant="tonal" icon="search" onClick={() => navigate('/buscar')}>Buscar figuritas</Button>

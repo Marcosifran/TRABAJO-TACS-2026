@@ -37,7 +37,22 @@ def listar_ofertas(subasta_id: int) -> list[dict]:
     subasta = subasta_repo.get_by_id(subasta_id)
     if not subasta:
         raise ValueError("Subasta inexistente")
-    return oferta_repo.get_by_subasta(subasta_id)
+    ofertas = oferta_repo.get_by_subasta(subasta_id)
+    result = []
+    for oferta in ofertas:
+        enriquecida = dict(oferta)
+        enriquecida["ofrecidas_detalle"] = [
+            {
+                "id": fig["id"],
+                "numero": fig["numero"],
+                "equipo": fig["equipo"],
+                "jugador": fig["jugador"],
+            }
+            for album_id in oferta["ofrecidas"]
+            if (fig := album_repo.get_by_id(album_id))
+        ]
+        result.append(enriquecida)
+    return result
 
 
 def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict:
@@ -55,6 +70,10 @@ def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict
 
     if subasta["usuario_id"] == usuario_id:
         raise ValueError("No podés ofertar en tu propia subasta")
+
+    ofertas_existentes = oferta_repo.get_by_subasta(subasta_id)
+    if any(o["usuario_id"] == usuario_id for o in ofertas_existentes):
+        raise ValueError("Ya enviaste una oferta a esta subasta")
 
     if not oferta_data.figuritas_ofrecidas:
         raise ValueError("Debés ofrecer al menos una figurita")
@@ -81,3 +100,39 @@ def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict
 
 def listar_subastas_usuario(usuario_id: int) -> list[dict]:
     return subasta_repo.get_by_usuario(usuario_id)
+
+
+def listar_mis_ofertas(usuario_id: int) -> list[dict]:
+    ofertas = oferta_repo.get_by_usuario(usuario_id)
+    result = []
+    for oferta in ofertas:
+        enriquecida = dict(oferta)
+        subasta = subasta_repo.get_by_id(oferta["subasta_id"])
+        enriquecida["subasta"] = subasta
+        if subasta:
+            pub = publicacion_repo.get_by_id(subasta["figurita_id"])
+            enriquecida["figurita_subastada"] = {
+                "jugador": pub["jugador"],
+                "equipo": pub["equipo"],
+                "numero": pub["numero"],
+            } if pub else None
+        enriquecida["ofrecidas_detalle"] = [
+            {"id": fig["id"], "numero": fig["numero"], "equipo": fig["equipo"], "jugador": fig["jugador"]}
+            for album_id in oferta["ofrecidas"]
+            if (fig := album_repo.get_by_id(album_id))
+        ]
+        result.append(enriquecida)
+    return result
+
+
+def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
+    oferta = oferta_repo.get_by_id(oferta_id)
+    if not oferta:
+        raise ValueError("Oferta no encontrada")
+    if oferta["usuario_id"] != usuario_id:
+        raise PermissionError("No podés cancelar una oferta que no es tuya")
+    subasta = subasta_repo.get_by_id(oferta["subasta_id"])
+    if not subasta or subasta["estado"] != "activa":
+        raise ValueError("Solo podés cancelar ofertas de subastas activas")
+    oferta_repo.delete(oferta_id)
+    return "Oferta cancelada"

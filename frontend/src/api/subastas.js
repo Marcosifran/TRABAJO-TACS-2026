@@ -28,3 +28,19 @@ export function ofertarSubasta(subastaId, figuritasIds){
         body: JSON.stringify({ figuritas_ofrecidas: figuritasIds})
     })
 }
+
+export function listarMisSubastas() {
+    return apiFetch('/usuarios/subastas')
+}
+
+export function listarOfertas(subastaId) {
+    return apiFetch(`/subastas/${subastaId}/ofertas`)
+}
+
+export function listarMisOfertas() {
+    return apiFetch('/usuarios/ofertas')
+}
+
+export function cancelarOferta(subastaId, ofertaId) {
+    return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}`, { method: 'DELETE' })
+}

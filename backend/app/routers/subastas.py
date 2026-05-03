@@ -54,6 +54,33 @@ def listar_ofertas(subasta_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     return {"ofertas": ofertas}
 
+@router.delete(
+    "/{subasta_id}/ofertas/{oferta_id}",
+    status_code=204,
+    responses={
+        204: {"description": "Oferta cancelada exitosamente"},
+        400: {"description": "La subasta ya no está activa"},
+        401: {"description": "Token ausente o inválido"},
+        403: {"description": "La oferta no pertenece al usuario"},
+        404: {"description": "Oferta no encontrada"},
+    },
+)
+def cancelar_oferta(
+    subasta_id: int,
+    oferta_id: int,
+    usuario: dict = Depends(get_current_user),
+):
+    try:
+        subasta_service.cancelar_oferta(oferta_id, usuario["id"])
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        detail = str(e)
+        if "no encontrada" in detail.lower():
+            raise HTTPException(status_code=404, detail=detail)
+        raise HTTPException(status_code=400, detail=detail)
+
+
 @router.post(
     "/{subasta_id}/ofertar",
     status_code=201,
