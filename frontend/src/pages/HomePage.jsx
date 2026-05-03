@@ -20,7 +20,7 @@ export default function HomePage() {
         <p className="mt-1 text-on-surface-variant text-[15px]">Tu resumen de actividad en FiguSwap</p>
       </div>
 
-      {/* Stats */}
+      {/* Estadisticas Figuritas - Faltan - Intercambios - Reputación */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         {STATS.map((s, i) => (
           <Card key={i} elevated>
@@ -40,7 +40,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Quick actions */}
+      {/* Acciones Publicar FIgurita - Buscar Figuritas - Ver Subastas */}
       <div className="flex gap-2.5 mb-8">
         <Button icon="add" onClick={() => navigate('/coleccion')}>Publicar figurita</Button>
         <Button variant="tonal" icon="search" onClick={() => navigate('/buscar')}>Buscar figuritas</Button>

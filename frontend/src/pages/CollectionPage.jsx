@@ -12,10 +12,10 @@ import { useUser } from '../context/UserContext'
 import { agregarAlAlbum, publicarFigurita, listarMisPublicaciones, retirarPublicacion } from '../api/publicaciones'
 
 const SELECCIONES = [
-  'Argentina','Brasil','Francia','Alemania','España',
-  'Inglaterra','Portugal','México','USA','Canadá','Uruguay','Colombia',
+  'Argentina', 'Brasil', 'Francia', 'Alemania', 'España',
+  'Inglaterra', 'Portugal', 'México', 'USA', 'Canadá', 'Uruguay', 'Colombia',
 ]
-const EMPTY_PUB  = { numero: '', equipo: SELECCIONES[0], jugador: '', cantidad: '1', tipo: 'intercambio_directo' }
+const EMPTY_PUB = { numero: '', equipo: SELECCIONES[0], jugador: '', cantidad: '1', tipo: 'intercambio_directo' }
 const EMPTY_FALT = { numero: '', seleccion: SELECCIONES[0], jugador: '' }
 
 function pubToCard(pub, ownerName) {
@@ -31,16 +31,16 @@ function pubToCard(pub, ownerName) {
 }
 
 export default function CollectionPage() {
-  const { user }  = useUser()
-  const [tab, setTab]           = useState('tengo')
-  const [showPub, setShowPub]   = useState(false)
+  const { user } = useUser()
+  const [tab, setTab] = useState('tengo')
+  const [showPub, setShowPub] = useState(false)
   const [showFalt, setShowFalt] = useState(false)
-  const [pubForm, setPubForm]   = useState(EMPTY_PUB)
+  const [pubForm, setPubForm] = useState(EMPTY_PUB)
   const [faltForm, setFaltForm] = useState(EMPTY_FALT)
   const [publicaciones, setPublicaciones] = useState([])
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [snack, setSnack]       = useState({ open: false, message: '', type: 'info' })
+  const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
 
   const cargarPublicaciones = useCallback(async () => {
     setLoading(true)
@@ -64,15 +64,15 @@ export default function CollectionPage() {
     setSubmitting(true)
     try {
       const albumEntry = await agregarAlAlbum({
-        numero:   pubForm.numero,
-        equipo:   pubForm.equipo,
-        jugador:  pubForm.jugador,
+        numero: pubForm.numero,
+        equipo: pubForm.equipo,
+        jugador: pubForm.jugador,
         cantidad: pubForm.cantidad,
       })
       await publicarFigurita({
         figurita_personal_id: albumEntry.id,
-        tipo_intercambio:     pubForm.tipo,
-        cantidad_disponible:  pubForm.cantidad,
+        tipo_intercambio: pubForm.tipo,
+        cantidad_disponible: pubForm.cantidad,
       })
       setShowPub(false)
       setPubForm(EMPTY_PUB)
@@ -137,7 +137,7 @@ export default function CollectionPage() {
 
       <Tabs
         tabs={[
-          { id: 'tengo',  label: `Mis figuritas (${publicaciones.length})`, icon: 'collections_bookmark' },
+          { id: 'tengo', label: `Mis figuritas (${publicaciones.length})`, icon: 'collections_bookmark' },
           { id: 'faltan', label: 'Me faltan (0)', icon: 'playlist_add' },
         ]}
         active={tab}
@@ -187,7 +187,7 @@ export default function CollectionPage() {
         )}
       </div>
 
-      {/* Publish Modal */}
+      {/* Boton Publicar Figurita */}
       <Modal open={showPub} onClose={() => !submitting && setShowPub(false)} title="Publicar figurita" width={480}>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
@@ -245,7 +245,7 @@ export default function CollectionPage() {
         </div>
       </Modal>
 
-      {/* Faltante Modal */}
+      {/* Boton Registrar Faltante */}
       <Modal open={showFalt} onClose={() => setShowFalt(false)} title="Registrar faltante" width={420}>
         <div className="flex flex-col gap-4">
           <Input
