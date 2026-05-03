@@ -1,18 +1,33 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
-
-const STATS = [
-  { icon: 'collections_bookmark', label: 'Figuritas',    value: '—',    colorVar: 'var(--color-primary)' },
-  { icon: 'playlist_add',         label: 'Faltan',        value: '—',    colorVar: 'var(--color-secondary)' },
-  { icon: 'swap_horiz',           label: 'Intercambios',  value: '—',    colorVar: 'var(--color-tertiary)' },
-  { icon: 'star',                 label: 'Reputación',    value: '—',    colorVar: 'var(--color-gold)' },
-]
+import { listarMisPublicaciones } from '../api/publicaciones'
+import { listarFaltantes } from '../api/faltantes'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const [figuritasCount, setFiguritasCount] = useState('—')
+  const [faltanCount,    setFaltanCount]    = useState('—')
+
+  useEffect(() => {
+    listarMisPublicaciones()
+      .then(data => setFiguritasCount(data.length))
+      .catch(() => {})
+    listarFaltantes()
+      .then(data => setFaltanCount(data.faltantes.length))
+      .catch(() => {})
+  }, [])
+
+  const STATS = [
+    { icon: 'collections_bookmark', label: 'Figuritas',   value: figuritasCount, colorVar: 'var(--color-primary)' },
+    { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,    colorVar: 'var(--color-secondary)' },
+    { icon: 'swap_horiz',           label: 'Intercambios', value: '—',            colorVar: 'var(--color-tertiary)' },
+    { icon: 'star',                 label: 'Reputación',   value: '—',            colorVar: 'var(--color-gold)' },
+  ]
+
   return (
     <div className="p-8 max-w-[1100px]">
       <div className="mb-7">

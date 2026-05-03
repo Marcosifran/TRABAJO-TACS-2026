@@ -10,6 +10,7 @@ import FiguritaCard from '../components/FiguritaCard'
 import Icon from '../components/ui/Icon'
 import { useUser } from '../context/UserContext'
 import { agregarAlAlbum, publicarFigurita, listarMisPublicaciones, retirarPublicacion } from '../api/publicaciones'
+import { registrarFaltante, listarFaltantes } from '../api/faltantes'
 
 const SELECCIONES = [
   'Argentina', 'Brasil', 'Francia', 'Alemania', 'España',
@@ -38,8 +39,11 @@ export default function CollectionPage() {
   const [pubForm, setPubForm] = useState(EMPTY_PUB)
   const [faltForm, setFaltForm] = useState(EMPTY_FALT)
   const [publicaciones, setPublicaciones] = useState([])
+  const [faltantes, setFaltantes] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingFalt, setLoadingFalt] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submittingFalt, setSubmittingFalt] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
 
   const cargarPublicaciones = useCallback(async () => {
@@ -54,7 +58,22 @@ export default function CollectionPage() {
     }
   }, [])
 
-  useEffect(() => { cargarPublicaciones() }, [cargarPublicaciones])
+  const cargarFaltantes = useCallback(async () => {
+    setLoadingFalt(true)
+    try {
+      const data = await listarFaltantes()
+      setFaltantes(data.faltantes)
+    } catch (e) {
+      setSnack({ open: true, message: e.message, type: 'error' })
+    } finally {
+      setLoadingFalt(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    cargarPublicaciones()
+    cargarFaltantes()
+  }, [cargarPublicaciones, cargarFaltantes])
 
   async function handlePublish() {
     if (!pubForm.numero || !pubForm.jugador) {
@@ -95,14 +114,27 @@ export default function CollectionPage() {
     }
   }
 
-  function handleAddFaltante() {
+  async function handleAddFaltante() {
     if (!faltForm.numero) {
       setSnack({ open: true, message: 'Ingresá el número de la figurita', type: 'error' })
       return
     }
-    setShowFalt(false)
-    setFaltForm(EMPTY_FALT)
-    setSnack({ open: true, message: 'Faltante registrado', type: 'success' })
+    setSubmittingFalt(true)
+    try {
+      await registrarFaltante({
+        numero_figurita: faltForm.numero,
+        equipo: faltForm.seleccion,
+        jugador: faltForm.jugador,
+      })
+      setShowFalt(false)
+      setFaltForm(EMPTY_FALT)
+      setSnack({ open: true, message: 'Faltante registrado con éxito', type: 'success' })
+      cargarFaltantes()
+    } catch (e) {
+      setSnack({ open: true, message: e.message, type: 'error' })
+    } finally {
+      setSubmittingFalt(false)
+    }
   }
 
   const cards = publicaciones.map(p => pubToCard(p, user.nombre))
@@ -113,7 +145,7 @@ export default function CollectionPage() {
         <div>
           <h1 className="text-3xl font-bold text-on-surface m-0">Mi Colección</h1>
           <p className="mt-1 text-on-surface-variant text-sm">
-            {publicaciones.length} publicadas · 0 me faltan
+            {publicaciones.length} publicadas · {faltantes.length} me faltan
           </p>
         </div>
         <div className="flex gap-2.5">
@@ -138,7 +170,7 @@ export default function CollectionPage() {
       <Tabs
         tabs={[
           { id: 'tengo', label: `Mis figuritas (${publicaciones.length})`, icon: 'collections_bookmark' },
-          { id: 'faltan', label: 'Me faltan (0)', icon: 'playlist_add' },
+          { id: 'faltan', label: `Me faltan (${faltantes.length})`, icon: 'playlist_add' },
         ]}
         active={tab}
         onChange={setTab}
@@ -176,7 +208,12 @@ export default function CollectionPage() {
               ))}
             </div>
           )
-        ) : (
+        ) : loadingFalt ? (
+          <div className="flex items-center justify-center gap-3 py-16 text-on-surface-variant">
+            <Icon name="progress_activity" size={24} className="animate-spin" />
+            Cargando...
+          </div>
+        ) : faltantes.length === 0 ? (
           <EmptyState
             icon="playlist_add"
             title="No tenés figuritas faltantes"
@@ -184,6 +221,26 @@ export default function CollectionPage() {
             action="Registrar faltante"
             onAction={() => setShowFalt(true)}
           />
+        ) : (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
+            {faltantes.map(f => (
+              <div
+                key={f.id}
+                className="rounded-2xl border border-outline-variant bg-surface-container p-4 flex flex-col gap-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-primary">#{f.numero_figurita}</span>
+                  <Icon name="playlist_add" size={20} className="text-on-surface-variant" />
+                </div>
+                {f.equipo && (
+                  <span className="text-sm font-medium text-on-surface">{f.equipo}</span>
+                )}
+                {f.jugador && (
+                  <span className="text-xs text-on-surface-variant">{f.jugador}</span>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -246,7 +303,7 @@ export default function CollectionPage() {
       </Modal>
 
       {/* Boton Registrar Faltante */}
-      <Modal open={showFalt} onClose={() => setShowFalt(false)} title="Registrar faltante" width={420}>
+      <Modal open={showFalt} onClose={() => !submittingFalt && setShowFalt(false)} title="Registrar faltante" width={420}>
         <div className="flex flex-col gap-4">
           <Input
             label="Número" type="number" icon="tag" placeholder="Ej: 321"
@@ -265,8 +322,14 @@ export default function CollectionPage() {
             onChange={v => setFaltForm({ ...faltForm, jugador: v })}
           />
           <div className="flex gap-2.5 justify-end mt-2">
-            <Button variant="text" onClick={() => setShowFalt(false)}>Cancelar</Button>
-            <Button icon="playlist_add" onClick={handleAddFaltante}>Registrar</Button>
+            <Button variant="text" onClick={() => setShowFalt(false)} disabled={submittingFalt}>Cancelar</Button>
+            <Button
+              icon={submittingFalt ? 'progress_activity' : 'playlist_add'}
+              onClick={handleAddFaltante}
+              disabled={submittingFalt}
+            >
+              {submittingFalt ? 'Registrando...' : 'Registrar'}
+            </Button>
           </div>
         </div>
       </Modal>
