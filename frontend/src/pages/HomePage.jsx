@@ -4,13 +4,15 @@ import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
-import { listarMisPublicaciones } from '../api/publicaciones'
+import FiguritaCard from '../components/FiguritaCard'
+import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
 import { listarFaltantes } from '../api/faltantes'
 
 export default function HomePage() {
   const navigate = useNavigate()
   const [figuritasCount, setFiguritasCount] = useState('—')
-  const [faltanCount,    setFaltanCount]    = useState('—')
+  const [faltanCount, setFaltanCount] = useState('—')
+  const [ultimasPublicadas, setUltimasPublicadas] = useState([])
 
   useEffect(() => {
     listarMisPublicaciones()
@@ -18,6 +20,9 @@ export default function HomePage() {
       .catch(() => {})
     listarFaltantes()
       .then(data => setFaltanCount(data.faltantes.length))
+      .catch(() => {})
+    buscarPublicaciones()
+      .then(data => setUltimasPublicadas(data.slice(-4).reverse()))
       .catch(() => {})
   }, [])
 
@@ -69,11 +74,31 @@ export default function HomePage() {
             <h2 className="text-lg font-semibold m-0">Últimas publicadas</h2>
             <Button variant="text" size="sm" onClick={() => navigate('/buscar')}>Ver todas</Button>
           </div>
-          <EmptyState
-            icon="style"
-            title="Sin figuritas publicadas"
-            subtitle="Todavía no hay figuritas disponibles para intercambio"
-          />
+          {ultimasPublicadas.length === 0 ? (
+            <EmptyState
+              icon="style"
+              title="Sin figuritas publicadas"
+              subtitle="Todavía no hay figuritas disponibles para intercambio"
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {ultimasPublicadas.map(pub => (
+                <FiguritaCard
+                  key={pub.id}
+                  compact
+                  figurita={{
+                    id: pub.id,
+                    numero: pub.numero,
+                    seleccion: pub.equipo,
+                    jugador: pub.jugador,
+                    tipo: pub.tipo_intercambio === 'intercambio_directo' ? 'intercambio' : 'subasta',
+                    cantidad: pub.cantidad_disponible,
+                    owner: `Usuario ${pub.usuario_id}`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Subastas y Sugerencias */}

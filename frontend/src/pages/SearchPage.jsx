@@ -43,8 +43,15 @@ export default function SearchPage() {
       const params = {}
       if (q) {
         const num = parseInt(q)
-        if (!isNaN(num)) params.numero = num
-        else params.jugador = q
+        if (!isNaN(num)) {
+          params.numero = num
+        } else {
+          const matchSeleccion = SELECCIONES.find(s =>
+            s.toLowerCase().includes(q.toLowerCase()) || q.toLowerCase().includes(s.toLowerCase())
+          )
+          if (matchSeleccion) params.equipo = matchSeleccion
+          else params.jugador = q
+        }
       }
       if (sel !== 'Todas') params.equipo = sel
       if (tipo !== 'todos') params.tipo_intercambio = tipo === 'intercambio' ? 'intercambio_directo' : 'subasta'
