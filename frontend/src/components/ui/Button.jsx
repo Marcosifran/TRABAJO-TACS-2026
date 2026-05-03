@@ -16,12 +16,14 @@ const SIZES = {
 export default function Button({
   children, variant = 'filled', icon, onClick,
   disabled = false, size = 'md', type = 'button', className = '',
+  style = {}
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      style={style}
       className={`
         inline-flex items-center justify-center font-medium rounded-full
         transition-all duration-200 cursor-pointer select-none

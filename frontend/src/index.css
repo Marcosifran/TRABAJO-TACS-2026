@@ -28,6 +28,8 @@
   --color-outline-variant:        #C1C9C0;
   --color-gold:                   #D4A843;
   --color-error:                  #BA1A1A;
+  --color-trade:                  #6750A4; /* Violeta */
+  --color-auction:                #BF4F00; /* Naranja */
 }
 
 /* ── Verde Cancha – Dark ── */
@@ -56,6 +58,8 @@
   --color-outline-variant:        #414941;
   --color-gold:                   #D4A843;
   --color-error:                  #FFB4AB;
+  --color-trade:                  #D0BCFF; /* Violeta claro */
+  --color-auction:                #FFB488; /* Naranja claro */
 }
 
 @layer base {

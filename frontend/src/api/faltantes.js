@@ -10,3 +10,11 @@ export function registrarFaltante({ numero_figurita, equipo, jugador }) {
 export function listarFaltantes() {
   return apiFetch('/usuarios/faltantes')
 }
+
+export function obtenerReputacion(id) {
+  return apiFetch(`/usuarios/${id}/reputacion`)
+}
+
+export function obtenerSugerencias() {
+  return apiFetch('/usuarios/sugerencias')
+}

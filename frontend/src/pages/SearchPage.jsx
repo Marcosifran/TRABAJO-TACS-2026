@@ -7,7 +7,9 @@ import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
-import { buscarPublicaciones } from '../api/publicaciones'
+import { buscarPublicaciones, listarMisPublicaciones } from '../api/publicaciones'
+import { listarMiAlbum } from '../api/album'
+import { proponerIntercambio } from '../api/intercambios'
 
 const SELECCIONES = ['Argentina','Brasil','Francia','Alemania','España','Inglaterra','Portugal','México','USA','Canadá']
 const CATEGORIAS  = ['Escudo','Jugador','Estadio','Leyenda','Especial']
@@ -33,7 +35,10 @@ export default function SearchPage() {
   const [results,     setResults]     = useState([])
   const [loading,     setLoading]     = useState(false)
   const [tradeModal,  setTradeModal]  = useState(null)
+  const [myAlbum,     setMyAlbum]     = useState([])
+  const [myPubs,      setMyPubs]      = useState([])
   const [selectedOffer, setSelectedOffer] = useState([])
+  const [submitting,  setSubmitting]  = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const debounceRef = useRef(null)
 
@@ -71,14 +76,45 @@ export default function SearchPage() {
     return () => clearTimeout(debounceRef.current)
   }, [query, selFilter, tipoFilter, fetchResults])
 
-  function handleSendTrade() {
+  useEffect(() => {
+    if (tradeModal) {
+      Promise.all([listarMiAlbum(), listarMisPublicaciones()])
+        .then(([album, pubs]) => {
+          setMyAlbum(album)
+          setMyPubs(pubs)
+        })
+        .catch(e => setSnack({ open: true, message: 'Error cargando datos: ' + e.message, type: 'error' }))
+    }
+  }, [tradeModal])
+
+  async function handleSendTrade() {
     if (selectedOffer.length === 0) {
       setSnack({ open: true, message: 'Seleccioná al menos una figurita para ofrecer', type: 'error' })
       return
     }
-    setTradeModal(null)
-    setSelectedOffer([])
-    setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
+    setSubmitting(true)
+    try {
+      await proponerIntercambio({
+        figuritas_ofrecidas_numero: selectedOffer,
+        figurita_solicitada_numero: tradeModal.numero,
+        solicitado_a_id: tradeModal._usuarioId
+      })
+      setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
+      setTradeModal(null)
+      setSelectedOffer([])
+    } catch (e) {
+      setSnack({ open: true, message: 'Error al enviar propuesta: ' + e.message, type: 'error' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function toggleOffer(numero) {
+    if (selectedOffer.includes(numero)) {
+      setSelectedOffer(prev => prev.filter(n => n !== numero))
+    } else {
+      setSelectedOffer(prev => [...prev, numero])
+    }
   }
 
   const cards = results.map(pubToCard)
@@ -128,12 +164,16 @@ export default function SearchPage() {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
           {cards.map(f => (
-            <FiguritaCard key={f.id} figurita={f} onTrade={setTradeModal} />
+            <FiguritaCard 
+              key={f.id} 
+              figurita={f} 
+              onTrade={f.tipo === 'intercambio' ? setTradeModal : null} 
+            />
           ))}
         </div>
       )}
 
-      {/* Trade Modal — stub, pendiente de implementar */}
+      {/* Trade Modal */}
       <Modal open={!!tradeModal} onClose={() => { setTradeModal(null); setSelectedOffer([]) }} title="Proponer intercambio" width={560}>
         {tradeModal && (
           <div>
@@ -145,10 +185,40 @@ export default function SearchPage() {
                 <div className="text-xs text-on-surface-variant">de {tradeModal.owner}</div>
               </div>
             </div>
-            <div className="text-sm font-semibold text-on-surface mb-2.5">Tu álbum está vacío. Publicá figuritas para poder ofrecer en intercambios.</div>
+
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-on-surface mb-2.5">Tus figuritas (seleccioná para ofrecer):</div>
+              {myAlbum.length === 0 ? (
+                <div className="text-sm text-on-surface-variant italic py-2">No tenés figuritas en tu álbum para ofrecer.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-1">
+                  {myAlbum.map(fig => {
+                    const isSubasta = myPubs.find(p => p.figurita_personal_id === fig.id && p.tipo_intercambio === 'subasta')
+                    return (
+                      <Chip
+                        key={fig.id}
+                        selected={selectedOffer.includes(fig.numero)}
+                        onClick={() => toggleOffer(fig.numero)}
+                        disabled={!!isSubasta}
+                        title={isSubasta ? "Esta figurita está en subasta" : ""}
+                      >
+                        #{fig.numero} {fig.jugador || fig.equipo}
+                      </Chip>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2.5 justify-end mt-5">
               <Button variant="text" onClick={() => { setTradeModal(null); setSelectedOffer([]) }}>Cancelar</Button>
-              <Button icon="send" onClick={handleSendTrade} disabled>Enviar propuesta</Button>
+              <Button
+                icon={submitting ? "progress_activity" : "send"}
+                onClick={handleSendTrade}
+                disabled={selectedOffer.length === 0 || submitting}
+              >
+                {submitting ? "Enviando..." : "Enviar propuesta"}
+              </Button>
             </div>
           </div>
         )}

@@ -6,20 +6,32 @@ import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
 import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
-import { listarFaltantes } from '../api/faltantes'
+import { listarFaltantes, obtenerReputacion } from '../api/faltantes'
+import { listarIntercambios } from '../api/intercambios'
+
+import { listarMiAlbum } from '../api/album'
 
 export default function HomePage() {
   const navigate = useNavigate()
   const [figuritasCount, setFiguritasCount] = useState('—')
   const [faltanCount, setFaltanCount] = useState('—')
+  const [intercambiosCount, setIntercambiosCount] = useState('—')
+  const [reputacion, setReputacion] = useState('—')
   const [ultimasPublicadas, setUltimasPublicadas] = useState([])
 
   useEffect(() => {
-    listarMisPublicaciones()
+    listarMiAlbum()
       .then(data => setFiguritasCount(data.length))
       .catch(() => {})
     listarFaltantes()
       .then(data => setFaltanCount(data.faltantes.length))
+      .catch(() => {})
+    listarIntercambios()
+      .then(data => setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)))
+      .catch(() => {})
+    // Nota: El ID del usuario debería venir del contexto. Uso 1 como fallback si no hay.
+    obtenerReputacion(1)
+      .then(data => setReputacion(data.promedio?.toFixed(1) || '5.0'))
       .catch(() => {})
     buscarPublicaciones()
       .then(data => setUltimasPublicadas(data.slice(-4).reverse()))
@@ -29,8 +41,8 @@ export default function HomePage() {
   const STATS = [
     { icon: 'collections_bookmark', label: 'Figuritas',   value: figuritasCount, colorVar: 'var(--color-primary)' },
     { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,    colorVar: 'var(--color-secondary)' },
-    { icon: 'swap_horiz',           label: 'Intercambios', value: '—',            colorVar: 'var(--color-tertiary)' },
-    { icon: 'star',                 label: 'Reputación',   value: '—',            colorVar: 'var(--color-gold)' },
+    { icon: 'swap_horiz',           label: 'Intercambios', value: intercambiosCount, colorVar: 'var(--color-tertiary)' },
+    { icon: 'star',                 label: 'Reputación',   value: reputacion,     colorVar: 'var(--color-gold)' },
   ]
 
   return (
