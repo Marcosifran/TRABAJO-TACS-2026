@@ -78,6 +78,9 @@ Los tokens se definen en un archivo `.env` en la raíz del proyecto:
 ```env
 USER_1_TOKEN=<uuid-del-usuario-1>
 USER_2_TOKEN=<uuid-del-usuario-2>
+
+VITE_USER_1_TOKEN=<uuid-del-usuario-1>
+VITE_USER_2_TOKEN=<uuid-del-usuario-2>
 ```
 
 Adicionalmente, se deben indicar los tokens para el front (proximamente se implementará un sistema de login y register)
