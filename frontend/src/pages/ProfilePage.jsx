@@ -8,12 +8,15 @@ import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
 import { useUser } from '../context/UserContext'
 import { listarMisPublicaciones } from '../api/publicaciones'
-import { listarFaltantes } from '../api/faltantes'
+import { listarFaltantes, obtenerReputacion } from '../api/faltantes'
+import { listarIntercambios } from '../api/intercambios'
 
 export default function ProfilePage() {
-  const { user } = useUser()
-  const [publicaciones, setPublicaciones] = useState([])
-  const [faltanCount,   setFaltanCount]   = useState(0)
+  const { user, users } = useUser()
+  const [publicaciones,      setPublicaciones]      = useState([])
+  const [faltanCount,        setFaltanCount]        = useState(0)
+  const [intercambiosCount,  setIntercambiosCount]  = useState(0)
+  const [reputacion,         setReputacion]         = useState(null)
 
   useEffect(() => {
     listarMisPublicaciones()
@@ -22,12 +25,25 @@ export default function ProfilePage() {
     listarFaltantes()
       .then(data => setFaltanCount(data.faltantes.length))
       .catch(() => {})
-  }, [])
+    listarIntercambios()
+      .then(data => {
+        const aceptados = [
+          ...(data.enviados  || []),
+          ...(data.recibidos || []),
+        ].filter(i => i.estado === 'aceptado').length
+        setIntercambiosCount(aceptados)
+      })
+      .catch(() => {})
+    const userId = users.indexOf(user) + 1
+    obtenerReputacion(userId)
+      .then(data => setReputacion(data))
+      .catch(() => {})
+  }, [user])
 
   const STATS = [
     { icon: 'collections_bookmark', label: 'Figuritas',   value: publicaciones.length, colorVar: 'var(--color-primary)' },
     { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,          colorVar: 'var(--color-secondary)' },
-    { icon: 'swap_horiz',           label: 'Intercambios', value: '0',                  colorVar: 'var(--color-tertiary)' },
+    { icon: 'swap_horiz',           label: 'Intercambios', value: intercambiosCount,    colorVar: 'var(--color-tertiary)' },
   ]
 
   const ultimas = publicaciones.slice(-5).reverse()
@@ -41,9 +57,13 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-bold m-0 text-on-surface">{user.nombre}</h1>
             <p className="text-on-surface-variant text-sm mt-1 mb-2">{user.email}</p>
             <div className="flex items-center gap-1.5">
-              <StarRating value={0} size={20} />
-              <span className="text-sm font-semibold text-on-surface">—</span>
-              <span className="text-[13px] text-on-surface-variant">(0 intercambios)</span>
+              <StarRating value={reputacion?.promedio_puntuacion ?? 0} size={20} />
+              <span className="text-sm font-semibold text-on-surface">
+                {reputacion?.promedio_puntuacion != null ? reputacion.promedio_puntuacion.toFixed(1) : '—'}
+              </span>
+              <span className="text-[13px] text-on-surface-variant">
+                ({reputacion?.cantidad_calificaciones ?? 0} calificaciones)
+              </span>
             </div>
           </div>
           <Button variant="outlined" icon="edit">Editar perfil</Button>

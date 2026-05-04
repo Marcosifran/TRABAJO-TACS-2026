@@ -49,8 +49,9 @@ export default function HomePage() {
       .then(data => setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)))
       .catch(() => {})
     // Nota: El ID del usuario debería venir del contexto. Uso 1 como fallback si no hay.
-    obtenerReputacion(1)
-      .then(data => setReputacion(data.promedio?.toFixed(1) || '5.0'))
+    const userId = users.indexOf(user) + 1
+    obtenerReputacion(userId)
+      .then(data => setReputacion(data.promedio_puntuacion != null ? data.promedio_puntuacion.toFixed(1) : '—'))
       .catch(() => {})
     buscarPublicaciones()
       .then(data => setUltimasPublicadas(data.slice(-4).reverse()))
@@ -58,7 +59,7 @@ export default function HomePage() {
     obtenerSugerencias()
       .then(data => setSugerencias(data.sugerencias || []))
       .catch(() => {})
-  }, [])
+  }, [user])
 
   useEffect(() => {
     let cancelled = false
