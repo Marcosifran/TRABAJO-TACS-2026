@@ -1,9 +1,12 @@
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import Icon from './ui/Icon'
 import Badge from './ui/Badge'
 import Avatar from './ui/Avatar'
 import { useTheme } from '../context/ThemeContext'
 import { useUser } from '../context/UserContext'
+import { obtenerSugerencias } from '../api/faltantes'
+import { listarSubastas } from '../api/subastas'
 
 const NAV = [
   { to: '/',             icon: 'dashboard',            label: 'Inicio' },
@@ -16,12 +19,89 @@ const NAV = [
   { to: '/admin',        icon: 'admin_panel_settings',  label: 'Admin' },
 ]
 
-const UNREAD_COUNT = 0
+const POLL_INTERVAL = 20000 // 20 segundos
 
 export default function AppShell({ children }) {
   const { dark, toggleDark } = useTheme()
   const { user, users, switchUser } = useUser()
   const location = useLocation()
+
+  const [notifs, setNotifs] = useState([])
+  const seenSugIds   = useRef(null)
+  const seenAuctIds  = useRef(null)
+  const timerRefs    = useRef({})
+
+  function pushNotif(id, icon, title, body) {
+    setNotifs(prev => prev.some(n => n.id === id) ? prev : [...prev, { id, icon, title, body }])
+    clearTimeout(timerRefs.current[id])
+    timerRefs.current[id] = setTimeout(
+      () => setNotifs(prev => prev.filter(n => n.id !== id)),
+      6000
+    )
+  }
+
+  function dismissNotif(id) {
+    clearTimeout(timerRefs.current[id])
+    setNotifs(prev => prev.filter(n => n.id !== id))
+  }
+
+  // Poll sugerencias
+  useEffect(() => {
+    seenSugIds.current = null
+    async function pollSugs() {
+      try {
+        const data = await obtenerSugerencias()
+        const sugs = data.sugerencias || []
+        const ids  = new Set(sugs.map(s => s.publicacion.id))
+        if (seenSugIds.current === null) { seenSugIds.current = ids; return }
+        const nuevas = sugs.filter(s => !seenSugIds.current.has(s.publicacion.id))
+        if (nuevas.length > 0) {
+          const p = nuevas[0].publicacion
+          pushNotif(
+            `sug-${p.id}`,
+            'auto_awesome',
+            '¡Nueva sugerencia disponible!',
+            `#${p.numero} ${p.jugador} (${p.equipo})${nuevas.length > 1 ? ` y ${nuevas.length - 1} más` : ''}`
+          )
+          seenSugIds.current = ids
+        }
+      } catch { /* ignorar */ }
+    }
+    pollSugs()
+    const t = setInterval(pollSugs, POLL_INTERVAL)
+    return () => clearInterval(t)
+  }, [user])
+
+  // Poll subastas por vencer (< 24 hs)
+  useEffect(() => {
+    seenAuctIds.current = new Set()
+    async function pollSubastas() {
+      try {
+        const data = await listarSubastas()
+        const ahora = Date.now()
+        const porVencer = (data.subastas || []).filter(s => {
+          const ms = new Date(s.fin) - ahora
+          return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
+        })
+        porVencer.forEach(s => {
+          if (seenAuctIds.current.has(s.id)) return
+          seenAuctIds.current.add(s.id)
+          const horas = Math.floor((new Date(s.fin) - ahora) / 3600000)
+          const mins  = Math.floor(((new Date(s.fin) - ahora) % 3600000) / 60000)
+          const tiempo = horas > 0 ? `${horas}h ${mins}m` : `${mins}m`
+          pushNotif(
+            `auct-${s.id}`,
+            'gavel',
+            '⏳ Subasta por finalizar',
+            `Subasta #${s.id} cierra en ${tiempo}`
+          )
+        })
+      } catch { /* ignorar */ }
+    }
+    pollSubastas()
+    const t = setInterval(pollSubastas, POLL_INTERVAL)
+    return () => clearInterval(t)
+  }, [user])
 
   return (
     <div className="flex h-screen bg-surface text-on-surface font-sans overflow-hidden">
@@ -61,7 +141,7 @@ export default function AppShell({ children }) {
                 `}
               >
                 {item.icon === 'notifications' ? (
-                  <Badge count={UNREAD_COUNT}>
+                  <Badge count={0}>
                     <Icon
                       name={item.icon}
                       size={20}
@@ -112,6 +192,38 @@ export default function AppShell({ children }) {
       <main className="flex-1 overflow-y-auto" key={user.nombre}>
         {children}
       </main>
+
+      {/* Stack de notificaciones pop-up */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
+        {notifs.map(n => (
+          <div
+            key={n.id}
+            className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px]"
+            style={{ animation: 'slideInRight 0.3s ease' }}
+          >
+            <div className="bg-primary-container rounded-full p-2 shrink-0">
+              <Icon name={n.icon} size={20} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm text-on-surface">{n.title}</div>
+              <div className="text-xs text-on-surface-variant mt-0.5">{n.body}</div>
+            </div>
+            <button
+              onClick={() => dismissNotif(n.id)}
+              className="p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent shrink-0 text-on-surface-variant"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(110%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
 import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
-import { listarFaltantes, obtenerReputacion } from '../api/faltantes'
+import { listarFaltantes, obtenerReputacion, obtenerSugerencias } from '../api/faltantes'
 import { listarIntercambios } from '../api/intercambios'
 
 import { listarMiAlbum } from '../api/album'
@@ -18,6 +18,7 @@ export default function HomePage() {
   const [intercambiosCount, setIntercambiosCount] = useState('—')
   const [reputacion, setReputacion] = useState('—')
   const [ultimasPublicadas, setUltimasPublicadas] = useState([])
+  const [sugerencias, setSugerencias] = useState([])
 
   useEffect(() => {
     listarMiAlbum()
@@ -35,6 +36,9 @@ export default function HomePage() {
       .catch(() => {})
     buscarPublicaciones()
       .then(data => setUltimasPublicadas(data.slice(-4).reverse()))
+      .catch(() => {})
+    obtenerSugerencias()
+      .then(data => setSugerencias(data.sugerencias || []))
       .catch(() => {})
   }, [])
 
@@ -136,10 +140,24 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <Icon name="auto_awesome" size={28} className="text-primary" />
               <div className="flex-1">
-                <div className="font-semibold text-[14px] text-on-primary-container">Sin sugerencias aún</div>
-                <div className="text-[13px] text-on-primary-container/80">Registrá tus faltantes para recibir sugerencias automáticas</div>
+                {sugerencias.length === 0 ? (
+                  <>
+                    <div className="font-semibold text-[14px] text-on-primary-container">Sin sugerencias aún</div>
+                    <div className="text-[13px] text-on-primary-container/80">Registrá tus faltantes para recibir sugerencias automáticas</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="font-semibold text-[14px] text-on-primary-container">
+                      {sugerencias.length} sugerencia{sugerencias.length > 1 ? 's' : ''} disponible{sugerencias.length > 1 ? 's' : ''}
+                    </div>
+                    <div className="text-[13px] text-on-primary-container/80">
+                      #{sugerencias[0].publicacion.numero} {sugerencias[0].publicacion.jugador} ({sugerencias[0].publicacion.equipo})
+                      {sugerencias.length > 1 ? ` y ${sugerencias.length - 1} más` : ''}
+                    </div>
+                  </>
+                )}
               </div>
-              <Button size="sm" onClick={() => navigate('/intercambios')}>Ver</Button>
+              <Button size="sm" onClick={() => navigate('/intercambios', { state: { tab: 'sugerencias' } })}>Ver</Button>
             </div>
           </Card>
         </div>

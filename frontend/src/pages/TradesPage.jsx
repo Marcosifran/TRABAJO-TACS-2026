@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import Tabs from '../components/ui/Tabs'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
@@ -8,11 +9,14 @@ import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
-import { listarIntercambios, responderIntercambio, calificarIntercambio } from '../api/intercambios'
+import Chip from '../components/ui/Chip'
+import { listarIntercambios, responderIntercambio, calificarIntercambio, proponerIntercambio } from '../api/intercambios'
 import { obtenerSugerencias } from '../api/faltantes'
+import { listarMiAlbum } from '../api/album'
 
 export default function TradesPage() {
-  const [tab, setTab]             = useState('recibidas')
+  const location = useLocation()
+  const [tab, setTab]             = useState(location.state?.tab || 'recibidas')
   const [recibidas, setRecibidas] = useState([])
   const [enviadas, setEnviadas]   = useState([])
   const [sugerencias, setSugerencias] = useState([])
@@ -22,13 +26,19 @@ export default function TradesPage() {
   const [comment, setComment]     = useState('')
   const [snack, setSnack]         = useState({ open: false, message: '', type: 'info' })
 
+  // Estados para el modal de propuesta desde sugerencias
+  const [sugTradeModal, setSugTradeModal]     = useState(null)
+  const [sugAlbum, setSugAlbum]               = useState([])
+  const [sugSelectedOffer, setSugSelectedOffer] = useState([])
+  const [sugSubmitting, setSugSubmitting]     = useState(false)
+
   const fetchIntercambios = useCallback(async () => {
     setLoading(true)
     try {
       const data = await listarIntercambios()
       setRecibidas(data.recibidos || [])
       setEnviadas(data.enviados || [])
-      
+
       const sugsData = await obtenerSugerencias()
       setSugerencias(sugsData.sugerencias || [])
     } catch (e) {
@@ -41,6 +51,14 @@ export default function TradesPage() {
   useEffect(() => {
     fetchIntercambios()
   }, [fetchIntercambios])
+
+  useEffect(() => {
+    if (sugTradeModal) {
+      listarMiAlbum()
+        .then(setSugAlbum)
+        .catch(e => setSnack({ open: true, message: 'Error cargando álbum: ' + e.message, type: 'error' }))
+    }
+  }, [sugTradeModal])
 
   async function handleResponse(id, decision) {
     try {
@@ -66,6 +84,34 @@ export default function TradesPage() {
     } catch (e) {
       setSnack({ open: true, message: 'Error al enviar calificación: ' + e.message, type: 'error' })
     }
+  }
+
+  async function handleSugTrade() {
+    if (sugSelectedOffer.length === 0) {
+      setSnack({ open: true, message: 'Seleccioná al menos una figurita para ofrecer', type: 'error' })
+      return
+    }
+    setSugSubmitting(true)
+    try {
+      await proponerIntercambio({
+        figuritas_ofrecidas_numero: sugSelectedOffer,
+        figurita_solicitada_numero: sugTradeModal.publicacion.numero,
+        solicitado_a_id: sugTradeModal.publicacion.usuario_id,
+      })
+      setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
+      setSugTradeModal(null)
+      setSugSelectedOffer([])
+    } catch (e) {
+      setSnack({ open: true, message: 'Error al enviar propuesta: ' + e.message, type: 'error' })
+    } finally {
+      setSugSubmitting(false)
+    }
+  }
+
+  function toggleSugOffer(numero) {
+    setSugSelectedOffer(prev =>
+      prev.includes(numero) ? prev.filter(n => n !== numero) : [...prev, numero]
+    )
   }
 
   const currentList = tab === 'recibidas' ? recibidas : enviadas
@@ -123,9 +169,12 @@ export default function TradesPage() {
                       <div>
                         <div className="font-semibold">{sug.publicacion.jugador} ({sug.publicacion.equipo})</div>
                         <div className="text-sm text-on-surface-variant">Ofrecida por {sug.ofrecida_por}</div>
+                        <div className="text-xs text-primary font-medium mt-0.5">Cubre tu faltante #{sug.cubre_tu_faltante}</div>
                       </div>
                     </div>
-                    <Button variant="tonal" size="sm" icon="visibility">Ver publicación</Button>
+                    <Button variant="tonal" size="sm" icon="swap_horiz" onClick={() => setSugTradeModal(sug)}>
+                      Proponer intercambio
+                    </Button>
                   </Card>
                 ))}
               </div>
@@ -198,6 +247,61 @@ export default function TradesPage() {
         )}
       </div>
 
+      {/* Modal proponer intercambio desde sugerencia */}
+      <Modal
+        open={!!sugTradeModal}
+        onClose={() => { setSugTradeModal(null); setSugSelectedOffer([]) }}
+        title="Proponer intercambio"
+        width={560}
+      >
+        {sugTradeModal && (
+          <div>
+            <div className="bg-surface-container rounded-xl p-3.5 mb-5 flex items-center gap-3.5">
+              <Icon name="arrow_forward" size={20} className="text-primary" />
+              <div>
+                <div className="text-xs text-on-surface-variant">Querés obtener</div>
+                <div className="font-semibold text-on-surface">
+                  #{sugTradeModal.publicacion.numero} {sugTradeModal.publicacion.jugador} ({sugTradeModal.publicacion.equipo})
+                </div>
+                <div className="text-xs text-on-surface-variant">de {sugTradeModal.ofrecida_por}</div>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-on-surface mb-2.5">Tus figuritas (seleccioná para ofrecer):</div>
+              {sugAlbum.length === 0 ? (
+                <div className="text-sm text-on-surface-variant italic py-2">No tenés figuritas en tu álbum para ofrecer.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-1">
+                  {sugAlbum.map(fig => (
+                    <Chip
+                      key={fig.id}
+                      selected={sugSelectedOffer.includes(fig.numero)}
+                      onClick={() => toggleSugOffer(fig.numero)}
+                    >
+                      #{fig.numero} {fig.jugador || fig.equipo}
+                    </Chip>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2.5 justify-end mt-5">
+              <Button variant="text" onClick={() => { setSugTradeModal(null); setSugSelectedOffer([]) }}>
+                Cancelar
+              </Button>
+              <Button
+                icon={sugSubmitting ? 'progress_activity' : 'send'}
+                onClick={handleSugTrade}
+                disabled={sugSelectedOffer.length === 0 || sugSubmitting}
+              >
+                {sugSubmitting ? 'Enviando...' : 'Enviar propuesta'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Rating Modal */}
       <Modal open={!!ratingModal} onClose={() => setRatingModal(null)} title="Calificar usuario" width={380}>
         {ratingModal && (
@@ -205,7 +309,7 @@ export default function TradesPage() {
             <Avatar name={ratingModal.user} size={56} />
             <div className="font-semibold text-base mt-2.5 text-on-surface">{ratingModal.user}</div>
             <p className="text-on-surface-variant text-sm mt-2 mb-4">¿Cómo fue la experiencia de intercambio?</p>
-            
+
             <div className="flex justify-center mb-4">
               <StarRating value={rating} onChange={setRating} size={36} />
             </div>
