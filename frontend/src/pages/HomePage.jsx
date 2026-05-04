@@ -10,6 +10,7 @@ import { listarFaltantes, obtenerReputacion, obtenerSugerencias } from '../api/f
 import { listarIntercambios } from '../api/intercambios'
 
 import { listarMiAlbum } from '../api/album'
+import WorldCupSchedule from '../sections/WorldCupSchedule'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -162,6 +163,8 @@ export default function HomePage() {
           </Card>
         </div>
       </div>
+
+      <WorldCupSchedule />
     </div>
   )
 }
