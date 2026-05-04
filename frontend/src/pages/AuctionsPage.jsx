@@ -5,8 +5,20 @@ import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
 import EmptyState from "../components/ui/EmptyState";
 import Snackbar from "../components/ui/Snackbar";
-import { listarSubastas, listarMisSubastas, crearSubasta, ofertarSubasta, listarOfertas, listarMisOfertas, cancelarOferta } from "../api/subastas";
-import { listarMisPublicaciones, buscarPublicaciones } from "../api/publicaciones";
+import {
+  listarSubastas,
+  listarMisSubastas,
+  crearSubasta,
+  ofertarSubasta,
+  listarOfertas,
+  listarMisOfertas,
+  cancelarOferta,
+  aceptarOferta,
+} from "../api/subastas";
+import {
+  listarMisPublicaciones,
+  buscarPublicaciones,
+} from "../api/publicaciones";
 import { listarMiAlbum } from "../api/album";
 import { useUser } from "../context/UserContext";
 import SubastaCardRow from "../components/SubastaCardRow";
@@ -14,7 +26,7 @@ import SubastaCardRow from "../components/SubastaCardRow";
 const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
-  const { user, users } = useUser()
+  const { user, users } = useUser();
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -53,8 +65,10 @@ export default function AuctionsPage() {
       setMisSubastas(misSubs.subastas || []);
       setMisPublicaciones(pubs.filter((p) => p.tipo_intercambio === "subasta"));
       setMiAlbum(album);
-      const map = {}
-      ;[...pubs, ...otrasPubs].forEach(p => { map[p.id] = p })
+      const map = {};
+      [...pubs, ...otrasPubs].forEach((p) => {
+        map[p.id] = p;
+      });
       setPubsMap(map);
     } catch (error) {
       setSnack({
@@ -107,38 +121,38 @@ export default function AuctionsPage() {
   }
 
   async function cargarMisOfertas() {
-    setLoadingMisOfertas(true)
+    setLoadingMisOfertas(true);
     try {
-      const data = await listarMisOfertas()
-      setMisOfertas(data.ofertas || [])
+      const data = await listarMisOfertas();
+      setMisOfertas(data.ofertas || []);
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: 'error' })
+      setSnack({ open: true, message: e.message, type: "error" });
     } finally {
-      setLoadingMisOfertas(false)
+      setLoadingMisOfertas(false);
     }
   }
 
   async function handleCancelarOferta(oferta) {
     try {
-      await cancelarOferta(oferta.subasta_id, oferta.id)
-      setMisOfertas(prev => prev.filter(o => o.id !== oferta.id))
-      setSnack({ open: true, message: 'Oferta cancelada', type: 'info' })
+      await cancelarOferta(oferta.subasta_id, oferta.id);
+      setMisOfertas((prev) => prev.filter((o) => o.id !== oferta.id));
+      setSnack({ open: true, message: "Oferta cancelada", type: "info" });
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: 'error' })
+      setSnack({ open: true, message: e.message, type: "error" });
     }
   }
 
   async function abrirOfertas(sub) {
-    setOffersModal(sub)
-    setOfertas([])
-    setLoadingOfertas(true)
+    setOffersModal(sub);
+    setOfertas([]);
+    setLoadingOfertas(true);
     try {
-      const data = await listarOfertas(sub.id)
-      setOfertas(data.ofertas || [])
+      const data = await listarOfertas(sub.id);
+      setOfertas(data.ofertas || []);
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: 'error' })
+      setSnack({ open: true, message: e.message, type: "error" });
     } finally {
-      setLoadingOfertas(false)
+      setLoadingOfertas(false);
     }
   }
 
@@ -177,6 +191,44 @@ export default function AuctionsPage() {
     }
   }
 
+  async function handleAceptarOferta(ofertaId) {
+    setLoading(true);
+    try {
+      await aceptarOferta(offersModal.id, ofertaId);
+
+      setSnack({
+        open: true,
+        message: "Oferta aceptada",
+        type: "success",
+      });
+      setOffersModal(null);
+      cargarDatos();
+    } catch (error) {
+      setSnack({ open: true, message: error.message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAceptarOferta(ofertaId) {
+    setLoading(true);
+    try {
+      await aceptarOferta(offersModal.id, ofertaId);
+
+      setSnack({
+        open: true,
+        message: "Oferta aceptada",
+        type: "success",
+      });
+      setOffersModal(null);
+      cargarDatos();
+    } catch (error) {
+      setSnack({ open: true, message: error.message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Preparamos las opciones para el select (solo publicaciones tipo subasta)
   const opcionesSubasta = misPublicaciones.map((p) => ({
     value: p.id,
@@ -205,14 +257,19 @@ export default function AuctionsPage() {
           { id: "ofertas", label: "Mis ofertas" },
         ]}
         active={tab}
-        onChange={t => { setTab(t); if (t === 'ofertas') cargarMisOfertas() }}
+        onChange={(t) => {
+          setTab(t);
+          if (t === "ofertas") cargarMisOfertas();
+        }}
       />
 
       <div className="mt-5">
-        {tab === 'ofertas' ? (
+        {tab === "ofertas" ? (
           loadingMisOfertas ? (
             <div className="flex items-center justify-center gap-3 py-16 text-on-surface-variant">
-              <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+              <span className="material-symbols-outlined animate-spin text-2xl">
+                progress_activity
+              </span>
               Cargando...
             </div>
           ) : misOfertas.length === 0 ? (
@@ -223,31 +280,37 @@ export default function AuctionsPage() {
             />
           ) : (
             <div className="flex flex-col gap-3">
-              {misOfertas.map(oferta => (
+              {misOfertas.map((oferta) => (
                 <div
                   key={oferta.id}
                   className="p-5 bg-surface rounded-2xl border border-outline-variant shadow-sm flex justify-between items-start"
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="font-bold text-primary text-base">Subasta #{oferta.subasta_id}</span>
+                    <span className="font-bold text-primary text-base">
+                      Subasta #{oferta.subasta_id}
+                    </span>
                     <span className="text-sm text-on-surface-variant">
-                      Figurita subastada:{' '}
+                      Figurita subastada:{" "}
                       {oferta.figurita_subastada
                         ? `${oferta.figurita_subastada.jugador} (${oferta.figurita_subastada.equipo})`
                         : `#${oferta.subasta_id}`}
                     </span>
                     <span className="text-sm text-on-surface-variant">
-                      Ofreciste:{' '}
+                      Ofreciste:{" "}
                       {(oferta.ofrecidas_detalle?.length
-                        ? oferta.ofrecidas_detalle.map(f => `${f.jugador} (${f.equipo})`)
-                        : oferta.ofrecidas.map(id => `#${id}`)
-                      ).join(', ')}
+                        ? oferta.ofrecidas_detalle.map(
+                            (f) => `${f.jugador} (${f.equipo})`,
+                          )
+                        : oferta.ofrecidas.map((id) => `#${id}`)
+                      ).join(", ")}
                     </span>
-                    <span className={`text-xs font-medium mt-0.5 ${oferta.subasta?.estado === 'activa' ? 'text-green-600' : 'text-error'}`}>
-                      Subasta {oferta.subasta?.estado ?? '—'}
+                    <span
+                      className={`text-xs font-medium mt-0.5 ${oferta.subasta?.estado === "activa" ? "text-green-600" : "text-error"}`}
+                    >
+                      Subasta {oferta.subasta?.estado ?? "—"}
                     </span>
                   </div>
-                  {oferta.subasta?.estado === 'activa' && (
+                  {oferta.subasta?.estado === "activa" && (
                     <Button
                       variant="outlined"
                       icon="cancel"
@@ -260,24 +323,31 @@ export default function AuctionsPage() {
               ))}
             </div>
           )
-        ) : (tab === 'activas' ? subastas : misSubastas).length === 0 ? (
+        ) : (tab === "activas" ? subastas : misSubastas).length === 0 ? (
           <EmptyState
             icon="gavel"
             title="Sin subastas"
-            subtitle={tab === 'activas' ? "No hay subastas en este momento." : "No creaste ninguna subasta aún."}
+            subtitle={
+              tab === "activas"
+                ? "No hay subastas en este momento."
+                : "No creaste ninguna subasta aún."
+            }
             action="Iniciar subasta"
             onAction={() => setCreate(true)}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(tab === 'activas' ? subastas : misSubastas).map((sub) => (
+            {(tab === "activas" ? subastas : misSubastas).map((sub) => (
               <SubastaCardRow
                 key={sub.id}
                 sub={sub}
                 pubsMap={pubsMap}
                 user={user}
                 users={users}
-                onOfertar={(s) => { setBidModal(s); setOfferIds([]) }}
+                onOfertar={(s) => {
+                  setBidModal(s);
+                  setOfferIds([]);
+                }}
                 onVerOfertas={abrirOfertas}
               />
             ))}
@@ -415,7 +485,9 @@ export default function AuctionsPage() {
           <div className="flex flex-col gap-3">
             {loadingOfertas ? (
               <div className="flex items-center justify-center gap-3 py-8 text-on-surface-variant">
-                <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+                <span className="material-symbols-outlined animate-spin text-2xl">
+                  progress_activity
+                </span>
                 Cargando...
               </div>
             ) : ofertas.length === 0 ? (
@@ -430,22 +502,41 @@ export default function AuctionsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm text-on-surface">
-                      {users[oferta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.usuario_id}`}
+                      {users[oferta.usuario_id - 1]?.nombre ??
+                        `Usuario ${oferta.usuario_id}`}
                     </span>
-                    <span className="text-xs text-on-surface-variant">Oferta #{oferta.id}</span>
+                    <span className="text-xs text-on-surface-variant">
+                      Oferta #{oferta.id}
+                    </span>
                   </div>
                   <div className="text-xs text-on-surface-variant">
-                    Figuritas ofrecidas:{' '}
+                    Figuritas ofrecidas:{" "}
                     {(oferta.ofrecidas_detalle?.length
-                      ? oferta.ofrecidas_detalle.map(f => `${f.jugador} (${f.equipo})`)
-                      : oferta.ofrecidas.map(id => `#${id}`)
-                    ).join(', ')}
+                      ? oferta.ofrecidas_detalle.map(
+                          (f) => `${f.jugador} (${f.equipo})`,
+                        )
+                      : oferta.ofrecidas.map((id) => `#${id}`)
+                    ).join(", ")}
                   </div>
+
+                  {}
+                  <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
+                    <Button
+                      icon="check_circle"
+                      onClick={() => handleAceptarOferta(oferta.id)}
+                      disabled={loading}
+                    >
+                      {loading ? "Aceptando..." : "Aceptar oferta"}
+                    </Button>
+                  </div>
+                  {}
                 </div>
               ))
             )}
             <div className="flex justify-end mt-2">
-              <Button variant="text" onClick={() => setOffersModal(null)}>Cerrar</Button>
+              <Button variant="text" onClick={() => setOffersModal(null)}>
+                Cerrar
+              </Button>
             </div>
           </div>
         )}

@@ -25,8 +25,10 @@ def listar_subastas():
         201: {"description": "Subasta creada exitosamente"},
         400: {"description": "Figurita inexistente / no es del usuario / no configurada para subasta / ya en subasta"},
         401: {"description": "Token ausente o inválido"},
+        404: {"description": "Subasta u oferta no encontrada"},
     },
 )
+
 def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_current_user)):
     """
     Permite a un usuario poner una de sus figuritas en subasta.
@@ -36,6 +38,24 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"mensaje": "Subasta creada exitosamente", "subasta": nueva_subasta}
+
+@router.post(
+    "/{subasta_id}/ofertas/{oferta_id}/aceptar",
+    status_code=200,
+)
+def aceptar_oferta(subasta_id: int, oferta_id: int, usuario: dict = Depends(get_current_user)):
+    """
+    Permite al dueño de una subasta aceptar una oferta.
+    """
+    try:
+        resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
+        return {"mensaje": "Oferta aceptada", "resultado":resultado}
+    except ValueError as e:
+        detail = str(e)
+        if "no encontrada" in detail.lower() or "no existe" in detail.lower():
+            raise HTTPException(status_code=404, detail = detail)
+        raise HTTPException(status_code=400, detail = detail)
+        
 
 @router.get(
     "/{subasta_id}/ofertas",
@@ -91,6 +111,8 @@ def cancelar_oferta(
         404: {"description": "Subasta o figuritas ofrecidas no encontradas"},
     },
 )
+
+
 def ofertar_en_subasta(
     subasta_id: int,
     oferta: OfertaCreate,
@@ -107,3 +129,5 @@ def ofertar_en_subasta(
         raise HTTPException(status_code=400, detail=str(e))
         
     return resultado
+
+

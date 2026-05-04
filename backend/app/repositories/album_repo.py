@@ -66,3 +66,14 @@ def get_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
         None,
     )
 
+def update(figurita_actualizada: dict) -> dict:
+    """
+    busca la figurita por id y actualiza los datos en la bd
+    """
+
+    for i, fig in enumerate(_db):
+        if fig["id"] == figurita_actualizada["id"]:
+            _db[i] = figurita_actualizada
+            return _db[i]
+    raise ValueError("No se pudo actualizar. Figurita no encontrada")
+

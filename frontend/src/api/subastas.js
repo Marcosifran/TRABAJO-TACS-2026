@@ -44,3 +44,9 @@ export function listarMisOfertas() {
 export function cancelarOferta(subastaId, ofertaId) {
     return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}`, { method: 'DELETE' })
 }
+
+export function aceptarOferta(subastaId, ofertaId){
+    return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}/aceptar`,{
+        method: 'POST'
+    })
+}

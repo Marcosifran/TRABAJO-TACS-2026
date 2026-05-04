@@ -26,3 +26,13 @@ def get_by_figurita(figurita_id: int) -> dict | None:
 
 def get_by_usuario(usuario_id: int) -> list[dict]:
     return [u for u in _db_subastas if u["usuario_id"] == usuario_id and u["estado"] == "activa"]
+
+def update(subasta_actualizada: dict) -> dict:
+    global _db_subastas
+
+    for i, sub in enumerate(_db_subastas):
+        if sub["id"] == subasta_actualizada["id"]:
+            _db_subastas[i] = subasta_actualizada
+            return _db_subastas[i]
+
+    raise ValueError(f"No se encontro la subasta de id {subasta_actualizada['id']}")

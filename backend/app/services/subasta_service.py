@@ -136,3 +136,55 @@ def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
         raise ValueError("Solo podés cancelar ofertas de subastas activas")
     oferta_repo.delete(oferta_id)
     return "Oferta cancelada"
+
+def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
+    """
+    aceptar oferta en una subasta
+    """
+    subasta = subasta_repo.get_by_id(subasta_id)
+    if not subasta:
+        raise ValueError("Subasta no encontrada")
+    
+    if subasta["usuario_id"] != usuario_id:
+        raise PermissionError("No podés aceptar una oferta que no es tuya")
+
+    if subasta.get("estado") != "activa":
+        raise ValueError("La subasta no esta activa")
+    
+    oferta = oferta_repo.get_by_id(oferta_id)
+    if not oferta:
+        raise ValueError("Oferta no encontrada")
+
+    if oferta["subasta_id"] != subasta_id:
+        raise ValueError("La oferta no pertenece a esta subasta")
+
+    ofertante_id = oferta["usuario_id"]
+    figurita_subastada_id = subasta["figurita_id"]
+    figuritas_ofrecidas_ids = oferta["ofrecidas"]
+
+    publicacion = publicacion_repo.get_by_id(figurita_subastada_id)
+    if not publicacion:
+        raise ValueError("Publicacion no encontrada")
+    
+    figurita_album = album_repo.get_by_id(publicacion["figurita_personal_id"])
+    if figurita_album:
+        figurita_album["usuario_id"] = ofertante_id
+        album_repo.update(figurita_album)
+
+    for fig_id in figuritas_ofrecidas_ids:
+        fig_ofrecida = album_repo.get_by_id(fig_id)
+        if fig_ofrecida:
+            fig_ofrecida["usuario_id"] = usuario_id
+            album_repo.update(fig_ofrecida)
+
+    subasta["estado"] = "finalizada"
+    subasta_repo.update(subasta)
+
+    publicacion_repo.delete(figurita_subastada_id)
+
+    return{
+        "mensaje": "oferta aceptada y figurtias intercambiadas",
+        "subasta_id": subasta_id,
+        "ganador_id": ofertante_id
+    }
+    
