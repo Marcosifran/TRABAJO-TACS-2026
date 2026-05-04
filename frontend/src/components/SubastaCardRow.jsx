@@ -13,13 +13,16 @@ export default function SubastaCardRow({
 }) {
   const currentUserId = users.indexOf(user) + 1
   const isOwner = sub.usuario_id === currentUserId
-  const [cierre, setCierre] = useState(() => lineaCierraEn(sub.fin))
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    setCierre(lineaCierraEn(sub.fin))
-    const id = setInterval(() => setCierre(lineaCierraEn(sub.fin)), 60000)
+    const id = setInterval(() => setNow(Date.now()), 60000)
     return () => clearInterval(id)
-  }, [sub.fin])
+  }, [])
+
+  const finMs    = sub.fin ? new Date(sub.fin).getTime() : 0
+  const activa   = sub.estado === 'activa' && finMs > now
+  const cierre   = lineaCierraEn(sub.fin)
 
   return (
     <div className="p-5 bg-surface rounded-2xl border border-outline-variant flex justify-between items-center shadow-sm">
@@ -41,12 +44,12 @@ export default function SubastaCardRow({
             </>
           )}
           Estado:{' '}
-          <span className={`capitalize font-medium ${sub.estado === 'activa' ? 'text-green-600' : 'text-error'}`}>
-            {sub.estado}
+          <span className={`capitalize font-medium ${activa ? 'text-green-600' : 'text-error'}`}>
+            {activa ? 'activa' : 'finalizada'}
           </span>
         </p>
       </div>
-      {!isOwner ? (
+      {!isOwner && activa ? (
         <Button
           variant="tonal"
           icon="gavel"

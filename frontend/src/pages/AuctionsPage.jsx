@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Button from "../components/ui/Button";
 import Tabs from "../components/ui/Tabs";
 import Modal from "../components/ui/Modal";
@@ -15,6 +15,7 @@ const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
   const { user, users } = useUser()
+  const [now, setNow] = useState(() => Date.now())
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -67,6 +68,8 @@ export default function AuctionsPage() {
 
   useEffect(() => {
     cargarDatos();
+    const tick = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(tick)
   }, []);
 
   async function handleCreate() {
@@ -243,11 +246,17 @@ export default function AuctionsPage() {
                         : oferta.ofrecidas.map(id => `#${id}`)
                       ).join(', ')}
                     </span>
-                    <span className={`text-xs font-medium mt-0.5 ${oferta.subasta?.estado === 'activa' ? 'text-green-600' : 'text-error'}`}>
-                      Subasta {oferta.subasta?.estado ?? '—'}
-                    </span>
+                    {(() => {
+                      const finMs = oferta.subasta?.fin ? new Date(oferta.subasta.fin).getTime() : 0
+                      const activa = oferta.subasta?.estado === 'activa' && finMs > now
+                      return (
+                        <span className={`text-xs font-medium mt-0.5 ${activa ? 'text-green-600' : 'text-error'}`}>
+                          Subasta {activa ? 'activa' : 'finalizada'}
+                        </span>
+                      )
+                    })()}
                   </div>
-                  {oferta.subasta?.estado === 'activa' && (
+                  {oferta.subasta?.estado === 'activa' && new Date(oferta.subasta?.fin).getTime() > now && (
                     <Button
                       variant="outlined"
                       icon="cancel"
