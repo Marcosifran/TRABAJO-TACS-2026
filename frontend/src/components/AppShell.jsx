@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useUser } from '../context/UserContext'
 import { obtenerSugerencias } from '../api/faltantes'
 import { listarSubastas } from '../api/subastas'
+import { formatTiempoRestante } from '../utils/auctionTime'
 
 const NAV = [
   { to: '/',             icon: 'dashboard',            label: 'Inicio' },
@@ -86,9 +87,7 @@ export default function AppShell({ children }) {
         porVencer.forEach(s => {
           if (seenAuctIds.current.has(s.id)) return
           seenAuctIds.current.add(s.id)
-          const horas = Math.floor((new Date(s.fin) - ahora) / 3600000)
-          const mins  = Math.floor(((new Date(s.fin) - ahora) % 3600000) / 60000)
-          const tiempo = horas > 0 ? `${horas}h ${mins}m` : `${mins}m`
+          const tiempo = formatTiempoRestante(s.fin)
           pushNotif(
             `auct-${s.id}`,
             'gavel',

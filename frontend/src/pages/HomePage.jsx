@@ -4,22 +4,39 @@ import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
+import Modal from '../components/ui/Modal'
+import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
+import SubastaCardRow from '../components/SubastaCardRow'
 import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
 import { listarFaltantes, obtenerReputacion, obtenerSugerencias } from '../api/faltantes'
 import { listarIntercambios } from '../api/intercambios'
-
 import { listarMiAlbum } from '../api/album'
+import { listarSubastas, ofertarSubasta } from '../api/subastas'
 import WorldCupSchedule from '../sections/WorldCupSchedule'
+import { useUser } from '../context/UserContext'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { user, users } = useUser()
   const [figuritasCount, setFiguritasCount] = useState('—')
   const [faltanCount, setFaltanCount] = useState('—')
   const [intercambiosCount, setIntercambiosCount] = useState('—')
   const [reputacion, setReputacion] = useState('—')
   const [ultimasPublicadas, setUltimasPublicadas] = useState([])
   const [sugerencias, setSugerencias] = useState([])
+  const [subastasPorFinalizar, setSubastasPorFinalizar] = useState([])
+  const [pubsMap, setPubsMap] = useState({})
+
+  const [bidModal, setBidModal] = useState(null)
+  const [offerIds, setOfferIds] = useState([])
+  const [miAlbum, setMiAlbum] = useState([])
+  const [loadingOferta, setLoadingOferta] = useState(false)
+  const [snack, setSnack] = useState({
+    open: false,
+    message: '',
+    type: 'info',
+  })
 
   useEffect(() => {
     listarMiAlbum()
@@ -42,6 +59,69 @@ export default function HomePage() {
       .then(data => setSugerencias(data.sugerencias || []))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadSubastasYAlbum() {
+      try {
+        const [subs, pubs, otrasPubs, album] = await Promise.all([
+          listarSubastas(),
+          listarMisPublicaciones(),
+          buscarPublicaciones(),
+          listarMiAlbum(),
+        ])
+        if (cancelled) return
+        const map = {}
+        ;[...pubs, ...otrasPubs].forEach(p => { map[p.id] = p })
+        setPubsMap(map)
+        setMiAlbum(album)
+        const ahora = Date.now()
+        const list = (subs.subastas || [])
+          .filter(s => s.estado === 'activa' && new Date(s.fin) > ahora)
+          .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+          .slice(0, 4)
+        setSubastasPorFinalizar(list)
+      } catch {
+        /* ignorar */
+      }
+    }
+    loadSubastasYAlbum()
+    return () => { cancelled = true }
+  }, [])
+
+  function toggleOferta(id) {
+    setOfferIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((offerId) => offerId !== id)
+        : [...prev, id],
+    )
+  }
+
+  async function handleOfertar() {
+    if (offerIds.length === 0) {
+      setSnack({
+        open: true,
+        message: 'Seleccioná al menos una figurita',
+        type: 'error',
+      })
+      return
+    }
+    setLoadingOferta(true)
+    try {
+      await ofertarSubasta(bidModal.id, offerIds)
+      setSnack({
+        open: true,
+        message: 'Oferta enviada con éxito',
+        type: 'success',
+      })
+      setBidModal(null)
+      setOfferIds([])
+    } catch (error) {
+      setSnack({ open: true, message: error.message, type: 'error' })
+    } finally {
+      setLoadingOferta(false)
+    }
+  }
 
   const STATS = [
     { icon: 'collections_bookmark', label: 'Figuritas',   value: figuritasCount, colorVar: 'var(--color-primary)' },
@@ -118,19 +198,33 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Subastas y Sugerencias */}
         <div>
           <div className="flex justify-between items-center mb-3.5">
             <h2 className="text-lg font-semibold m-0">Subastas por finalizar</h2>
             <Button variant="text" size="sm" onClick={() => navigate('/subastas')}>Ver todas</Button>
           </div>
-          <EmptyState
-            icon="gavel"
-            title="Sin subastas activas"
-            subtitle="No hay subastas próximas a finalizar"
-          />
+          {subastasPorFinalizar.length === 0 ? (
+            <EmptyState
+              icon="gavel"
+              title="Sin subastas activas"
+              subtitle="No hay subastas próximas a finalizar"
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {subastasPorFinalizar.map(sub => (
+                <SubastaCardRow
+                  key={sub.id}
+                  sub={sub}
+                  pubsMap={pubsMap}
+                  user={user}
+                  users={users}
+                  onOfertar={(s) => { setBidModal(s); setOfferIds([]) }}
+                  showVerOfertasButton={false}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Sugerencias */}
           <h2 className="text-lg font-semibold mt-6 mb-3.5">Sugerencias para vos</h2>
           <Card
             style={{
@@ -163,6 +257,72 @@ export default function HomePage() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        open={!!bidModal}
+        onClose={() => setBidModal(null)}
+        title={`Ofertar en Subasta #${bidModal?.id}`}
+        width={520}
+      >
+        {bidModal && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-on-surface-variant">
+              Seleccioná las figuritas de tu álbum que querés ofrecer a cambio:
+            </p>
+
+            {miAlbum.length === 0 ? (
+              <div className="p-4 bg-error-container text-on-error-container rounded-lg text-sm">
+                No tenés figuritas en tu álbum personal para ofrecer. Agregá
+                figuritas desde Mi Colección.
+              </div>
+            ) : (
+              <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
+                {miAlbum.map((fig) => (
+                  <label
+                    key={fig.id}
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-primary"
+                      checked={offerIds.includes(fig.id)}
+                      onChange={() => toggleOferta(fig.id)}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{fig.jugador}</span>
+                      <span className="text-xs text-on-surface-variant">
+                        #{fig.numero} - {fig.equipo}
+                      </span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-outline-variant">
+              <Button
+                variant="text"
+                onClick={() => setBidModal(null)}
+                disabled={loadingOferta}
+              >
+                Cancelar
+              </Button>
+              <Button
+                icon="gavel"
+                onClick={handleOfertar}
+                disabled={loadingOferta || offerIds.length === 0}
+              >
+                {loadingOferta ? 'Enviando...' : `Enviar oferta (${offerIds.length})`}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Snackbar
+        {...snack}
+        onClose={() => setSnack({ ...snack, open: false })}
+      />
 
       <WorldCupSchedule />
     </div>

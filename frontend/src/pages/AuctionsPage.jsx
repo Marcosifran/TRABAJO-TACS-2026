@@ -9,6 +9,7 @@ import { listarSubastas, listarMisSubastas, crearSubasta, ofertarSubasta, listar
 import { listarMisPublicaciones, buscarPublicaciones } from "../api/publicaciones";
 import { listarMiAlbum } from "../api/album";
 import { useUser } from "../context/UserContext";
+import SubastaCardRow from "../components/SubastaCardRow";
 
 const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
@@ -270,43 +271,15 @@ export default function AuctionsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(tab === 'activas' ? subastas : misSubastas).map((sub) => (
-              <div
+              <SubastaCardRow
                 key={sub.id}
-                className="p-5 bg-surface rounded-2xl border border-outline-variant flex justify-between items-center shadow-sm"
-              >
-                <div>
-                  <h3 className="font-bold text-lg text-primary">
-                    Subasta #{sub.id}
-                  </h3>
-                  <p className="text-on-surface-variant text-sm mt-1">
-                    Figurita: {pubsMap[sub.figurita_id]
-                      ? `${pubsMap[sub.figurita_id].jugador} (${pubsMap[sub.figurita_id].equipo})`
-                      : `#${sub.figurita_id}`} <br />
-                    Propietario: {users[sub.usuario_id - 1]?.nombre ?? `Usuario ${sub.usuario_id}`} <br />
-                    Estado:{" "}
-                    <span className={`capitalize font-medium ${sub.estado === 'activa' ? 'text-green-600' : 'text-error'}`}>
-                      {sub.estado}
-                    </span>
-                  </p>
-                </div>
-                {sub.usuario_id !== (users.indexOf(user) + 1) ? (
-                  <Button
-                    variant="tonal"
-                    icon="gavel"
-                    onClick={() => { setBidModal(sub); setOfferIds([]) }}
-                  >
-                    Ofertar
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    icon="format_list_bulleted"
-                    onClick={() => abrirOfertas(sub)}
-                  >
-                    Ver ofertas
-                  </Button>
-                )}
-              </div>
+                sub={sub}
+                pubsMap={pubsMap}
+                user={user}
+                users={users}
+                onOfertar={(s) => { setBidModal(s); setOfferIds([]) }}
+                onVerOfertas={abrirOfertas}
+              />
             ))}
           </div>
         )}
