@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useUser } from '../context/UserContext'
 import { obtenerSugerencias } from '../api/faltantes'
 import { listarSubastas } from '../api/subastas'
+import { listarIntercambios } from '../api/intercambios'
 import { formatTiempoRestante } from '../utils/auctionTime'
 
 const NAV = [
@@ -30,6 +31,7 @@ export default function AppShell({ children }) {
   const [notifs, setNotifs] = useState([])
   const seenSugIds   = useRef(null)
   const seenAuctIds  = useRef(null)
+  const seenTradeIds = useRef(null)
   const timerRefs    = useRef({})
 
   function pushNotif(id, icon, title, body) {
@@ -70,6 +72,34 @@ export default function AppShell({ children }) {
     }
     pollSugs()
     const t = setInterval(pollSugs, POLL_INTERVAL)
+    return () => clearInterval(t)
+  }, [user])
+
+  // Poll propuestas de intercambio recibidas
+  useEffect(() => {
+    seenTradeIds.current = null
+    async function pollTrades() {
+      try {
+        const data = await listarIntercambios()
+        const pendientes = (data.recibidos || []).filter(i => i.estado === 'pendiente')
+        const ids = new Set(pendientes.map(i => i.id))
+        if (seenTradeIds.current === null) { seenTradeIds.current = ids; return }
+        const nuevas = pendientes.filter(i => !seenTradeIds.current.has(i.id))
+        if (nuevas.length > 0) {
+          const t = nuevas[0]
+          const ofertante = users[t.propuesto_por - 1]?.nombre ?? `Usuario ${t.propuesto_por}`
+          pushNotif(
+            `trade-${t.id}`,
+            'swap_horiz',
+            '¡Nueva propuesta de intercambio!',
+            `${ofertante} quiere la figurita #${t.figurita_solicitada}`
+          )
+          seenTradeIds.current = ids
+        }
+      } catch { /* ignorar */ }
+    }
+    pollTrades()
+    const t = setInterval(pollTrades, POLL_INTERVAL)
     return () => clearInterval(t)
   }, [user])
 

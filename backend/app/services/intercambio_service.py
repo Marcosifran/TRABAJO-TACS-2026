@@ -162,16 +162,22 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
             fig_prop["cantidad"] -= 1
             if fig_prop["cantidad"] <= 0:
                 album_repo.delete(fig_prop["id"])
+                
+                # Limpiar todas las publicaciones asociadas si se quedó sin stock
+                pubs_a_borrar = [p for p in publicacion_repo.get_all() 
+                                 if p["numero"] == numero and p["usuario_id"] == intercambio["propuesto_por"]]
+                for p in pubs_a_borrar:
+                    publicacion_repo.delete(p["id"])
+            else:
+                # Restar de publicaciones del proponente (si existía una para este número)
+                pub_prop = next((p for p in publicacion_repo.get_all() 
+                                 if p["numero"] == numero and p["usuario_id"] == intercambio["propuesto_por"]), None)
+                if pub_prop:
+                    pub_prop["cantidad_disponible"] -= 1
+                    if pub_prop["cantidad_disponible"] <= 0:
+                        publicacion_repo.delete(pub_prop["id"])
         else:
             equipo, jugador = "Desconocido", "Desconocido"
-
-        # Restar de publicaciones del proponente (si existía una para este número)
-        pub_prop = next((p for p in publicacion_repo.get_all() 
-                        if p["numero"] == numero and p["usuario_id"] == intercambio["propuesto_por"]), None)
-        if pub_prop:
-            pub_prop["cantidad_disponible"] -= 1
-            if pub_prop["cantidad_disponible"] <= 0:
-                publicacion_repo.delete(pub_prop["id"])
 
         # Sumar al álbum del receptor (solicitado_a)
         fig_rec = album_repo.get_por_numero_y_usuario(numero, intercambio["solicitado_a"])
@@ -196,16 +202,22 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
         fig_sol["cantidad"] -= 1
         if fig_sol["cantidad"] <= 0:
             album_repo.delete(fig_sol["id"])
+            
+            # Limpiar todas las publicaciones asociadas si se quedó sin stock
+            pubs_a_borrar = [p for p in publicacion_repo.get_all() 
+                             if p["numero"] == num_solicitado and p["usuario_id"] == intercambio["solicitado_a"]]
+            for p in pubs_a_borrar:
+                publicacion_repo.delete(p["id"])
+        else:
+            # Restar de publicaciones del receptor
+            pub_sol = next((p for p in publicacion_repo.get_all() 
+                           if p["numero"] == num_solicitado and p["usuario_id"] == intercambio["solicitado_a"]), None)
+            if pub_sol:
+                pub_sol["cantidad_disponible"] -= 1
+                if pub_sol["cantidad_disponible"] <= 0:
+                    publicacion_repo.delete(pub_sol["id"])
     else:
         equipo_sol, jugador_sol = "Desconocido", "Desconocido"
-
-    # Restar de publicaciones del receptor
-    pub_sol = next((p for p in publicacion_repo.get_all() 
-                   if p["numero"] == num_solicitado and p["usuario_id"] == intercambio["solicitado_a"]), None)
-    if pub_sol:
-        pub_sol["cantidad_disponible"] -= 1
-        if pub_sol["cantidad_disponible"] <= 0:
-            publicacion_repo.delete(pub_sol["id"])
 
     # Sumar al álbum del proponente
     fig_prop_rec = album_repo.get_por_numero_y_usuario(num_solicitado, intercambio["propuesto_por"])
@@ -219,7 +231,6 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
 
     # Remover de faltantes del proponente
     usuario_repo.remove_faltante(intercambio["propuesto_por"], num_solicitado)
-
 
 def responder_intercambio(
     intercambio_id: int,

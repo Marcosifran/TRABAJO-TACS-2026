@@ -25,7 +25,7 @@ def get_by_figurita(figurita_id: int) -> dict | None:
     return next((s for s in _db_subastas if s["figurita_id"] == figurita_id and s["estado"] == "activa"), None)
 
 def get_by_usuario(usuario_id: int) -> list[dict]:
-    return [u for u in _db_subastas if u["usuario_id"] == usuario_id and u["estado"] == "activa"]
+    return [u for u in _db_subastas if u["usuario_id"] == usuario_id]
 
 def update(subasta_actualizada: dict) -> dict:
     global _db_subastas

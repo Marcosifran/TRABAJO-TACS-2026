@@ -1,7 +1,23 @@
+import datetime as dt
 from fastapi import HTTPException
 from app.repositories import subasta_repo, publicacion_repo, oferta_repo, album_repo
 from app.schemas.subasta import SubastaCreate
 from app.schemas.oferta import OfertaCreate
+
+
+def _esta_activa(subasta: dict) -> bool:
+    """Verifica en tiempo real si la subasta está dentro del rango activo."""
+    if subasta.get("estado") != "activa":
+        return False
+    ahora = dt.datetime.now(dt.timezone.utc)
+    fin = subasta.get("fin")
+    if fin is None:
+        return False
+    if isinstance(fin, str):
+        fin = dt.datetime.fromisoformat(fin)
+    if fin.tzinfo is None:
+        fin = fin.replace(tzinfo=dt.timezone.utc)
+    return ahora <= fin
 
 
 def crear_subasta(subasta_data: SubastaCreate, usuario_id: int) -> dict:
@@ -65,8 +81,8 @@ def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict
     if not subasta:
         raise ValueError("Subasta inexistente")
 
-    if subasta["estado"] != "activa":
-        raise ValueError("La subasta no está activa")
+    if not _esta_activa(subasta):
+        raise ValueError("La subasta no está activa o ya finalizó")
 
     if subasta["usuario_id"] == usuario_id:
         raise ValueError("No podés ofertar en tu propia subasta")
@@ -124,7 +140,6 @@ def listar_mis_ofertas(usuario_id: int) -> list[dict]:
         result.append(enriquecida)
     return result
 
-
 def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
     oferta = oferta_repo.get_by_id(oferta_id)
     if not oferta:
@@ -132,14 +147,14 @@ def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
     if oferta["usuario_id"] != usuario_id:
         raise PermissionError("No podés cancelar una oferta que no es tuya")
     subasta = subasta_repo.get_by_id(oferta["subasta_id"])
-    if not subasta or subasta["estado"] != "activa":
+    if not subasta or not _esta_activa(subasta):
         raise ValueError("Solo podés cancelar ofertas de subastas activas")
     oferta_repo.delete(oferta_id)
     return "Oferta cancelada"
 
 def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
     """
-    aceptar oferta en una subasta
+    Aceptar oferta en una subasta y limpiar publicaciones huérfanas
     """
     subasta = subasta_repo.get_by_id(subasta_id)
     if not subasta:
@@ -149,7 +164,7 @@ def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
         raise PermissionError("No podés aceptar una oferta que no es tuya")
 
     if subasta.get("estado") != "activa":
-        raise ValueError("La subasta no esta activa")
+        raise ValueError("La subasta no está activa")
     
     oferta = oferta_repo.get_by_id(oferta_id)
     if not oferta:
@@ -166,24 +181,33 @@ def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
     if not publicacion:
         raise ValueError("Publicacion no encontrada")
     
+    # transferir la figurita subastada al ofertante (ganador)
     figurita_album = album_repo.get_by_id(publicacion["figurita_personal_id"])
     if figurita_album:
         figurita_album["usuario_id"] = ofertante_id
         album_repo.update(figurita_album)
 
+    # transferir las figuritas ofrecidas al creador Y limpiar publicaciones
     for fig_id in figuritas_ofrecidas_ids:
         fig_ofrecida = album_repo.get_by_id(fig_id)
         if fig_ofrecida:
+            # Cambiamos el dueño en el álbum
             fig_ofrecida["usuario_id"] = usuario_id
             album_repo.update(fig_ofrecida)
+        
+            pub_fantasma = publicacion_repo.get_by_figurita_personal(fig_id)
+            if pub_fantasma:
+                publicacion_repo.delete(pub_fantasma["id"])
 
+    # finalizar la subasta y eliminar la publicación original
     subasta["estado"] = "finalizada"
+    subasta["oferta_ganadora_id"] = oferta_id
     subasta_repo.update(subasta)
 
     publicacion_repo.delete(figurita_subastada_id)
 
-    return{
-        "mensaje": "oferta aceptada y figurtias intercambiadas",
+    return {
+        "mensaje": "Oferta aceptada y figuritas intercambiadas",
         "subasta_id": subasta_id,
         "ganador_id": ofertante_id
     }

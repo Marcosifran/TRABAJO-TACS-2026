@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Button from "../components/ui/Button";
 import Tabs from "../components/ui/Tabs";
 import Modal from "../components/ui/Modal";
@@ -27,6 +27,7 @@ const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
   const { user, users } = useUser();
+  const [now, setNow] = useState(() => Date.now());
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -81,6 +82,8 @@ export default function AuctionsPage() {
 
   useEffect(() => {
     cargarDatos();
+    const tick = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(tick);
   }, []);
 
   async function handleCreate() {
@@ -210,31 +213,20 @@ export default function AuctionsPage() {
     }
   }
 
-  async function handleAceptarOferta(ofertaId) {
-    setLoading(true);
-    try {
-      await aceptarOferta(offersModal.id, ofertaId);
-
-      setSnack({
-        open: true,
-        message: "Oferta aceptada",
-        type: "success",
-      });
-      setOffersModal(null);
-      cargarDatos();
-    } catch (error) {
-      setSnack({ open: true, message: error.message, type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   // Preparamos las opciones para el select (solo publicaciones tipo subasta)
   const opcionesSubasta = misPublicaciones.map((p) => ({
     value: p.id,
     label: `Pub #${p.id} - ${p.jugador} (${p.equipo})`,
   }));
   opcionesSubasta.unshift({ value: "", label: "Seleccioná una figurita..." });
+
+  // Filtramos las activas para que no muestre las finalizadas
+  const activasFiltradas = subastas.filter(
+    (sub) => sub.estado === "activa" && new Date(sub.fin).getTime() > now,
+  );
+
+  // Decidimos qué lista usar según la pestaña
+  const listaSubastas = tab === "activas" ? activasFiltradas : misSubastas;
 
   return (
     <div className="p-8 max-w-[1000px]">
@@ -304,26 +296,54 @@ export default function AuctionsPage() {
                         : oferta.ofrecidas.map((id) => `#${id}`)
                       ).join(", ")}
                     </span>
-                    <span
-                      className={`text-xs font-medium mt-0.5 ${oferta.subasta?.estado === "activa" ? "text-green-600" : "text-error"}`}
-                    >
-                      Subasta {oferta.subasta?.estado ?? "—"}
-                    </span>
+                    {(() => {
+                      const finMs = oferta.subasta?.fin
+                        ? new Date(oferta.subasta.fin).getTime()
+                        : 0;
+                      const activa =
+                        oferta.subasta?.estado === "activa" && finMs > now;
+
+                      // Si sigue activa, mostramos el texto normal
+                      if (activa) {
+                        return (
+                          <span className="text-xs font-medium mt-0.5 text-green-600">
+                            Subasta activa
+                          </span>
+                        );
+                      }
+
+                      // Si ya finalizó, nos fijamos si esta oferta es la ganadora
+                      const esGanadora =
+                        oferta.subasta?.oferta_ganadora_id === oferta.id;
+
+                      return (
+                        <span
+                          className={`text-sm font-bold mt-1 ${
+                            esGanadora ? "text-green-600" : "text-error"
+                          }`}
+                        >
+                          {esGanadora
+                            ? "¡Oferta aceptada! 🎉"
+                            : "Subasta finalizada - No fuiste elegido"}
+                        </span>
+                      );
+                    })()}
                   </div>
-                  {oferta.subasta?.estado === "activa" && (
-                    <Button
-                      variant="outlined"
-                      icon="cancel"
-                      onClick={() => handleCancelarOferta(oferta)}
-                    >
-                      Cancelar
-                    </Button>
-                  )}
+                  {oferta.subasta?.estado === "activa" &&
+                    new Date(oferta.subasta?.fin).getTime() > now && (
+                      <Button
+                        variant="outlined"
+                        icon="cancel"
+                        onClick={() => handleCancelarOferta(oferta)}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
                 </div>
               ))}
             </div>
           )
-        ) : (tab === "activas" ? subastas : misSubastas).length === 0 ? (
+        ) : listaSubastas.length === 0 ? (
           <EmptyState
             icon="gavel"
             title="Sin subastas"
@@ -337,7 +357,7 @@ export default function AuctionsPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(tab === "activas" ? subastas : misSubastas).map((sub) => (
+            {listaSubastas.map((sub) => (
               <SubastaCardRow
                 key={sub.id}
                 sub={sub}
@@ -520,15 +540,18 @@ export default function AuctionsPage() {
                   </div>
 
                   {}
-                  <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
-                    <Button
-                      icon="check_circle"
-                      onClick={() => handleAceptarOferta(oferta.id)}
-                      disabled={loading}
-                    >
-                      {loading ? "Aceptando..." : "Aceptar oferta"}
-                    </Button>
-                  </div>
+                  {offersModal?.estado === "activa" &&
+                    new Date(offersModal?.fin).getTime() > now && (
+                      <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
+                        <Button
+                          icon="check_circle"
+                          onClick={() => handleAceptarOferta(oferta.id)}
+                          disabled={loading}
+                        >
+                          {loading ? "Aceptando..." : "Aceptar oferta"}
+                        </Button>
+                      </div>
+                    )}
                   {}
                 </div>
               ))

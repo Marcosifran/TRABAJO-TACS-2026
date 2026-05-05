@@ -24,6 +24,7 @@ export default function TradesPage() {
   const [ratingModal, setRatingModal] = useState(null)
   const [rating, setRating]       = useState(0)
   const [comment, setComment]     = useState('')
+  const [calificados, setCalificados] = useState(new Set())
   const [snack, setSnack]         = useState({ open: false, message: '', type: 'info' })
 
   // Estados para el modal de propuesta desde sugerencias
@@ -77,6 +78,7 @@ export default function TradesPage() {
     }
     try {
       await calificarIntercambio(ratingModal.id, { puntuacion: rating, comentario: comment })
+      setCalificados(prev => new Set([...prev, ratingModal.id]))
       setSnack({ open: true, message: 'Calificación enviada', type: 'success' })
       setRatingModal(null)
       setRating(0)
@@ -232,13 +234,19 @@ export default function TradesPage() {
                     </div>
                   )}
 
-                  {item.estado === 'aceptado' && (
+                  {item.estado === 'aceptado' && !item.ya_calificado && !calificados.has(item.id) && (
                     <Button variant="tonal" className="w-full" icon="star" onClick={() => setRatingModal({
                       id: item.id,
                       user: tab === 'recibidas' ? `Usuario ${item.propuesto_por}` : `Usuario ${item.solicitado_a}`
                     })}>
                       Calificar intercambio
                     </Button>
+                  )}
+                  {item.estado === 'aceptado' && (item.ya_calificado || calificados.has(item.id)) && (
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-on-surface-variant py-1">
+                      <Icon name="check_circle" size={14} className="text-green-600" />
+                      Ya calificaste este intercambio
+                    </div>
                   )}
                 </Card>
               ))}
