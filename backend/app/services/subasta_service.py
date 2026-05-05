@@ -163,8 +163,8 @@ def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
     if subasta["usuario_id"] != usuario_id:
         raise PermissionError("No podés aceptar una oferta que no es tuya")
 
-    if subasta.get("estado") != "activa":
-        raise ValueError("La subasta no está activa")
+    if not _esta_activa(subasta):
+        raise ValueError("La subasta no está activa o ya finalizó")
     
     oferta = oferta_repo.get_by_id(oferta_id)
     if not oferta:

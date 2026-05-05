@@ -49,12 +49,14 @@ def aceptar_oferta(subasta_id: int, oferta_id: int, usuario: dict = Depends(get_
     """
     try:
         resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
-        return {"mensaje": "Oferta aceptada", "resultado":resultado}
+        return {"mensaje": "Oferta aceptada", "resultado": resultado}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         detail = str(e)
         if "no encontrada" in detail.lower() or "no existe" in detail.lower():
-            raise HTTPException(status_code=404, detail = detail)
-        raise HTTPException(status_code=400, detail = detail)
+            raise HTTPException(status_code=404, detail=detail)
+        raise HTTPException(status_code=400, detail=detail)
         
 
 @router.get(
