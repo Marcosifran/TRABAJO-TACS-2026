@@ -3,7 +3,7 @@ from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, 
 from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
 from app.dependencies import get_current_user
 from app.services import intercambio_service, calificacion_service
-from app.repositories import intercambio_repo
+from app.repositories import intercambio_repo, calificacion_repo
     
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
 
@@ -44,6 +44,11 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
 )
 def listar_intercambios(usuario: dict = Depends(get_current_user)):
     intercambios = intercambio_repo.listar_intercambios_por_usuario(usuario["id"])
+    for grupo in ("enviados", "recibidos"):
+        for i in intercambios.get(grupo, []):
+            i["ya_calificado"] = bool(
+                calificacion_repo.buscar_por_intercambio_y_calificador(i["id"], usuario["id"])
+            )
     return intercambios
 
 

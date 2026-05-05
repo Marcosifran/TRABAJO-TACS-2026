@@ -87,6 +87,19 @@ def obtener_reputacion(usuario_id: int):
     return calificacion_service.obtener_reputacion(usuario_id)
 
 @router.get(
+    "/ofertas",
+    responses={
+        200: {"description": "Ofertas enviadas por el usuario autenticado a subastas"},
+        401: {"description": "Token ausente o inválido"},
+    },
+)
+def listar_mis_ofertas(usuario: dict = Depends(get_current_user)):
+    """Devuelve las ofertas enviadas por el usuario autenticado a subastas de otros."""
+    ofertas = subasta_service.listar_mis_ofertas(usuario["id"])
+    return {"usuario_id": usuario["id"], "ofertas": ofertas}
+
+
+@router.get(
     "/subastas",
     responses={
         200: {"description": "Subastas creadas por el usuario autenticado"},
