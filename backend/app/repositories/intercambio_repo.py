@@ -1,55 +1,45 @@
-# intercambio_repo.py
 from app.schemas.intercambio_sch import IntercambioCreate
+from app.core.database import get_db
 
-_db: list[dict] = []
-
-'''
-Repositorio para manejar datos de intercambios. Se usan listas en memoria para simular
-una base de datos, pero luego se implementará MongoDB.
-Implementación de CRUD para intercambios.
-'''
-
+def _get_collection():
+    return get_db()["intercambios"]
 
 def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
+    total = _get_collection().count_documents({})
     nuevo = {
-        "id": len(_db) + 1,
+        "id": total + 1,
         "propuesto_por": propuesto_por,
         "solicitado_a": solicitado_a,
         "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
         "figurita_solicitada": intercambio.figurita_solicitada_numero,
         "estado": "pendiente",
     }
-    _db.append(nuevo)
+    _get_collection().insert_one(nuevo)
+    if "_id" in nuevo: del nuevo["_id"]
     return nuevo
 
 def listar_intercambios() -> list[dict]:
-    return _db
-
+    return list(_get_collection().find({}, {"_id": 0}))
 
 def buscar_intercambio_por_id(intercambio_id: int) -> dict | None:
-    for intercambio in _db:
-        if intercambio["id"] == intercambio_id:
-            return intercambio
-    return None
-
+    return _get_collection().find_one({"id": intercambio_id}, {"_id": 0})
 
 def responder_intercambio(intercambio_id: int, estado: str) -> dict | None:
-    intercambio = buscar_intercambio_por_id(intercambio_id)
-    if not intercambio:
-        return None
-    intercambio["estado"] = estado
-    return intercambio
+    return _get_collection().find_one_and_update(
+        {"id": intercambio_id},
+        {"$set": {"estado": estado}},
+        return_document=True,
+        projection={"_id": 0}
+    )
 
 def buscar_intercambios_por_usuario(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
-
+    return list(_get_collection().find({"propuesto_por": usuario_id}, {"_id": 0}))
 
 def buscar_intercambios_enviados(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
-
+    return list(_get_collection().find({"propuesto_por": usuario_id}, {"_id": 0}))
 
 def buscar_intercambios_recibidos(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["solicitado_a"] == usuario_id]
+    return list(_get_collection().find({"solicitado_a": usuario_id}, {"_id": 0}))
 
 def listar_intercambios_por_usuario(usuario_id: int) -> dict[str, list[dict]]:
     enviados = buscar_intercambios_enviados(usuario_id)

@@ -1,68 +1,44 @@
 from app.schemas.figurita import FiguritaCreate
+from app.core.database import get_db
 
-_db: list[dict] = []
-
-'''
-Repositorio para manejar datos de figuritas. Se usan listas en memoria para simular
-una base de datos, pero luego se implementará MongoDB.
-Implementación de CRUD para figuritas.
-'''
+def _get_collection():
+    return get_db()["figuritas"]
 
 def get_all() -> list[dict]:
-    return _db
-
+    return list(_get_collection().find({}, {"_id": 0}))
 
 def get_by_id(figurita_id: int) -> dict | None:
-    return next((f for f in _db if f["id"] == figurita_id), None)
-
+    return _get_collection().find_one({"id": figurita_id}, {"_id": 0})
 
 def buscar_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
-    return next((f for f in _db if f["numero"] == numero and f["usuario_id"] == usuario_id), None)
+    return _get_collection().find_one({"numero": numero, "usuario_id": usuario_id}, {"_id": 0})
 
 def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
-    """
-    Filtra las figuritas disponibles según criterios opcionales. Si dejamos alguno vacio, no lo utiliza para filtrar
-    """
-    resultado = _db
-    if numero is not None:
-        resultado = [f for f in resultado if f["numero"] == numero]
-    if equipo is not None:
-        resultado = [f for f in resultado if equipo.lower() in f["equipo"].lower()]
-    if jugador is not None:
-        resultado = [f for f in resultado if jugador.lower() in f["jugador"].lower()]
-    return resultado
+    """Filtra las figuritas disponibles según criterios opcionales. Si dejamos alguno vacio, no lo utiliza para filtrar"""
+    query = {}
+    if numero is not None: query["numero"] = numero
+    if equipo is not None: query["equipo"] = {"$regex": equipo, "$options": "i"}
+    if jugador is not None: query["jugador"] = {"$regex": jugador, "$options": "i"}
+    return list(_get_collection().find(query, {"_id": 0}))
 
 def get_by_usuario_id(usuario_id: int) -> list[dict]:
-    # Busca figuritas publicadas por un usuario específico.
-    return [f for f in _db if f["usuario_id"] == usuario_id]
-
+    return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
 def get_sugerencias(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
-    """
-    Busca figuritas publicadas por otros usuarios que coincidan con los números faltantes del usuario.
-    """
-    return [
-        f for f in _db
-        if f["numero"] in numeros_faltantes and f["usuario_id"] != usuario_id
-    ]
-
+    return list(_get_collection().find({
+        "numero": {"$in": numeros_faltantes},
+        "usuario_id": {"$ne": usuario_id}
+    }, {"_id": 0}))
 
 def create(figurita: FiguritaCreate, usuario_id: int) -> dict:
+    total = _get_collection().count_documents({})
     nueva = figurita.model_dump()
-    nueva["id"] = len(_db) + 1
-    # Guardamos quién publicó la figurita para poder filtrar y validar después
-    nueva["usuario_id"] = usuario_id #Si la figurita conoce a su dueño va a existir una instancia de cada una por usuario 
-    _db.append(nueva)
+    nueva["id"] = total + 1
+    nueva["usuario_id"] = usuario_id
+    _get_collection().insert_one(nueva)
+    if "_id" in nueva: del nueva["_id"]
     return nueva
 
-
 def delete(figurita_id: int) -> bool:
-    for index, figu in enumerate(_db):
-        if figu["id"] == figurita_id:
-            _db.pop(index)
-            return True
-    return False
-
-
-# /1/intercambios/
-# 
+    res = _get_collection().delete_one({"id": figurita_id})
+    return res.deleted_count > 0

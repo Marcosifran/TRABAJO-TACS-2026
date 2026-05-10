@@ -1,36 +1,24 @@
-_db: list[dict] = []
+from app.core.database import get_db
 
-'''
-Repositorio de calificaciones entre usuarios tras intercambios concretados.
-Persistencia en memoria; mismo patrón que intercambio_repo.
-'''
+def _get_collection():
+    return get_db()["calificaciones"]
 
-
-def crear(
-    intercambio_id: int,
-    calificador_id: int,
-    calificado_id: int,
-    puntuacion: int,
-    comentario: str | None,
-) -> dict:
+def crear(intercambio_id: int, calificador_id: int, calificado_id: int, puntuacion: int, comentario: str | None) -> dict:
+    total = _get_collection().count_documents({})
     nuevo = {
-        "id": len(_db) + 1,
+        "id": total + 1,
         "intercambio_id": intercambio_id,
         "calificador_id": calificador_id,
         "calificado_id": calificado_id,
         "puntuacion": puntuacion,
         "comentario": comentario,
     }
-    _db.append(nuevo)
+    _get_collection().insert_one(nuevo)
+    if "_id" in nuevo: del nuevo["_id"]
     return nuevo
 
-
 def buscar_por_intercambio_y_calificador(intercambio_id: int, calificador_id: int) -> dict | None:
-    for c in _db:
-        if c["intercambio_id"] == intercambio_id and c["calificador_id"] == calificador_id:
-            return c
-    return None
-
+    return _get_collection().find_one({"intercambio_id": intercambio_id, "calificador_id": calificador_id}, {"_id": 0})
 
 def listar_por_calificado(calificado_id: int) -> list[dict]:
-    return [c for c in _db if c["calificado_id"] == calificado_id]
+    return list(_get_collection().find({"calificado_id": calificado_id}, {"_id": 0}))
