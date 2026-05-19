@@ -5,3 +5,5 @@ pydantic-settings
 pytest
 httpx
 pymongo[srv]
+requests
+beautifulsoup4
