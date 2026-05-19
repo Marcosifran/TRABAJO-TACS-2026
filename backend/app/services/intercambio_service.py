@@ -233,7 +233,7 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
     usuario_repo.remove_faltante(intercambio["propuesto_por"], num_solicitado)
 
 def responder_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     decision: IntercambioDecision,
     usuario_id: int,
 ) -> dict:

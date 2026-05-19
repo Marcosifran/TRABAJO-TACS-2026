@@ -11,8 +11,8 @@ class CalificacionCreate(BaseModel):
 
 
 class CalificacionResponse(BaseModel):
-    id: int
-    intercambio_id: int
+    id: str
+    intercambio_id: str
     calificador_id: int
     calificado_id: int
     puntuacion: int

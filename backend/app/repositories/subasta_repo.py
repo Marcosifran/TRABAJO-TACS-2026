@@ -1,31 +1,33 @@
 import datetime as dt
+from bson import ObjectId
 from app.core.database import get_db
 
 def _get_collection():
     return get_db()["subastas"]
 
-def create(figurita_id: int, usuario_id: int, inicio: dt.datetime, fin: dt.datetime) -> dict:
+def create(figurita_id: str, usuario_id: int, inicio: dt.datetime, fin: dt.datetime) -> dict:
     estado = "activa" if inicio <= dt.datetime.now(dt.timezone.utc) <= fin else "inactiva"
-    total = _get_collection().count_documents({})
+    oid = ObjectId()
     nueva_subasta = {
-        "id": total + 1,
+        "_id": oid,
+        "id": str(oid),
         "figurita_id": figurita_id,
         "usuario_id": usuario_id,
         "inicio": inicio,
-        "fin": fin, 
+        "fin": fin,
         "estado": estado
     }
     _get_collection().insert_one(nueva_subasta)
-    if "_id" in nueva_subasta: del nueva_subasta["_id"]
+    del nueva_subasta["_id"]
     return nueva_subasta
 
 def get_all() -> list[dict]:
     return list(_get_collection().find({"estado": "activa"}, {"_id": 0}))
 
-def get_by_id(subasta_id: int) -> dict | None:
+def get_by_id(subasta_id: str) -> dict | None:
     return _get_collection().find_one({"id": subasta_id}, {"_id": 0})
 
-def get_by_figurita(figurita_id: int) -> dict | None:
+def get_by_figurita(figurita_id: str) -> dict | None:
     return _get_collection().find_one({"figurita_id": figurita_id, "estado": "activa"}, {"_id": 0})
 
 def get_by_usuario(usuario_id: int) -> list[dict]:

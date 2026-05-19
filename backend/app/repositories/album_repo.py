@@ -1,5 +1,6 @@
+from bson import ObjectId
 from app.core.database import get_db
-from app.schemas.album_sch import FiguritaAlbumResponse, FiguritaAlbumCreate
+from app.schemas.album_sch import FiguritaAlbumCreate
 
 def _get_collection():
     return get_db()["album"]
@@ -7,7 +8,7 @@ def _get_collection():
 def get_all() -> list[dict]:
     return list(_get_collection().find({}, {"_id": 0}))
 
-def get_by_id(figurita_id: int) -> dict | None:
+def get_by_id(figurita_id: str) -> dict | None:
     return _get_collection().find_one({"id": figurita_id}, {"_id": 0})
 
 def get_by_usuario(usuario_id: int) -> list[dict]:
@@ -22,27 +23,27 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None, usuario_
     return list(_get_collection().find(query, {"_id": 0}))
 
 def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> dict:
-    total = _get_collection().count_documents({})
+    oid = ObjectId()
     nueva = figurita.model_dump()
-    nueva["id"] = total + 1
+    nueva["_id"] = oid
+    nueva["id"] = str(oid)
     nueva["usuario_id"] = usuario_id
     _get_collection().insert_one(nueva)
-    if "_id" in nueva: del nueva["_id"]
+    del nueva["_id"]
     return nueva
 
-def update_cantidad(figurita_id: int, cantidad: int) -> dict | None:
-    """Actualiza la cantidad de una figurita en el album personal de un usuario. 
-    Retorna la cantidad disponible o None si no se encuentra la figurita"""
-    res = _get_collection().find_one_and_update(
+def update_cantidad(figurita_id: str, cantidad: int) -> dict | None:
+    """Actualiza la cantidad de una figurita en el album personal de un usuario.
+    Retorna la figurita actualizada o None si no se encuentra."""
+    return _get_collection().find_one_and_update(
         {"id": figurita_id},
         {"$set": {"cantidad": cantidad}},
         return_document=True,
         projection={"_id": 0}
     )
-    return res
 
-def delete(figurita_id: int) -> bool:
-    """Elimina una figurita del album personal de un usuario"""
+def delete(figurita_id: str) -> bool:
+    """Elimina una figurita del album personal de un usuario."""
     res = _get_collection().delete_one({"id": figurita_id})
     return res.deleted_count > 0
 
@@ -50,9 +51,7 @@ def get_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
     return _get_collection().find_one({"numero": numero, "usuario_id": usuario_id}, {"_id": 0})
 
 def update(figurita_actualizada: dict) -> dict:
-    """
-    busca la figurita por id y actualiza los datos en la bd
-    """
+    """Busca la figurita por id y actualiza los datos en la bd."""
     res = _get_collection().find_one_and_update(
         {"id": figurita_actualizada["id"]},
         {"$set": figurita_actualizada},

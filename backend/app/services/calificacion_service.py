@@ -4,7 +4,7 @@ from app.repositories import calificacion_repo, intercambio_repo, usuario_repo
 from app.schemas.calificacion_sch import CalificacionCreate, ReputacionResponse
 
 
-def crear_calificacion(intercambio_id: int, calificador_id: int, data: CalificacionCreate) -> dict:
+def crear_calificacion(intercambio_id: str, calificador_id: int, data: CalificacionCreate) -> dict:
     """
     Registra la calificación que un participante le otorga al otro tras un intercambio aceptado.
 

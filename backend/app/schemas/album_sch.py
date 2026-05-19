@@ -14,7 +14,7 @@ class FiguritaAlbumCreate(BaseModel):
 class FiguritaAlbumResponse(FiguritaAlbumCreate):
     """Esquema para la respuesta de una figurita de álbum, incluyendo el ID y el ID del usuario."""
 
-    id: int
+    id: str
     usuario_id: int
     en_intercambio: bool = Field(default=False, description="Indica si la figurita está actualmente en intercambio")
 

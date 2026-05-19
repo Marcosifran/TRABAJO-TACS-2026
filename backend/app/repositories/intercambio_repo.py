@@ -1,3 +1,4 @@
+from bson import ObjectId
 from app.schemas.intercambio_sch import IntercambioCreate
 from app.core.database import get_db
 
@@ -5,9 +6,10 @@ def _get_collection():
     return get_db()["intercambios"]
 
 def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
-    total = _get_collection().count_documents({})
+    oid = ObjectId()
     nuevo = {
-        "id": total + 1,
+        "_id": oid,
+        "id": str(oid),
         "propuesto_por": propuesto_por,
         "solicitado_a": solicitado_a,
         "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
@@ -15,16 +17,16 @@ def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solici
         "estado": "pendiente",
     }
     _get_collection().insert_one(nuevo)
-    if "_id" in nuevo: del nuevo["_id"]
+    del nuevo["_id"]
     return nuevo
 
 def listar_intercambios() -> list[dict]:
     return list(_get_collection().find({}, {"_id": 0}))
 
-def buscar_intercambio_por_id(intercambio_id: int) -> dict | None:
+def buscar_intercambio_por_id(intercambio_id: str) -> dict | None:
     return _get_collection().find_one({"id": intercambio_id}, {"_id": 0})
 
-def responder_intercambio(intercambio_id: int, estado: str) -> dict | None:
+def responder_intercambio(intercambio_id: str, estado: str) -> dict | None:
     return _get_collection().find_one_and_update(
         {"id": intercambio_id},
         {"$set": {"estado": estado}},

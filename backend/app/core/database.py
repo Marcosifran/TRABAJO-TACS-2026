@@ -7,11 +7,12 @@ class Database:
 
 db_instance = Database()
 
-def connect_to_mongo():
+def connect_to_mongo(url: str | None = None, db_name: str | None = None):
+    if db_instance.client is not None:
+        return
     print("Conectando a mongodb")
-    db_instance.client = MongoClient(settings.mongodb_url)
-    db_instance.db = db_instance.client[settings.mongodb_db_name]
-    # Hacemos un ping de prueba para asegurar que la conexión es exitosa
+    db_instance.client = MongoClient(url or settings.mongodb_url)
+    db_instance.db = db_instance.client[db_name or settings.mongodb_db_name]
     db_instance.client.admin.command('ping')
     print("Conectado a mongodb")
 

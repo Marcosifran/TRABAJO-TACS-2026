@@ -71,7 +71,7 @@ def publicar(figurita: FiguritaCreate, usuario_id: int) -> dict:
     return figurita_repo.create(figurita, usuario_id)
 
 
-def eliminar(figurita_id: int, usuario_id: int) -> bool | None:
+def eliminar(figurita_id: str, usuario_id: int) -> bool | None:
     """
     Elimina una figurita del sistema por su ID, solo si pertenece al usuario.
 
