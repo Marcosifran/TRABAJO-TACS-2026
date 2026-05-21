@@ -1,4 +1,5 @@
 from app.core.config import settings
+import hmac
 
 # Los tokens vienen del entorno (.env), no se generan en código ni se exponen por API
 _db_usuarios: list[dict] = [
@@ -21,7 +22,13 @@ def get_by_id(usuario_id: int) -> dict | None:
 
 # Buscamos el usuario por token para identificarlo en cada request
 def get_by_token(token: str) -> dict | None:
-    return next((u for u in _db_usuarios if u["token"] == token), None)
+    if not token:
+        return None
+    for u in _db_usuarios:
+        stored = u.get("token")
+        if stored and hmac.compare_digest(stored, token):
+            return u
+    return None
 
 
 def get_faltantes(usuario_id: int) -> list[dict]:
