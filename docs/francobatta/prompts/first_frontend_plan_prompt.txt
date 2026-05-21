@@ -1,0 +1,16 @@
+❯ Following the evaluation style, let's create a new plan for the frontend part of the coursework. The requirements are as follows:
+  * Strive for simplicity and know: UI = f(state). When the state management is simple, the UI becomes simple                                        
+  * Hook usage: correct hook choices, simple state per page (avoid clumping distinct domains in one piece of data)                                   
+  * Correct state management (is the team using a framework or library to manage state, such as redux, react-query, useSWR or similar?)              
+  * Styles: CSS does not need to be perfect, but understandable and simple enough. Is the team using the chosen style libraries correctly?           
+  * API client: is there any abstraction which can be used to simplify the API clients? Can the fetcher be generalized or superseded by a best       
+  practice?                                                                                                                                          
+  * localStorage and sessionStorage: provide an alternative model if there are better solutions for the current saved states                         
+  * Misc. libraries: utility (lodash-like), date and time (moment-like), and more: worth including and refactoring to use them?                      
+                                                                                                                                                     
+  Include more React best practices and overall JavaScript code guidelines for the frontend part. Prioritize simplicity, ease of use (both by the    
+  devs and the users), readability and friendliness of the UI and code. Watch for potential async/Promise pitfalls. Do not shy away from technical   
+  details.                                                                                                                                           
+                                                                                                                                                     
+  Make your plan, let's refine it and we will later apply it.                                                                                        
+  

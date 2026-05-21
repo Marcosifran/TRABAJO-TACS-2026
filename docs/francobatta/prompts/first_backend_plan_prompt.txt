@@ -1,0 +1,19 @@
+❯ Using @"TP TACS 2026C1.pdf" and @CLAUDE.md and all the project as "context", we need to provide a thorough, senior evaluation of this project 
+  made by interns aspiring to learn more about fullstack development. The assessment of this project must end in detailed report(s) (one per major 
+  finding), shining light in the improvements that can be made, how they can be made, and why.
+  
+  First, let's make a senior plan for evaluating the backend python application. The evaluation is comprised of, but not limited to:
+  * REST maturity level (are the five principles considered? what scale on the Richardson Maturity Model has been reached? Are the resources 
+  idempotent, safe when appropiate?)
+  * Pythonic code (is the code pythonic? is it using the appropiate level of abstraction? can it be made for elegant, more subtle?)
+  * Authorization (is auth stateless? are mature standards and payload formats such as JWT being used? is the backend resilient against attacks or 
+  malicious users?)
+  * In-memory database: the database is meant to be a stub for now, but it is important to note if the Repository or Record patterns are used 
+  correctly
+  * Layers (is the code structured in layers? are layers correct, are they consistent?)
+  * Error handling: is it pythonic and consistent across the backend?
+  * Tests (appropiate hierarchy? are the tests sound?)
+  
+  In your plan, include more senior idiomatic python best practices and overall strive for a holistic approach. 
+  
+  NOTE: the code and resources are in spanish, let's ignore that and assume it is OK for now.
