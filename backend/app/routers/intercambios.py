@@ -3,9 +3,13 @@ from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, 
 from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
 from app.dependencies import get_current_user
 from app.services import intercambio_service, calificacion_service
-from app.repositories import intercambio_repo, calificacion_repo
+from app.domain.errors import DomainError
     
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
+
+
+def _traducir_error(error: DomainError) -> None:
+    raise HTTPException(status_code=error.status_code, detail=str(error))
 
 
 @router.post(
@@ -20,19 +24,10 @@ router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
     },
 )
 def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends(get_current_user)):
-    
-    intercambio_service.validar_intercambio(
-        intercambio=intercambio,
-        usuario_id=usuario["id"],
-    )
-
-    intercambio_propuesto = intercambio_repo.crear_intercambio(
-        intercambio=intercambio,
-        propuesto_por=usuario["id"],
-        solicitado_a=intercambio.solicitado_a_id,
-    )
-
-    return intercambio_propuesto
+    try:
+        return intercambio_service.proponer_intercambio(intercambio, usuario["id"])
+    except DomainError as error:
+        _traducir_error(error)
 
 
 @router.get(
@@ -43,13 +38,7 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
     },
 )
 def listar_intercambios(usuario: dict = Depends(get_current_user)):
-    intercambios = intercambio_repo.listar_intercambios_por_usuario(usuario["id"])
-    for grupo in ("enviados", "recibidos"):
-        for i in intercambios.get(grupo, []):
-            i["ya_calificado"] = bool(
-                calificacion_repo.buscar_por_intercambio_y_calificador(i["id"], usuario["id"])
-            )
-    return intercambios
+    return intercambio_service.listar_intercambios_de(usuario["id"])
 
 
 @router.patch(
@@ -64,16 +53,14 @@ def listar_intercambios(usuario: dict = Depends(get_current_user)):
     },
 )
 def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):
-    intercambio_actualizado = intercambio_service.responder_intercambio(
-        intercambio_id=intercambio_id,
-        decision=decision,
-        usuario_id=usuario["id"],
-    )
-
-    if intercambio_actualizado is None:
-        raise HTTPException(status_code=404, detail="Intercambio no encontrado o no tenés permisos para responderlo")
-
-    return intercambio_actualizado
+    try:
+        return intercambio_service.responder_intercambio(
+            intercambio_id=intercambio_id,
+            decision=decision,
+            usuario_id=usuario["id"],
+        )
+    except DomainError as error:
+        _traducir_error(error)
 
 
 @router.post(
