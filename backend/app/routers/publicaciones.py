@@ -5,6 +5,7 @@ from app.schemas.publicacion_sch import(
     PublicacionCreate,
     PublicacionResponse,
     SugerenciaResponse,
+    SugerenciasEnvelope,
 )
 
 router = APIRouter(prefix="/publicaciones", tags=["Publicaciones"])
@@ -24,35 +25,28 @@ def listar_publicaciones(
     equipo: str | None = Query(default=None, description="Equipo de la figurita"),
     jugador: str | None = Query(default=None, description="Jugador de la figurita"),
     tipo_intercambio: str | None = Query(default=None, description="intercambio directo o subasta"),
+    incluir_propias: bool = Query(default=False, description="Incluir las propias publicaciones del usuario autenticado"),
     usuario: dict = Depends(get_current_user)
 ):
     """Retorna las figuritas disponibles poara intercambio aplicando filtros"""
-
+    excluir_usuario_id = None if incluir_propias else usuario["id"]
     return publicacion_service.listar_publicaciones(
         numero=numero,
         equipo=equipo,
         jugador=jugador,
         tipo_intercambio=tipo_intercambio,
-        excluir_usuario_id=usuario["id"],
+        excluir_usuario_id=excluir_usuario_id,
     )
 
-@router.get("/mias", response_model=list[PublicacionResponse])
-def mis_publicaciones(
-    usuario: dict = Depends(get_current_user),
-):
-    """
-    Retorna las publicaciones activas del usuario autenticado.
-    A diferencia de GET /, este endpoint SÍ incluye las propias.
-    """
-    return publicacion_service.mis_publicaciones(usuario["id"])
+# Note: `/publicaciones/mias` removed in favor of `GET /publicaciones?incluir_propias=true`
 
-@router.get("/sugerencias", response_model=list[SugerenciaResponse])
+@router.get("/sugerencias", response_model=SugerenciasEnvelope)
 def obtener_sugerencias(
     usuario: dict = Depends(get_current_user)
 ):
     """Genera sugerencias automaticas de intercambio para el usuario, desde faltantes del usuario con publicaciones de otros"""
-
-    return publicacion_service.obtener_sugerencias(usuario["id"])
+    sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
+    return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 
 @router.delete("/{publicacion_id}", status_code=204)
 def retirar_publicacion(

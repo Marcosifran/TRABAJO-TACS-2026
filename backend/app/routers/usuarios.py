@@ -62,7 +62,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     return {"usuario_id": usuario["id"], "faltantes": faltantes}
 
 
-# Devuelve sugerencias de intercambio: figuritas de otros usuarios que cubren los faltantes del usuario autenticado
+# Note: `/usuarios/sugerencias` removed; keep `/publicaciones/sugerencias` as canonical route
 @router.get(
     "/sugerencias",
     responses={
@@ -70,7 +70,11 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
         401: {"description": "Token ausente o inválido"},
     },
 )
-def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
+def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
+    """
+    Estas sugerencias estaban doblemente disponibles en `/usuarios/sugerencias` y `/publicaciones/sugerencias`. Se mantiene esta ruta por compatibilidad, 
+    pero utilizaremos la ruta de publicaciones para obtener sugerencias.
+    """
     sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 

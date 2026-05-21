@@ -34,3 +34,8 @@ class SugerenciaResponse(BaseModel):
     publicacion: PublicacionResponse
     ofrecida_por: str
     cubre_tu_faltante: int
+
+
+class SugerenciasEnvelope(BaseModel):
+    usuario_id: int
+    sugerencias: list[SugerenciaResponse]

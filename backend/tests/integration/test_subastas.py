@@ -142,7 +142,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [pub_user2]},
             headers={"X-User-Token": token_user2},
         )
@@ -161,7 +161,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [pub_extra]},
             headers={"X-User-Token": token_user1},
         )
@@ -175,7 +175,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}999/ofertar",
+            f"{ENDPOINT_SUBASTAS}999/ofertas",
             json={"figuritas_ofrecidas": [pub_user2]},
             headers={"X-User-Token": token_user2},
         )
@@ -187,7 +187,7 @@ class TestOfertarEnSubasta:
         subasta_id = self._setup_subasta(client, token_user1)
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": []},
             headers={"X-User-Token": token_user2},
         )
@@ -199,7 +199,7 @@ class TestOfertarEnSubasta:
         subasta_id = self._setup_subasta(client, token_user1)
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [9999]},
             headers={"X-User-Token": token_user2},
         )
@@ -215,7 +215,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [pub_user1_extra]},
             headers={"X-User-Token": token_user2},
         )
@@ -248,7 +248,7 @@ class TestHistorialOfertas:
         )
 
         client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [pub_user2]},
             headers={"X-User-Token": token_user2},
         )

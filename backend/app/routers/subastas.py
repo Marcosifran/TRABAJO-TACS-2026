@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.subasta import SubastaCreate, SubastaResponse
-from app.schemas.oferta import OfertaCreate
+from app.schemas.oferta import OfertaCreate, OfertaDecision
 from app.services import subasta_service
 from app.dependencies import get_current_user
+from app.repositories import oferta_repo
 
 router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(get_current_user)])
 
@@ -39,17 +40,26 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
         raise HTTPException(status_code=400, detail=str(e))
     return {"mensaje": "Subasta creada exitosamente", "subasta": nueva_subasta}
 
-@router.post(
-    "/{subasta_id}/ofertas/{oferta_id}/aceptar",
+@router.patch(
+    "/{subasta_id}/ofertas/{oferta_id}",
     status_code=200,
 )
-def aceptar_oferta(subasta_id: int, oferta_id: int, usuario: dict = Depends(get_current_user)):
+def responder_oferta(subasta_id: int, oferta_id: int, decision: OfertaDecision, usuario: dict = Depends(get_current_user)):
     """
-    Permite al dueño de una subasta aceptar una oferta.
+    Responde una oferta: puede aceptarse o rechazarse usando el campo `estado`.
     """
     try:
-        resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
-        return {"mensaje": "Oferta aceptada", "resultado": resultado}
+        if decision.estado == "aceptada":
+            resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
+            return {"mensaje": "Oferta aceptada", "resultado": resultado}
+        elif decision.estado == "rechazada":
+            # Rechazar simplemente elimina la oferta
+            deleted = oferta_repo.delete(oferta_id)
+            if not deleted:
+                raise ValueError("Oferta no encontrada")
+            return {"mensaje": "Oferta rechazada"}
+        else:
+            raise ValueError("Estado desconocido")
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
@@ -104,7 +114,7 @@ def cancelar_oferta(
 
 
 @router.post(
-    "/{subasta_id}/ofertar",
+    "/{subasta_id}/ofertas",
     status_code=201,
     responses={
         201: {"description": "Oferta registrada exitosamente"},

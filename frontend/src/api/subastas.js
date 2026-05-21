@@ -23,7 +23,7 @@ export function crearSubasta(data) {
 */
 
 export function ofertarSubasta(subastaId, figuritasIds){
-    return apiFetch(`/subastas/${subastaId}/ofertar`, {
+    return apiFetch(`/subastas/${subastaId}/ofertas`, {
         method: 'POST',
         body: JSON.stringify({ figuritas_ofrecidas: figuritasIds})
     })
@@ -46,7 +46,8 @@ export function cancelarOferta(subastaId, ofertaId) {
 }
 
 export function aceptarOferta(subastaId, ofertaId){
-    return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}/aceptar`,{
-        method: 'POST'
+    return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}`,{
+        method: 'PATCH',
+        body: JSON.stringify({ estado: 'aceptada' })
     })
 }
