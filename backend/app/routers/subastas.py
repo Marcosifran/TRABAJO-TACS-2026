@@ -4,7 +4,7 @@ from app.schemas.oferta import OfertaCreate
 from app.services import subasta_service
 from app.dependencies import get_current_user
 
-router = APIRouter(prefix="/subastas", tags=["Subastas"])
+router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(get_current_user)])
 
 @router.get(
     "/",

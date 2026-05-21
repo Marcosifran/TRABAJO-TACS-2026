@@ -5,7 +5,7 @@ from app.services import figurita_service
 from app.dependencies import get_current_user
 from app.repositories import figurita_repo
 
-router = APIRouter(prefix="/figuritas", tags=["Figuritas"])
+router = APIRouter(prefix="/figuritas", tags=["Figuritas"], dependencies=[Depends(get_current_user)])
 
 @router.get(
     "/",

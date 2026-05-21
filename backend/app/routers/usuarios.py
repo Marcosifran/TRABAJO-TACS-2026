@@ -6,7 +6,7 @@ from app.services import usuario_service, album_service,publicacion_service, cal
 from app.dependencies import get_current_user
 from app.repositories import usuario_repo
 
-router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
 
 
 @router.get(

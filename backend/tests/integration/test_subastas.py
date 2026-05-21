@@ -112,7 +112,7 @@ class TestCrearSubasta:
         pub_id = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         _crear_subasta(client, token_user1, pub_id)
 
-        resp = client.get(ENDPOINT_SUBASTAS)
+        resp = client.get(ENDPOINT_SUBASTAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         subastas = resp.json()["subastas"]
@@ -234,7 +234,7 @@ class TestHistorialOfertas:
         pub_id = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         subasta_id = _crear_subasta(client, token_user1, pub_id).json()["subasta"]["id"]
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         assert resp.json()["ofertas"] == []
@@ -253,7 +253,7 @@ class TestHistorialOfertas:
             headers={"X-User-Token": token_user2},
         )
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         ofertas = resp.json()["ofertas"]
@@ -262,8 +262,8 @@ class TestHistorialOfertas:
         assert ofertas[0]["usuario_id"] == 2
         assert pub_user2 in ofertas[0]["ofrecidas"]
 
-    def test_subasta_inexistente_devuelve_404(self, client):
+    def test_subasta_inexistente_devuelve_404(self, client, token_user1):
         """Consultar historial de una subasta inexistente devuelve 404."""
-        resp = client.get(f"{ENDPOINT_SUBASTAS}999/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}999/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404

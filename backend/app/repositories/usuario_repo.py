@@ -2,8 +2,8 @@ from app.core.config import settings
 
 # Los tokens vienen del entorno (.env), no se generan en código ni se exponen por API
 _db_usuarios: list[dict] = [
-    {"id": 1, "nombre": "marcos", "email": "marcos@utn", "token": settings.user_1_token},
-    {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "token": settings.user_2_token},
+    {"id": 1, "nombre": "marcos", "email": "marcos@utn", "token": settings.user_1_token, "es_admin": True},
+    {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "token": settings.user_2_token, "es_admin": False},
 ]
 _db_faltantes: list[dict] = []
 
