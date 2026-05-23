@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     user_1_token: str = ""
     user_2_token: str = ""
 
+    # Configuración JWT para el backend.
+    jwt_secret: str = "dev-jwt-secret-change-me-please-use-env-overrides"
+    jwt_algorithm: str = "HS256"
+    jwt_exp_minutes: int = 480
+
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),
