@@ -1,4 +1,5 @@
 import pytest
+import datetime
 
 ENDPOINT_ADMIN_STATS = "/api/v1/admin/estadisticas"
 ENDPOINT_ALBUM = "/api/v1/album"
@@ -7,9 +8,9 @@ ENDPOINT_SUBASTAS = "/api/v1/subastas"
 
 class TestAdminEstadisticas:
 
-    def test_estadistica_iniciales_con_db_limpia(self, client):
+    def test_estadistica_iniciales_con_db_limpia(self, client, token_user1):
         """Al iniciar limpia la bd, los contadores base deberían ser 0"""
-        response = client.get(ENDPOINT_ADMIN_STATS)
+        response = client.get(ENDPOINT_ADMIN_STATS, headers={"X-User-Token":token_user1})
 
         assert response.status_code == 200
         data = response.json()
@@ -47,7 +48,7 @@ class TestAdminEstadisticas:
         assert resp_pub.status_code == 201
 
         #uso el endpoint de administración
-        resp_stats = client.get(ENDPOINT_ADMIN_STATS)
+        resp_stats = client.get(ENDPOINT_ADMIN_STATS, headers={"X-User-Token":token_user1})
         assert resp_stats.status_code == 200
 
         #verifico que las estadísticas se hatan actualizado en MongoDB
@@ -103,7 +104,7 @@ class TestAdminEstadisticas:
         assert resp_sub.status_code == 201
 
         #verifico que las estadísticas del admin reflejen la subasta activa
-        resp_status = client.get(ENDPOINT_ADMIN_STATS)
+        resp_status = client.get(ENDPOINT_ADMIN_STATS, headers={"X-User-Token":token_user1})
         assert resp_status.status_code == 200
 
         data = resp_status.json()
