@@ -1,5 +1,6 @@
 # intercambio_repo.py
 from app.schemas.intercambio_sch import IntercambioCreate
+from app.schemas.intercambio_sch import EstadoIntercambio
 
 _db: list[dict] = []
 
@@ -17,7 +18,7 @@ def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solici
         "solicitado_a": solicitado_a,
         "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
         "figurita_solicitada": intercambio.figurita_solicitada_numero,
-        "estado": "pendiente",
+        "estado": EstadoIntercambio.PENDIENTE.value,
     }
     _db.append(nuevo)
     return nuevo

@@ -1,5 +1,11 @@
 from pydantic import BaseModel, Field
+from enum import Enum
 import datetime as dt
+
+class EstadoSubasta(str, Enum):
+    ACTIVA = "activa"
+    INACTIVA = "inactiva"
+    FINALIZADA = "finalizada"
 
 class SubastaCreate(BaseModel):
     figurita_id: int = Field(..., description="ID de la figurita que se pondrá en subasta")

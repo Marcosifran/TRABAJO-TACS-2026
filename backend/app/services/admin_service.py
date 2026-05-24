@@ -1,5 +1,5 @@
 from app.repositories import usuario_repo, publicacion_repo, intercambio_repo, subasta_repo
-
+from app.schemas.intercambio_sch import EstadoIntercambio
 
 def obtener_estadisticas() -> dict:
     usuarios      = usuario_repo.get_all()
@@ -7,7 +7,7 @@ def obtener_estadisticas() -> dict:
     intercambios  = intercambio_repo.listar_intercambios()
     subastas      = subasta_repo.get_all()
 
-    estados = {"pendiente": 0, "aceptado": 0, "rechazado": 0}
+    estados = {e.value: 0 for e in EstadoIntercambio}
     for i in intercambios:
         e = i.get("estado", "pendiente")
         if e in estados:

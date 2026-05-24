@@ -6,16 +6,8 @@ from app.domain.errors import (
     DomainValidationError,
 )
 from app.schemas.intercambio_sch import IntercambioCreate, IntercambioDecision
-
-
-def validar_figuritas_ofrecidas(intercambio: IntercambioCreate) -> None:
-    """Valida que la lista de figuritas ofrecidas no esté vacía ni tenga repetidos."""
-    if not intercambio.figuritas_ofrecidas_numero:
-        raise DomainValidationError("Debés ofrecer al menos una figurita")
-
-    if len(intercambio.figuritas_ofrecidas_numero) != len(set(intercambio.figuritas_ofrecidas_numero)):
-        raise DomainValidationError("No podés repetir figuritas en la oferta")
-
+from app.schemas.intercambio_sch import EstadoIntercambio
+from app.schemas.album_sch import FiguritaAlbumCreate
 
 def validar_numeros_distintos(intercambio: IntercambioCreate) -> None:
     """Valida que la figurita solicitada no esté incluida entre las ofrecidas."""
@@ -120,7 +112,6 @@ def validar_intercambio(
     Returns:
         Tupla (publicaciones_ofrecidas, publicacion_solicitada)
     """
-    validar_figuritas_ofrecidas(intercambio)
     validar_numeros_distintos(intercambio)
     validar_usuario_destino(intercambio, usuario_id)
     publicaciones_ofrecidas, publicacion_solicitada = obtener_publicaciones_para_intercambio(
@@ -156,7 +147,6 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
     Realiza el intercambio efectivo de figuritas entre los usuarios.
     Actualiza tanto el álbum como las publicaciones activas para reflejar el cambio de stock.
     """
-    from app.schemas.album_sch import FiguritaAlbumCreate
 
     # 1. Procesar figuritas ofrecidas por el proponente -> entregadas al solicitado_a
     for numero in intercambio["figuritas_ofrecidas"]:
@@ -261,7 +251,7 @@ def responder_intercambio(
     if intercambio["solicitado_a"] != usuario_id:
         raise DomainPermissionError("Solo el usuario receptor puede responder este intercambio")
 
-    if intercambio["estado"] != "pendiente":
+    if intercambio["estado"] != EstadoIntercambio.PENDIENTE.value:
         raise DomainValidationError("El intercambio ya fue respondido")
 
     if decision.estado.value == "aceptado":

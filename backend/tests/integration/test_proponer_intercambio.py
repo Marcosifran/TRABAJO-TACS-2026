@@ -224,7 +224,7 @@ class TestProponerIntercambio:
             headers={"X-User-Token": token_user1},
         )
 
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_falla_si_usuario_destino_no_existe(self, client, token_user1):
         """No se puede proponer un intercambio a un usuario que no existe."""

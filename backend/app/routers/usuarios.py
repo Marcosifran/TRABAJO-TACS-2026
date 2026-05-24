@@ -4,7 +4,6 @@ from app.schemas.usuario import UsuarioResponse
 from app.schemas.calificacion_sch import ReputacionResponse
 from app.services import usuario_service, album_service,publicacion_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
-from app.repositories import usuario_repo
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
 

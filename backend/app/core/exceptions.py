@@ -14,6 +14,7 @@ def register_exceptions_handlers(app: FastAPI) -> None:
         detail_lower = detail.lower()
         if "inexistente" in detail_lower or "no encontrada" in detail_lower or "no existe" in detail_lower:
             status_code = 404
+        #caso particular del error 409
         elif "registrada como faltante" in detail_lower or "ya está registrada" in detail_lower:
             status_code = 409
         #retorna el stable error envelope

@@ -54,11 +54,9 @@ def retirar_publicacion(
     usuario: dict = Depends(get_current_user)
 ):
     """Retira una figurita de la oferta publica"""
-
     resultado = publicacion_service.retirar_publicacion(publicacion_id, usuario["id"])
 
     if resultado is False:
-        raise HTTPException(status_code=404, detail="Publicación no encontrada")
+        raise HTTPException(status_code = 404, detail = "Publiacacion no encontrada")
     if resultado is None:
-        raise HTTPException(status_code=403, detail="No tenés permiso para retirar esta publicación")
-    
+        raise HTTPException(status_code = 403, detail = "No tiene permiso para retirar")
