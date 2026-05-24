@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.exceptions import register_exceptions_handlers
 from app.routers import album, publicaciones, usuarios, intercambios, subastas, admin
-
 # Creamos la aplicación FastAPI. El título y versión los toma desde config.py
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+# Excepciones
+register_exceptions_handlers(app)
 
 # Seteamos CORS como middleware para permitir solicitudes desde cualquier origen.
 app.add_middleware(

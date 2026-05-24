@@ -86,10 +86,10 @@ class TestCrearSubasta:
         assert resp.status_code == 400
 
     def test_figurita_inexistente_falla(self, client, token_user1):
-        """Intentar subastar una publicación que no existe devuelve 400."""
+        """Intentar subastar una publicación que no existe devuelve 404."""
         resp = _crear_subasta(client, token_user1, publicacion_id=999)
 
-        assert resp.status_code == 400
+        assert resp.status_code == 404
 
     def test_figurita_de_otro_usuario_falla(self, client, token_user1, token_user2):
         """No se puede subastar una publicación que pertenece a otro usuario."""

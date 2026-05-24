@@ -36,13 +36,8 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
     },
 )
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
-    try:
-        resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
-    except ValueError as e:
-        # Si el error es por datos duplicados, informamos con 409.
-        raise HTTPException(status_code=409, detail=str(e))
-    if resultado is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
     return {"mensaje": "Faltante registrado", "data": resultado}
 
 

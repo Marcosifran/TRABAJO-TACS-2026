@@ -7,11 +7,6 @@ from app.domain.errors import DomainError
     
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
 
-
-def _traducir_error(error: DomainError) -> None:
-    raise HTTPException(status_code=error.status_code, detail=str(error))
-
-
 @router.post(
     "/",
     status_code=201,
@@ -24,10 +19,7 @@ def _traducir_error(error: DomainError) -> None:
     },
 )
 def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends(get_current_user)):
-    try:
-        return intercambio_service.proponer_intercambio(intercambio, usuario["id"])
-    except DomainError as error:
-        _traducir_error(error)
+    return intercambio_service.proponer_intercambio(intercambio, usuario["id"])
 
 
 @router.get(
@@ -52,16 +44,12 @@ def listar_intercambios(usuario: dict = Depends(get_current_user)):
         404: {"description": "Intercambio no encontrado"},
     },
 )
-def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):
-    try:
-        return intercambio_service.responder_intercambio(
+def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):        
+    return intercambio_service.responder_intercambio(
             intercambio_id=intercambio_id,
             decision=decision,
             usuario_id=usuario["id"],
         )
-    except DomainError as error:
-        _traducir_error(error)
-
 
 @router.post(
     "/{intercambio_id}/calificaciones",

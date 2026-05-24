@@ -37,10 +37,7 @@ def buscar_figuritas(
     },
 )
 def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_user)):
-    try:
-        nueva = figurita_service.publicar(figu, usuario["id"])
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    nueva = figurita_service.publicar(figu, usuario["id"])
     return {"mensaje": "Figurita a intercambiar publicada", "data": nueva}
 
 
