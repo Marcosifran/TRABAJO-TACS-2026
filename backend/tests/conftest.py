@@ -17,6 +17,7 @@ _COLLECTIONS = [
     "ofertas",
     "calificaciones",
     "faltantes",
+    "maestro_figuritas",
 ]
 
 

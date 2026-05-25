@@ -3,14 +3,16 @@ import Icon from './Icon'
 
 export default function Input({
   label, value, onChange, type = 'text',
-  icon, placeholder, multiline = false, options,
+  icon, placeholder, multiline = false, options, disabled = false,
 }) {
   const [focused, setFocused] = useState(false)
 
   const baseClass = `
     w-full px-3.5 py-3 text-sm rounded-xl border-[1.5px] transition-colors duration-200
-    bg-surface-container-low text-on-surface font-sans outline-none
-    ${focused ? 'border-primary' : 'border-outline'}
+    font-sans outline-none
+    ${disabled
+      ? 'bg-surface-variant text-on-surface-variant border-outline-variant cursor-not-allowed opacity-60'
+      : `bg-surface-container-low text-on-surface ${focused ? 'border-primary' : 'border-outline'}`}
     ${icon ? 'pl-10' : ''}
   `
 
@@ -32,6 +34,7 @@ export default function Input({
           onChange={e => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          disabled={disabled}
           className={`${baseClass} cursor-pointer appearance-none`}
         >
           {options.map(o => (
@@ -46,6 +49,7 @@ export default function Input({
           rows={3}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          disabled={disabled}
           className={`${baseClass} resize-y`}
         />
       ) : (
@@ -56,6 +60,7 @@ export default function Input({
           placeholder={placeholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          disabled={disabled}
           className={baseClass}
         />
       )}
