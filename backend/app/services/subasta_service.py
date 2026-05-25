@@ -49,7 +49,7 @@ def listar_subastas() -> list[dict]:
     return subasta_repo.get_all()
 
 
-def listar_ofertas(subasta_id: int) -> list[dict]:
+def listar_ofertas(subasta_id: str) -> list[dict]:
     subasta = subasta_repo.get_by_id(subasta_id)
     if not subasta:
         raise ValueError("Subasta inexistente")
@@ -71,7 +71,7 @@ def listar_ofertas(subasta_id: int) -> list[dict]:
     return result
 
 
-def ofertar(subasta_id: int, oferta_data: OfertaCreate, usuario_id: int) -> dict:
+def ofertar(subasta_id: str, oferta_data: OfertaCreate, usuario_id: int) -> dict:
     """
     Registra una oferta en una subasta activa.
     Las figuritas ofrecidas se buscan en album_repo (son figuritas del álbum del ofertante).
@@ -140,7 +140,7 @@ def listar_mis_ofertas(usuario_id: int) -> list[dict]:
         result.append(enriquecida)
     return result
 
-def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
+def cancelar_oferta(oferta_id: str, usuario_id: int) -> str:
     oferta = oferta_repo.get_by_id(oferta_id)
     if not oferta:
         raise ValueError("Oferta no encontrada")
@@ -152,7 +152,7 @@ def cancelar_oferta(oferta_id: int, usuario_id: int) -> str:
     oferta_repo.delete(oferta_id)
     return "Oferta cancelada"
 
-def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
+def aceptar_oferta(subasta_id: str, oferta_id: str, usuario_id: int) -> dict:
     """
     Aceptar oferta en una subasta y limpiar publicaciones huérfanas
     """
@@ -191,10 +191,9 @@ def aceptar_oferta(subasta_id: int, oferta_id: int, usuario_id: int) -> dict:
     for fig_id in figuritas_ofrecidas_ids:
         fig_ofrecida = album_repo.get_by_id(fig_id)
         if fig_ofrecida:
-            # Cambiamos el dueño en el álbum
             fig_ofrecida["usuario_id"] = usuario_id
             album_repo.update(fig_ofrecida)
-        
+
             pub_fantasma = publicacion_repo.get_by_figurita_personal(fig_id)
             if pub_fantasma:
                 publicacion_repo.delete(pub_fantasma["id"])

@@ -39,7 +39,7 @@ def listar_publicaciones(
         usuario_id=excluir_usuario_id,
     )
 
-def retirar_publicacion(publicacion_id: int, usuario_id:int) -> bool | None:
+def retirar_publicacion(publicacion_id: str, usuario_id: int) -> bool | None:
     """ Retira una figurita de la oferta publica"""
     publicacion = publicacion_repo.get_by_id(publicacion_id)
 

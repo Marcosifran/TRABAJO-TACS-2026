@@ -63,7 +63,7 @@ def listar_intercambios(usuario: dict = Depends(get_current_user)):
         404: {"description": "Intercambio no encontrado"},
     },
 )
-def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):
+def responder_intercambio(intercambio_id: str, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):
     intercambio_actualizado = intercambio_service.responder_intercambio(
         intercambio_id=intercambio_id,
         decision=decision,
@@ -90,7 +90,7 @@ def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, us
     },
 )
 def calificar_tras_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     body: CalificacionCreate,
     usuario: dict = Depends(get_current_user),
 ):

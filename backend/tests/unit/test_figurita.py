@@ -29,7 +29,7 @@ def _album_create(numero=10, equipo="Argentina", jugador="Messi", cantidad=2):
         cantidad=cantidad,
     )
 
-def _publicacion_create(figurita_personal_id=1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO, cantidad=1):
+def _publicacion_create(figurita_personal_id="1", tipo=TipoIntercambio.INTERCAMBIO_DIRECTO, cantidad=1):
     return PublicacionCreate(
         figurita_personal_id=figurita_personal_id,
         tipo_intercambio=tipo,
@@ -55,15 +55,16 @@ class TestAlbumRepoCreate:
         assert resultado["cantidad"] == 2
         assert resultado["usuario_id"] == 1
 
-    def test_create_asigna_id_autoincrementado(self):
-        """Los IDs asignados son secuenciales y únicos."""
+    def test_create_asigna_ids_unicos(self):
+        """Los IDs asignados son strings únicos (ObjectId de MongoDB)."""
         figurita = _album_create()
 
         primera = album_repo.create(figurita, usuario_id=1)
         segunda = album_repo.create(figurita, usuario_id=2)
 
-        assert primera["id"] == 1
-        assert segunda["id"] == 2
+        assert isinstance(primera["id"], str)
+        assert isinstance(segunda["id"], str)
+        assert primera["id"] != segunda["id"]
 
     def test_create_asocia_usuario_id(self):
         """La figurita queda vinculada al usuario que la agregó."""
@@ -96,7 +97,7 @@ class TestAlbumRepoGetYDelete:
         assert resultado["numero"] == 7
 
     def test_get_by_id_retorna_none_si_no_existe(self):
-        assert album_repo.get_by_id(999) is None
+        assert album_repo.get_by_id("000000000000000000000000") is None
 
     def test_get_by_usuario_retorna_solo_las_del_usuario(self):
         album_repo.create(_album_create(numero=1), usuario_id=1)
@@ -120,7 +121,7 @@ class TestAlbumRepoGetYDelete:
         assert album_repo.get_all() == []
 
     def test_delete_retorna_false_si_no_existe(self):
-        assert album_repo.delete(999) is False
+        assert album_repo.delete("000000000000000000000000") is False
 
 
 class TestAlbumRepoBuscar:
@@ -206,7 +207,7 @@ class TestPublicacionRepoCreate:
 
     def test_create_guarda_publicacion_con_datos_aplanados(self):
         """create() guarda los datos de la figurita aplanados en la publicación."""
-        pub = _publicacion_create(figurita_personal_id=1)
+        pub = _publicacion_create(figurita_personal_id="1")
 
         resultado = publicacion_repo.create(
             publicacion=pub,
@@ -219,23 +220,24 @@ class TestPublicacionRepoCreate:
         assert resultado["numero"] == 10
         assert resultado["equipo"] == "Argentina"
         assert resultado["jugador"] == "Messi"
-        assert resultado["figurita_personal_id"] == 1
+        assert resultado["figurita_personal_id"] == "1"
         assert resultado["tipo_intercambio"] == "intercambio_directo"
         assert resultado["usuario_id"] == 1
 
-    def test_create_asigna_id_autoincrementado(self):
+    def test_create_asigna_ids_unicos(self):
         pub = _publicacion_create()
 
         primera = publicacion_repo.create(pub, usuario_id=1, numero=1, equipo="A", jugador="J1")
         segunda = publicacion_repo.create(pub, usuario_id=2, numero=2, equipo="B", jugador="J2")
 
-        assert primera["id"] == 1
-        assert segunda["id"] == 2
+        assert isinstance(primera["id"], str)
+        assert isinstance(segunda["id"], str)
+        assert primera["id"] != segunda["id"]
 
 
 class TestPublicacionRepoGetYDelete:
 
-    def _crear(self, figurita_personal_id=1, usuario_id=1, numero=10, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
+    def _crear(self, figurita_personal_id="1", usuario_id=1, numero=10, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
         return publicacion_repo.create(
             _publicacion_create(figurita_personal_id=figurita_personal_id, tipo=tipo),
             usuario_id=usuario_id,
@@ -256,11 +258,11 @@ class TestPublicacionRepoGetYDelete:
         assert resultado["id"] == creada["id"]
 
     def test_get_by_id_retorna_none_si_no_existe(self):
-        assert publicacion_repo.get_by_id(999) is None
+        assert publicacion_repo.get_by_id("000000000000000000000000") is None
 
     def test_get_by_usuario_retorna_solo_las_del_usuario(self):
-        self._crear(figurita_personal_id=1, usuario_id=1, numero=10)
-        self._crear(figurita_personal_id=2, usuario_id=2, numero=20)
+        self._crear(figurita_personal_id="1", usuario_id=1, numero=10)
+        self._crear(figurita_personal_id="2", usuario_id=2, numero=20)
 
         resultado = publicacion_repo.get_by_usuario(1)
 
@@ -268,15 +270,15 @@ class TestPublicacionRepoGetYDelete:
         assert resultado[0]["usuario_id"] == 1
 
     def test_get_by_figurita_personal_retorna_publicacion_activa(self):
-        self._crear(figurita_personal_id=5)
+        self._crear(figurita_personal_id="5")
 
-        resultado = publicacion_repo.get_by_figurita_personal(5)
+        resultado = publicacion_repo.get_by_figurita_personal("5")
 
         assert resultado is not None
-        assert resultado["figurita_personal_id"] == 5
+        assert resultado["figurita_personal_id"] == "5"
 
     def test_get_by_figurita_personal_retorna_none_si_no_esta_publicada(self):
-        assert publicacion_repo.get_by_figurita_personal(99) is None
+        assert publicacion_repo.get_by_figurita_personal("000000000000000000000000") is None
 
     def test_delete_elimina_publicacion_existente(self):
         creada = self._crear()
@@ -287,7 +289,7 @@ class TestPublicacionRepoGetYDelete:
         assert publicacion_repo.get_all() == []
 
     def test_delete_retorna_false_si_no_existe(self):
-        assert publicacion_repo.delete(999) is False
+        assert publicacion_repo.delete("000000000000000000000000") is False
 
 
 class TestPublicacionRepoBuscar:
@@ -422,7 +424,7 @@ class TestPublicacionService:
     def test_publicar_falla_404_si_figurita_no_existe_en_album(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=999)
+        pub = _publicacion_create(figurita_personal_id="999")
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=None):
             with pytest.raises(HTTPException) as exc:
@@ -433,8 +435,8 @@ class TestPublicacionService:
     def test_publicar_falla_403_si_figurita_no_pertenece_al_usuario(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1)
-        figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10, "cantidad": 1}
+        pub = _publicacion_create(figurita_personal_id="1")
+        figurita_de_otro = {"id": "1", "usuario_id": 99, "numero": 10, "cantidad": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita_de_otro):
             with pytest.raises(HTTPException) as exc:
@@ -445,9 +447,9 @@ class TestPublicacionService:
     def test_publicar_falla_409_si_ya_esta_publicada(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 2}
-        publicacion_existente = {"id": 1}
+        pub = _publicacion_create(figurita_personal_id="1")
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 2}
+        publicacion_existente = {"id": "1"}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
              patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion_existente):
@@ -460,8 +462,8 @@ class TestPublicacionService:
     def test_publicar_falla_400_si_cantidad_supera_album(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1, cantidad=5)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 1}
+        pub = _publicacion_create(figurita_personal_id="1", cantidad=5)
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
              patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=None):
@@ -473,8 +475,8 @@ class TestPublicacionService:
 
     def test_publicar_llama_a_repo_create_con_datos_aplanados(self):
         """publicar_figurita() crea la publicación con los datos de la figurita aplanados."""
-        pub = _publicacion_create(figurita_personal_id=1, cantidad=1)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2}
+        pub = _publicacion_create(figurita_personal_id="1", cantidad=1)
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2}
         fake_result = {"id": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \

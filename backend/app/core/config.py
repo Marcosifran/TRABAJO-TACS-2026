@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     user_1_token: str = ""
     user_2_token: str = ""
 
+    # Variables de MongoDB
+    mongodb_url: str = "mongodb://localhost:27017" # Valor por defecto
+    mongodb_db_name: str = "mundial_figuritas_db"
+
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

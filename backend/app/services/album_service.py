@@ -25,7 +25,7 @@ def buscar_en_album(
     figuritas = album_repo.buscar(numero, equipo, jugador, usuario_id=usuario_id)
     return [_enriquecer(f) for f in figuritas]
 
-def eliminar_del_album (figurita_id: int, usuario_id: int) -> bool | None: 
+def eliminar_del_album(figurita_id: str, usuario_id: int) -> bool | None:
     """ Elimina una figurita del album personal"""
     figurita = album_repo.get_by_id(figurita_id)
 

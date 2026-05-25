@@ -53,7 +53,7 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
         404: {"description": "Figurita no encontrada"},
     },
 )
-def eliminar_figurita(figurita_id: int, usuario: dict = Depends(get_current_user)):
+def eliminar_figurita(figurita_id: str, usuario: dict = Depends(get_current_user)):
     resultado = figurita_service.eliminar(figurita_id, usuario["id"])
     if resultado is False:
         raise HTTPException(status_code=404, detail="Figurita no encontrada")
