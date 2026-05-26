@@ -30,7 +30,7 @@ def get_by_id(subasta_id: str) -> dict | None:
 def get_by_figurita(figurita_id: str) -> dict | None:
     return _get_collection().find_one({"figurita_id": figurita_id, "estado": "activa"}, {"_id": 0})
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
+def get_by_user(usuario_id: int) -> list[dict]:
     return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
 def update(subasta_actualizada: dict) -> dict:

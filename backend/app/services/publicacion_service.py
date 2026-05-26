@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.repositories import album_repo, publicacion_repo, usuario_repo
+from app.repositories import album_repo, publicacion_repo, usuario_repo, faltante_repo
 from app.schemas.publicacion_sch import PublicacionCreate
 
 def publicar_figurita(publicacion: PublicacionCreate, usuario_id: int) -> dict:
@@ -10,11 +10,11 @@ def publicar_figurita(publicacion: PublicacionCreate, usuario_id: int) -> dict:
         raise HTTPException(status_code=404, detail="Figurita no encontrada en el álbum del usuario")
     if figurita["usuario_id"] != usuario_id:
         raise HTTPException(status_code=403, detail="La figurita no pertenece al usuario")
-    if publicacion_repo.get_by_figurita_personal(publicacion.figurita_personal_id):
+    if publicacion_repo.get_by_personal_figurita(publicacion.figurita_personal_id):
         raise HTTPException(status_code=409, detail="La figurita ya está publicada para intercambio")
     if publicacion.cantidad_disponible > figurita["cantidad"]:
         raise HTTPException(status_code=400, detail="La cantidad disponible no puede ser mayor a la cantidad en el álbum")
-    
+
     return publicacion_repo.create(
         publicacion=publicacion,
         usuario_id=usuario_id,
@@ -31,7 +31,7 @@ def listar_publicaciones(
     excluir_usuario_id: int | None
 ) -> list[dict]:
     """Retorna las figuritas disponibles poara intercambio aplicando filtros, excluir es para no ver sus propias ofertas"""
-    return publicacion_repo.buscar(
+    return publicacion_repo.find(
         numero=numero,
         equipo=equipo,
         jugador=jugador,
@@ -45,23 +45,23 @@ def retirar_publicacion(publicacion_id: str, usuario_id: int) -> bool | None:
 
     if publicacion is None:
         return False
-    
+
     if publicacion["usuario_id"] != usuario_id:
         return None
-    
+
     publicacion_repo.delete(publicacion_id)
     return True
 
 def obtener_sugerencias(usuario_id: int) -> list[dict]:
     """ Genera sugerencias automaticas de intercambio para el usuario, desde faltantes del usuario con publicaciones de otros"""
-    faltantes = usuario_repo.get_faltantes(usuario_id)
+    faltantes = faltante_repo.get_missing(usuario_id)
 
     if not faltantes:
         return []
-    
+
     numeros_faltantes = {f["numero_figurita"] for f in faltantes}
 
-    publicaciones = publicacion_repo.buscar(
+    publicaciones = publicacion_repo.find(
         numero=None,
         equipo=None,
         jugador=None,
@@ -84,5 +84,5 @@ def mis_publicaciones(usuario_id: int) -> list[dict]:
     """
     Retorna las publicaciones activas del usuario autenticado.
     """
-    return publicacion_repo.get_by_usuario(usuario_id)
+    return publicacion_repo.get_by_user(usuario_id)
 

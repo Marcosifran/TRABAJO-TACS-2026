@@ -151,17 +151,17 @@ class TestMaestroService:
 
     def test_get_jugador_delega_en_repo(self):
         fake = {"numero": 47, "equipo": "Argentina", "jugador": "Messi", "posicion": "FW", "numero_camiseta": 10}
-        with patch("app.services.maestro_service.maestro_repo.get_by_numero", return_value=fake) as mock:
+        with patch("app.services.maestro_service.maestro_repo.get_by_number", return_value=fake) as mock:
             resultado = maestro_service.get_jugador(47)
         mock.assert_called_once_with(47)
         assert resultado == fake
 
     def test_get_jugador_retorna_none_si_no_existe(self):
-        with patch("app.services.maestro_service.maestro_repo.get_by_numero", return_value=None):
+        with patch("app.services.maestro_service.maestro_repo.get_by_number", return_value=None):
             assert maestro_service.get_jugador(9999) is None
 
     def test_get_equipos_delega_en_repo(self):
-        with patch("app.services.maestro_service.maestro_repo.get_equipos", return_value=["Argentina", "Brazil"]) as mock:
+        with patch("app.services.maestro_service.maestro_repo.get_teams", return_value=["Argentina", "Brazil"]) as mock:
             resultado = maestro_service.get_equipos()
         mock.assert_called_once()
         assert resultado == ["Argentina", "Brazil"]

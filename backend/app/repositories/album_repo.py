@@ -11,10 +11,10 @@ def get_all() -> list[dict]:
 def get_by_id(figurita_id: str) -> dict | None:
     return _get_collection().find_one({"id": figurita_id}, {"_id": 0})
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
+def get_by_user(usuario_id: int) -> list[dict]:
     return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
-def buscar(numero: int | None, equipo: str | None, jugador: str | None, usuario_id: int | None = None) -> list[dict]:
+def find(numero: int | None, equipo: str | None, jugador: str | None, usuario_id: int | None = None) -> list[dict]:
     query = {}
     if usuario_id is not None: query["usuario_id"] = usuario_id
     if numero is not None: query["numero"] = numero
@@ -32,7 +32,7 @@ def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> dict:
     del nueva["_id"]
     return nueva
 
-def update_cantidad(figurita_id: str, cantidad: int) -> dict | None:
+def update_qty(figurita_id: str, cantidad: int) -> dict | None:
     """Actualiza la cantidad de una figurita en el album personal de un usuario.
     Retorna la figurita actualizada o None si no se encuentra."""
     return _get_collection().find_one_and_update(
@@ -47,7 +47,7 @@ def delete(figurita_id: str) -> bool:
     res = _get_collection().delete_one({"id": figurita_id})
     return res.deleted_count > 0
 
-def get_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
+def get_by_number_and_user(numero: int, usuario_id: int) -> dict | None:
     return _get_collection().find_one({"numero": numero, "usuario_id": usuario_id}, {"_id": 0})
 
 def update(figurita_actualizada: dict) -> dict:

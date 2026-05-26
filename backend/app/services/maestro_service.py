@@ -36,15 +36,15 @@ def inicializar() -> None:
 
 
 def get_jugador(numero: int) -> dict | None:
-    return maestro_repo.get_by_numero(numero)
+    return maestro_repo.get_by_number(numero)
 
 
 def get_equipos() -> list[str]:
-    return maestro_repo.get_equipos()
+    return maestro_repo.get_teams()
 
 
 def get_por_equipo(equipo: str) -> list[dict]:
-    return maestro_repo.get_by_equipo(equipo)
+    return maestro_repo.get_by_team(equipo)
 
 
 def get_todos() -> list[dict]:

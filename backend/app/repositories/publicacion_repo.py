@@ -15,15 +15,15 @@ def get_by_id(publicacion_id: str) -> dict | None:
     """Obtiene una publicación por su ID."""
     return _get_collection().find_one({"id": publicacion_id}, {"_id": 0})
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
+def get_by_user(usuario_id: int) -> list[dict]:
     """Obtiene todas las publicaciones de un usuario específico."""
     return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
-def get_by_figurita_personal(figurita_personal_id: str) -> dict | None:
+def get_by_personal_figurita(figurita_personal_id: str) -> dict | None:
     """Obtiene la publicación activa que ofrece una figurita personal específica."""
     return _get_collection().find_one({"figurita_personal_id": figurita_personal_id}, {"_id": 0})
 
-def buscar(
+def find(
         numero: int | None,
         equipo: str | None,
         jugador: str | None,

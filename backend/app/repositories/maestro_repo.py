@@ -13,15 +13,15 @@ def get_all() -> list[dict]:
     return list(_col().find({}, {"_id": 0}).sort("numero", 1))
 
 
-def get_by_numero(numero: int) -> dict | None:
+def get_by_number(numero: int) -> dict | None:
     return _col().find_one({"numero": numero}, {"_id": 0})
 
 
-def get_equipos() -> list[str]:
+def get_teams() -> list[str]:
     return sorted(_col().distinct("equipo"))
 
 
-def get_by_equipo(equipo: str) -> list[dict]:
+def get_by_team(equipo: str) -> list[dict]:
     return list(
         _col()
         .find({"equipo": {"$regex": f"^{equipo}$", "$options": "i"}}, {"_id": 0})

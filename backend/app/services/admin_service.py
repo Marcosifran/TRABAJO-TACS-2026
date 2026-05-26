@@ -4,7 +4,7 @@ from app.repositories import usuario_repo, publicacion_repo, intercambio_repo, s
 def obtener_estadisticas() -> dict:
     usuarios      = usuario_repo.get_all()
     publicaciones = publicacion_repo.get_all()
-    intercambios  = intercambio_repo.listar_intercambios()
+    intercambios  = intercambio_repo.list_exchanges()
     subastas      = subasta_repo.get_all()
 
     estados = {"pendiente": 0, "aceptado": 0, "rechazado": 0}

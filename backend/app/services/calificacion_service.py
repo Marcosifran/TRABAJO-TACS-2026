@@ -30,7 +30,7 @@ def crear_calificacion(intercambio_id: str, calificador_id: int, data: Calificac
         HTTPException 403: Si el calificador no participó en el intercambio.
         HTTPException 409: Si el calificador ya calificó este intercambio.
     """
-    intercambio = intercambio_repo.buscar_intercambio_por_id(intercambio_id)
+    intercambio = intercambio_repo.find_exchange_by_id(intercambio_id)
     if not intercambio:
         raise HTTPException(status_code=404, detail="Intercambio no encontrado")
 
@@ -43,7 +43,7 @@ def crear_calificacion(intercambio_id: str, calificador_id: int, data: Calificac
     if calificador_id not in (intercambio["propuesto_por"], intercambio["solicitado_a"]):
         raise HTTPException(status_code=403, detail="No participás en este intercambio")
 
-    if calificacion_repo.buscar_por_intercambio_y_calificador(intercambio_id, calificador_id):
+    if calificacion_repo.find_by_exchange_and_qualifier(intercambio_id, calificador_id):
         raise HTTPException(status_code=409, detail="Ya calificaste este intercambio")
 
     calificado_id = (
@@ -52,7 +52,7 @@ def crear_calificacion(intercambio_id: str, calificador_id: int, data: Calificac
         else intercambio["propuesto_por"]
     )
 
-    return calificacion_repo.crear(
+    return calificacion_repo.create(
         intercambio_id=intercambio_id,
         calificador_id=calificador_id,
         calificado_id=calificado_id,
@@ -79,7 +79,7 @@ def obtener_reputacion(usuario_id: int) -> ReputacionResponse:
     if not usuario_repo.get_by_id(usuario_id):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    recibidas = calificacion_repo.listar_por_calificado(usuario_id)
+    recibidas = calificacion_repo.list_by_qualified(usuario_id)
     n = len(recibidas)
     if n == 0:
         return ReputacionResponse(
