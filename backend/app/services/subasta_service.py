@@ -53,7 +53,7 @@ def listar_ofertas(subasta_id: str) -> list[dict]:
     subasta = subasta_repo.get_by_id(subasta_id)
     if not subasta:
         raise ValueError("Subasta inexistente")
-    ofertas = oferta_repo.get_by_subasta(subasta_id)
+    ofertas = oferta_repo.get_by_auction(subasta_id)
     result = []
     for oferta in ofertas:
         enriquecida = dict(oferta)
@@ -87,7 +87,7 @@ def ofertar(subasta_id: str, oferta_data: OfertaCreate, usuario_id: int) -> dict
     if subasta["usuario_id"] == usuario_id:
         raise ValueError("No podés ofertar en tu propia subasta")
 
-    ofertas_existentes = oferta_repo.get_by_subasta(subasta_id)
+    ofertas_existentes = oferta_repo.get_by_auction(subasta_id)
     if any(o["usuario_id"] == usuario_id for o in ofertas_existentes):
         raise ValueError("Ya enviaste una oferta a esta subasta")
 
@@ -105,7 +105,7 @@ def ofertar(subasta_id: str, oferta_data: OfertaCreate, usuario_id: int) -> dict
         raise ValueError("No podés ofrecer una figurita que no es tuya")
 
     subastada = publicacion_repo.get_by_id(subasta["figurita_id"])
-    nueva_oferta = oferta_repo.crear_oferta(subasta_id, [f["id"] for f in ofrecidas], usuario_id)
+    nueva_oferta = oferta_repo.create_offer(subasta_id, [f["id"] for f in ofrecidas], usuario_id)
 
     return {
         "oferta": nueva_oferta,
@@ -115,11 +115,11 @@ def ofertar(subasta_id: str, oferta_data: OfertaCreate, usuario_id: int) -> dict
 
 
 def listar_subastas_usuario(usuario_id: int) -> list[dict]:
-    return subasta_repo.get_by_usuario(usuario_id)
+    return subasta_repo.get_by_user(usuario_id)
 
 
 def listar_mis_ofertas(usuario_id: int) -> list[dict]:
-    ofertas = oferta_repo.get_by_usuario(usuario_id)
+    ofertas = oferta_repo.get_by_user(usuario_id)
     result = []
     for oferta in ofertas:
         enriquecida = dict(oferta)
@@ -194,7 +194,7 @@ def aceptar_oferta(subasta_id: str, oferta_id: str, usuario_id: int) -> dict:
             fig_ofrecida["usuario_id"] = usuario_id
             album_repo.update(fig_ofrecida)
 
-            pub_fantasma = publicacion_repo.get_by_figurita_personal(fig_id)
+            pub_fantasma = publicacion_repo.get_by_personal_figurita(fig_id)
             if pub_fantasma:
                 publicacion_repo.delete(pub_fantasma["id"])
 

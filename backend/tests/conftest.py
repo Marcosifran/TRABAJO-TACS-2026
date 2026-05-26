@@ -5,7 +5,7 @@ Configuración global de pytest — compartida entre tests unitarios y de integr
 import pytest
 from app.core.database import connect_to_mongo, close_mongo_connection, get_db
 
-_TEST_DB_NAME = "mundial_figuritas_test_db"
+_TEST_DB_NAME = "mundial_figuritas_db"
 _TEST_MONGODB_URL = "mongodb://localhost:27017"
 
 _COLLECTIONS = [

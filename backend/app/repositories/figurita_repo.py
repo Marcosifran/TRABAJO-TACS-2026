@@ -11,10 +11,10 @@ def get_all() -> list[dict]:
 def get_by_id(figurita_id: str) -> dict | None:
     return _get_collection().find_one({"id": figurita_id}, {"_id": 0})
 
-def buscar_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
+def find_by_number_and_user(numero: int, usuario_id: int) -> dict | None:
     return _get_collection().find_one({"numero": numero, "usuario_id": usuario_id}, {"_id": 0})
 
-def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
+def find(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
     """Filtra las figuritas disponibles según criterios opcionales."""
     query = {}
     if numero is not None: query["numero"] = numero
@@ -22,10 +22,10 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[
     if jugador is not None: query["jugador"] = {"$regex": jugador, "$options": "i"}
     return list(_get_collection().find(query, {"_id": 0}))
 
-def get_by_usuario_id(usuario_id: int) -> list[dict]:
+def get_by_user_id(usuario_id: int) -> list[dict]:
     return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
-def get_sugerencias(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
+def get_suggestions(numeros_faltantes: list[int], usuario_id: int) -> list[dict]:
     return list(_get_collection().find({
         "numero": {"$in": numeros_faltantes},
         "usuario_id": {"$ne": usuario_id}

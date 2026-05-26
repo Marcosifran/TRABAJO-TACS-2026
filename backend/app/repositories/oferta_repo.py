@@ -4,7 +4,7 @@ from app.core.database import get_db
 def _get_collection():
     return get_db()["ofertas"]
 
-def crear_oferta(subasta_id: str, ofrecidas: list[str], usuario_id: int) -> dict:
+def create_offer(subasta_id: str, ofrecidas: list[str], usuario_id: int) -> dict:
     oid = ObjectId()
     nueva_oferta = {
         "_id": oid,
@@ -20,10 +20,10 @@ def crear_oferta(subasta_id: str, ofrecidas: list[str], usuario_id: int) -> dict
 def get_all() -> list[dict]:
     return list(_get_collection().find({}, {"_id": 0}))
 
-def get_by_subasta(subasta_id: str) -> list[dict]:
+def get_by_auction(subasta_id: str) -> list[dict]:
     return list(_get_collection().find({"subasta_id": subasta_id}, {"_id": 0}))
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
+def get_by_user(usuario_id: int) -> list[dict]:
     return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
 def get_by_id(oferta_id: str) -> dict | None:

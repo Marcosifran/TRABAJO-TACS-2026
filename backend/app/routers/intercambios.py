@@ -26,7 +26,7 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
         usuario_id=usuario["id"],
     )
 
-    intercambio_propuesto = intercambio_repo.crear_intercambio(
+    intercambio_propuesto = intercambio_repo.create_exchange(
         intercambio=intercambio,
         propuesto_por=usuario["id"],
         solicitado_a=intercambio.solicitado_a_id,
@@ -43,11 +43,11 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
     },
 )
 def listar_intercambios(usuario: dict = Depends(get_current_user)):
-    intercambios = intercambio_repo.listar_intercambios_por_usuario(usuario["id"])
+    intercambios = intercambio_repo.list_exchanges_by_user(usuario["id"])
     for grupo in ("enviados", "recibidos"):
         for i in intercambios.get(grupo, []):
             i["ya_calificado"] = bool(
-                calificacion_repo.buscar_por_intercambio_y_calificador(i["id"], usuario["id"])
+                calificacion_repo.find_by_exchange_and_qualifier(i["id"], usuario["id"])
             )
     return intercambios
 

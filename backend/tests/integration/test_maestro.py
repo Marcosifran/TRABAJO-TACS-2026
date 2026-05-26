@@ -139,7 +139,7 @@ class TestRefreshMaestro:
 
         assert resp.status_code == 200
         assert maestro_repo.count() == 1
-        assert maestro_repo.get_by_numero(1)["equipo"] == "Nuevo"
+        assert maestro_repo.get_by_number(1)["equipo"] == "Nuevo"
 
     def test_refresh_devuelve_503_si_scrape_falla(self, client):
         with patch("app.services.maestro_service.scrape_planteles", side_effect=Exception("timeout")):
