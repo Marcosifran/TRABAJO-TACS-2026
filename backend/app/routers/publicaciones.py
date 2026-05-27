@@ -50,7 +50,7 @@ def obtener_sugerencias(
 
 @router.delete("/{publicacion_id}", status_code=204)
 def retirar_publicacion(
-    publicacion_id: int,
+    publicacion_id: str,
     usuario: dict = Depends(get_current_user)
 ):
     """Retira una figurita de la oferta publica"""

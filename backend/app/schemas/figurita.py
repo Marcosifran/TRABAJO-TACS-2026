@@ -18,7 +18,7 @@ class FiguritaCreate(BaseModel):
     tipo_intercambio: TipoIntercambio = Field(..., description="Modalidad de intercambio: intercambio_directo o subasta")
 
 class FiguritaResponse(FiguritaCreate):
-    id: int
+    id: str
     usuario_id: int
 
 class SugerenciaResponse(BaseModel): #Representa una sugerencia de intercambio

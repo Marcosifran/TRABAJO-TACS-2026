@@ -29,7 +29,7 @@ class IntercambioDecision(BaseModel):
 
 
 class IntercambioResponse(BaseModel):
-    id: int
+    id: str
     propuesto_por: int
     solicitado_a: int
     figuritas_ofrecidas: list[int]

@@ -1,4 +1,11 @@
-from app.repositories import album_repo, publicacion_repo, intercambio_repo, usuario_repo, calificacion_repo
+from app.repositories import (
+    album_repo,
+    publicacion_repo,
+    intercambio_repo,
+    usuario_repo,
+    calificacion_repo,
+    faltante_repo,
+)
 from app.domain.errors import (
     DomainConflictError,
     DomainNotFoundError,
@@ -45,7 +52,7 @@ def obtener_publicaciones_para_intercambio(
     todas_publicaciones = publicacion_repo.get_all()
 
     # Buscamos en el álbum del proponente los números ofrecidos
-    album_proponente = album_repo.get_by_usuario(usuario_id)
+    album_proponente = album_repo.get_by_user(usuario_id)
     numeros_en_album = {f["numero"] for f in album_proponente if f["cantidad"] > 0}
     
     numeros_faltantes = [
@@ -151,7 +158,7 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
     # 1. Procesar figuritas ofrecidas por el proponente -> entregadas al solicitado_a
     for numero in intercambio["figuritas_ofrecidas"]:
         # Restar del álbum del proponente
-        fig_prop = album_repo.get_por_numero_y_usuario(numero, intercambio["propuesto_por"])
+        fig_prop = album_repo.get_by_number_and_user(numero, intercambio["propuesto_por"])
         if fig_prop:
             equipo, jugador = fig_prop["equipo"], fig_prop["jugador"]
             fig_prop["cantidad"] -= 1
@@ -175,7 +182,7 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
             equipo, jugador = "Desconocido", "Desconocido"
 
         # Sumar al álbum del receptor (solicitado_a)
-        fig_rec = album_repo.get_por_numero_y_usuario(numero, intercambio["solicitado_a"])
+        fig_rec = album_repo.get_by_number_and_user(numero, intercambio["solicitado_a"])
         if fig_rec:
             fig_rec["cantidad"] += 1
         else:
@@ -183,15 +190,15 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
                 FiguritaAlbumCreate(numero=numero, equipo=equipo, jugador=jugador, cantidad=1),
                 usuario_id=intercambio["solicitado_a"]
             )
-        
+
         # Remover de faltantes del receptor
-        usuario_repo.remove_faltante(intercambio["solicitado_a"], numero)
+        faltante_repo.remove_missing(intercambio["solicitado_a"], numero)
 
     # 2. Procesar figurita solicitada al receptor -> entregada al proponente
     num_solicitado = intercambio["figurita_solicitada"]
-    
+
     # Restar del álbum del receptor (solicitado_a)
-    fig_sol = album_repo.get_por_numero_y_usuario(num_solicitado, intercambio["solicitado_a"])
+    fig_sol = album_repo.get_by_number_and_user(num_solicitado, intercambio["solicitado_a"])
     if fig_sol:
         equipo_sol, jugador_sol = fig_sol["equipo"], fig_sol["jugador"]
         fig_sol["cantidad"] -= 1
@@ -215,7 +222,7 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
         equipo_sol, jugador_sol = "Desconocido", "Desconocido"
 
     # Sumar al álbum del proponente
-    fig_prop_rec = album_repo.get_por_numero_y_usuario(num_solicitado, intercambio["propuesto_por"])
+    fig_prop_rec = album_repo.get_by_number_and_user(num_solicitado, intercambio["propuesto_por"])
     if fig_prop_rec:
         fig_prop_rec["cantidad"] += 1
     else:
@@ -225,10 +232,10 @@ def realizar_intercambio_aceptado(intercambio: dict) -> None:
         )
 
     # Remover de faltantes del proponente
-    usuario_repo.remove_faltante(intercambio["propuesto_por"], num_solicitado)
+    faltante_repo.remove_missing(intercambio["propuesto_por"], num_solicitado)
 
 def responder_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     decision: IntercambioDecision,
     usuario_id: int,
 ) -> dict:
@@ -243,7 +250,7 @@ def responder_intercambio(
     Returns:
         El intercambio actualizado con el nuevo estado.
     """
-    intercambio = intercambio_repo.buscar_intercambio_por_id(intercambio_id)
+    intercambio = intercambio_repo.find_exchange_by_id(intercambio_id)
 
     if not intercambio:
         raise DomainNotFoundError("Intercambio no encontrado")
@@ -257,7 +264,7 @@ def responder_intercambio(
     if decision.estado.value == "aceptado":
         realizar_intercambio_aceptado(intercambio)
 
-    intercambio_actualizado = intercambio_repo.responder_intercambio(
+    intercambio_actualizado = intercambio_repo.answer_exchange(
         intercambio_id,
         decision.estado.value,
     )

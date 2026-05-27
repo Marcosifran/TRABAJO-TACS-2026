@@ -4,8 +4,13 @@ from app.schemas.calificacion_sch import CalificacionCreate, CalificacionRespons
 from app.dependencies import get_current_user
 from app.services import intercambio_service, calificacion_service
 from app.domain.errors import DomainError
-    
+
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
+
+
+def _traducir_error(error: DomainError) -> None:
+    raise HTTPException(status_code=error.status_code, detail=str(error))
+
 
 @router.post(
     "/",
@@ -19,7 +24,10 @@ router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
     },
 )
 def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends(get_current_user)):
-    return intercambio_service.proponer_intercambio(intercambio, usuario["id"])
+    try:
+        return intercambio_service.proponer_intercambio(intercambio, usuario["id"])
+    except DomainError as error:
+        _traducir_error(error)
 
 
 @router.get(
@@ -30,7 +38,10 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
     },
 )
 def listar_intercambios(usuario: dict = Depends(get_current_user)):
-    return intercambio_service.listar_intercambios_de(usuario["id"])
+    try:
+        return intercambio_service.listar_intercambios_de(usuario["id"])
+    except DomainError as error:
+        _traducir_error(error)
 
 
 @router.patch(
@@ -44,12 +55,16 @@ def listar_intercambios(usuario: dict = Depends(get_current_user)):
         404: {"description": "Intercambio no encontrado"},
     },
 )
-def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):        
-    return intercambio_service.responder_intercambio(
+def responder_intercambio(intercambio_id: str, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):
+    try:
+        return intercambio_service.responder_intercambio(
             intercambio_id=intercambio_id,
             decision=decision,
             usuario_id=usuario["id"],
         )
+    except DomainError as error:
+        _traducir_error(error)
+
 
 @router.post(
     "/{intercambio_id}/calificaciones",
@@ -65,12 +80,15 @@ def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, us
     },
 )
 def calificar_tras_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     body: CalificacionCreate,
     usuario: dict = Depends(get_current_user),
 ):
-    return calificacion_service.crear_calificacion(
-        intercambio_id=intercambio_id,
-        calificador_id=usuario["id"],
-        data=body,
-    )
+    try:
+        return calificacion_service.crear_calificacion(
+            intercambio_id=intercambio_id,
+            calificador_id=usuario["id"],
+            data=body,
+        )
+    except DomainError as error:
+        _traducir_error(error)

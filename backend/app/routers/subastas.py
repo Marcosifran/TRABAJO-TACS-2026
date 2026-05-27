@@ -41,7 +41,7 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
     "/{subasta_id}/ofertas/{oferta_id}",
     status_code=200,
 )
-def responder_oferta(subasta_id: int, oferta_id: int, decision: OfertaDecision, usuario: dict = Depends(get_current_user)):
+def responder_oferta(subasta_id: str, oferta_id: str, decision: OfertaDecision, usuario: dict = Depends(get_current_user)):
     """
     Responde una oferta: puede aceptarse o rechazarse usando el campo `estado`.
     """
@@ -66,7 +66,7 @@ def responder_oferta(subasta_id: int, oferta_id: int, decision: OfertaDecision, 
         404: {"description": "Subasta no encontrada"},
     },
 )
-def listar_ofertas(subasta_id: int):
+def listar_ofertas(subasta_id: str):
     """
     Devuelve todas las ofertas recibidas para una subasta.
     """
@@ -85,8 +85,8 @@ def listar_ofertas(subasta_id: int):
     },
 )
 def cancelar_oferta(
-    subasta_id: int,
-    oferta_id: int,
+    subasta_id: str,
+    oferta_id: str,
     usuario: dict = Depends(get_current_user),
 ):
 
@@ -106,7 +106,7 @@ def cancelar_oferta(
 
 
 def ofertar_en_subasta(
-    subasta_id: int,
+    subasta_id: str,
     oferta: OfertaCreate,
     usuario: dict = Depends(get_current_user)
 ):

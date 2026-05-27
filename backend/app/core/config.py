@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-jwt-secret-change-me-please-use-env-overrides"
     jwt_algorithm: str = "HS256"
     jwt_exp_minutes: int = 480
+    # Variables de MongoDB
+    mongodb_url: str = "mongodb://localhost:27017" # Valor por defecto
+    mongodb_db_name: str = "mundial_figuritas_db"
 
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(

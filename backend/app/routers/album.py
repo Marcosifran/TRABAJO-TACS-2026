@@ -31,7 +31,7 @@ def listar_album(
 
 @router.delete("/{figurita_id}", status_code=204)
 def eliminar_del_album(
-    figurita_id: int,
+    figurita_id: str,
     usuario: dict = Depends(get_current_user)
 ):
     """Elimina una figurita del album personal del usuario"""

@@ -1,50 +1,66 @@
+from bson import ObjectId
 from app.core.config import settings
 import hmac
+from app.core.database import get_db
 
-# Los tokens vienen del entorno (.env), no se generan en código ni se exponen por API
+
+def _get_usuarios_collection():
+    return get_db()["usuarios"]
+
+
+def _get_faltantes_collection():
+    return get_db()["faltantes"]
+
+
 _db_usuarios: list[dict] = [
     {"id": 1, "nombre": "marcos", "email": "marcos@utn", "token": settings.user_1_token, "es_admin": True},
     {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "token": settings.user_2_token, "es_admin": False},
 ]
-_db_faltantes: list[dict] = []
 
-'''
-Repositorio para manejar datos de usuarios. Se usan listas en memoria para simular
-una base de datos, pero luego se implementará MongoDB.
-Implementación de CRUD para usuarios.
-'''
 
 def get_all() -> list[dict]:
-    return _db_usuarios
+    db_users = list(_get_usuarios_collection().find({}, {"_id": 0}))
+    return _db_usuarios + db_users
+
 
 def get_by_id(usuario_id: int) -> dict | None:
-    return next((u for u in _db_usuarios if u["id"] == usuario_id), None)
+    user = next((u for u in _db_usuarios if u["id"] == usuario_id), None)
+    if user:
+        return user
+    return _get_usuarios_collection().find_one({"id": usuario_id}, {"_id": 0})
 
-# Buscamos el usuario por token para identificarlo en cada request
+
 def get_by_token(token: str) -> dict | None:
+    """Busca usuario por token. Usa comparación segura para los usuarios en memoria
+    y cae a MongoDB si no se encuentra localmente.
+    """
     if not token:
         return None
+
     for u in _db_usuarios:
         stored = u.get("token")
         if stored and hmac.compare_digest(stored, token):
             return u
-    return None
+
+    return _get_usuarios_collection().find_one({"token": token}, {"_id": 0})
 
 
 def get_faltantes(usuario_id: int) -> list[dict]:
-    return [f for f in _db_faltantes if f["usuario_id"] == usuario_id]
+    return list(_get_faltantes_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
 
 def create_faltante(faltante_data: dict) -> dict:
-    faltante_data["id"] = len(_db_faltantes) + 1
-    _db_faltantes.append(faltante_data)
+    oid = ObjectId()
+    faltante_data["_id"] = oid
+    faltante_data["id"] = str(oid)
+    _get_faltantes_collection().insert_one(faltante_data)
+    del faltante_data["_id"]
     return faltante_data
 
 
 def remove_faltante(usuario_id: int, numero_figurita: int) -> bool:
-    for index, faltante in enumerate(_db_faltantes):
-        if faltante["usuario_id"] == usuario_id and faltante["numero_figurita"] == numero_figurita:
-            _db_faltantes.pop(index)
-            return True
-    return False
-
+    resultado = _get_faltantes_collection().delete_one({
+        "usuario_id": usuario_id,
+        "numero_figurita": numero_figurita,
+    })
+    return resultado.deleted_count > 0

@@ -3,7 +3,7 @@ Tests unitarios — Álbum personal y Publicaciones
 
 Testea directamente los repositorios y services sin pasar por HTTP.
 Cubre:
-- album_repo: create, get_by_id, get_by_usuario, buscar, delete, update_cantidad
+- album_repo: create, get_by_id, get_by_user, find, delete, update_qty
 - publicacion_repo: create, get_by_id, get_by_usuario, get_by_figurita_personal, buscar, delete
 - album_service: agregar, listar, eliminar, campo en_intercambio
 - publicacion_service: publicar, listar, retirar, sugerencias
@@ -12,7 +12,7 @@ Cubre:
 import pytest
 from unittest.mock import patch
 
-from app.repositories import album_repo, publicacion_repo
+from app.repositories import album_repo, publicacion_repo, faltante_repo
 from app.schemas.album_sch import FiguritaAlbumCreate
 from app.schemas.publicacion_sch import PublicacionCreate, TipoIntercambio
 
@@ -29,7 +29,7 @@ def _album_create(numero=10, equipo="Argentina", jugador="Messi", cantidad=2):
         cantidad=cantidad,
     )
 
-def _publicacion_create(figurita_personal_id=1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO, cantidad=1):
+def _publicacion_create(figurita_personal_id="1", tipo=TipoIntercambio.INTERCAMBIO_DIRECTO, cantidad=1):
     return PublicacionCreate(
         figurita_personal_id=figurita_personal_id,
         tipo_intercambio=tipo,
@@ -55,15 +55,16 @@ class TestAlbumRepoCreate:
         assert resultado["cantidad"] == 2
         assert resultado["usuario_id"] == 1
 
-    def test_create_asigna_id_autoincrementado(self):
-        """Los IDs asignados son secuenciales y únicos."""
+    def test_create_asigna_ids_unicos(self):
+        """Los IDs asignados son strings únicos (ObjectId de MongoDB)."""
         figurita = _album_create()
 
         primera = album_repo.create(figurita, usuario_id=1)
         segunda = album_repo.create(figurita, usuario_id=2)
 
-        assert primera["id"] == 1
-        assert segunda["id"] == 2
+        assert isinstance(primera["id"], str)
+        assert isinstance(segunda["id"], str)
+        assert primera["id"] != segunda["id"]
 
     def test_create_asocia_usuario_id(self):
         """La figurita queda vinculada al usuario que la agregó."""
@@ -96,20 +97,20 @@ class TestAlbumRepoGetYDelete:
         assert resultado["numero"] == 7
 
     def test_get_by_id_retorna_none_si_no_existe(self):
-        assert album_repo.get_by_id(999) is None
+        assert album_repo.get_by_id("000000000000000000000000") is None
 
-    def test_get_by_usuario_retorna_solo_las_del_usuario(self):
+    def test_get_by_user_retorna_solo_las_del_usuario(self):
         album_repo.create(_album_create(numero=1), usuario_id=1)
         album_repo.create(_album_create(numero=2), usuario_id=1)
         album_repo.create(_album_create(numero=3), usuario_id=2)
 
-        resultado = album_repo.get_by_usuario(1)
+        resultado = album_repo.get_by_user(1)
 
         assert len(resultado) == 2
         assert all(f["usuario_id"] == 1 for f in resultado)
 
-    def test_get_by_usuario_retorna_lista_vacia_si_no_tiene_figuritas(self):
-        assert album_repo.get_by_usuario(99) == []
+    def test_get_by_user_retorna_lista_vacia_si_no_tiene_figuritas(self):
+        assert album_repo.get_by_user(99) == []
 
     def test_delete_elimina_figurita_existente(self):
         creada = album_repo.create(_album_create(), usuario_id=1)
@@ -120,10 +121,10 @@ class TestAlbumRepoGetYDelete:
         assert album_repo.get_all() == []
 
     def test_delete_retorna_false_si_no_existe(self):
-        assert album_repo.delete(999) is False
+        assert album_repo.delete("000000000000000000000000") is False
 
 
-class TestAlbumRepoBuscar:
+class TestAlbumRepoFind:
 
     def _crear(self, numero, equipo, jugador, usuario_id=1):
         return album_repo.create(
@@ -131,60 +132,60 @@ class TestAlbumRepoBuscar:
             usuario_id=usuario_id,
         )
 
-    def test_buscar_sin_filtros_retorna_todas(self):
+    def test_find_sin_filtros_retorna_todas(self):
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Vinicius")
 
-        assert len(album_repo.buscar(None, None, None)) == 2
+        assert len(album_repo.find(None, None, None)) == 2
 
-    def test_buscar_por_numero_exacto(self):
+    def test_find_por_numero_exacto(self):
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Neymar")
 
-        resultado = album_repo.buscar(1, None, None)
+        resultado = album_repo.find(1, None, None)
 
         assert len(resultado) == 1
         assert resultado[0]["numero"] == 1
 
-    def test_buscar_por_equipo_parcial_case_insensitive(self):
+    def test_find_por_equipo_parcial_case_insensitive(self):
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Francia", "Mbappé")
 
-        resultado = album_repo.buscar(None, "argen", None)
+        resultado = album_repo.find(None, "argen", None)
 
         assert len(resultado) == 1
         assert resultado[0]["equipo"] == "Argentina"
 
-    def test_buscar_por_jugador_parcial(self):
+    def test_find_por_jugador_parcial(self):
         self._crear(1, "Argentina", "Messi")
         self._crear(2, "Brasil", "Vinicius")
 
-        resultado = album_repo.buscar(None, None, "mess")
+        resultado = album_repo.find(None, None, "mess")
 
         assert len(resultado) == 1
         assert resultado[0]["jugador"] == "Messi"
 
-    def test_buscar_filtra_por_usuario_si_se_pasa(self):
+    def test_find_filtra_por_usuario_si_se_pasa(self):
         self._crear(1, "Argentina", "Messi", usuario_id=1)
         self._crear(2, "Brasil", "Vinicius", usuario_id=2)
 
-        resultado = album_repo.buscar(None, None, None, usuario_id=1)
+        resultado = album_repo.find(None, None, None, usuario_id=1)
 
         assert len(resultado) == 1
         assert resultado[0]["usuario_id"] == 1
 
-    def test_buscar_numero_inexistente_retorna_lista_vacia(self):
+    def test_find_numero_inexistente_retorna_lista_vacia(self):
         self._crear(1, "Argentina", "Messi")
 
-        assert album_repo.buscar(99, None, None) == []
+        assert album_repo.find(99, None, None) == []
 
 
-class TestAlbumRepoGetPorNumeroYUsuario:
+class TestAlbumRepoGetByNumberAndUser:
 
     def test_retorna_figurita_cuando_coinciden(self):
         album_repo.create(_album_create(numero=10), usuario_id=1)
 
-        resultado = album_repo.get_por_numero_y_usuario(10, 1)
+        resultado = album_repo.get_by_number_and_user(10, 1)
 
         assert resultado is not None
         assert resultado["numero"] == 10
@@ -192,10 +193,10 @@ class TestAlbumRepoGetPorNumeroYUsuario:
     def test_retorna_none_si_pertenece_a_otro_usuario(self):
         album_repo.create(_album_create(numero=10), usuario_id=2)
 
-        assert album_repo.get_por_numero_y_usuario(10, 1) is None
+        assert album_repo.get_by_number_and_user(10, 1) is None
 
     def test_retorna_none_si_numero_no_existe(self):
-        assert album_repo.get_por_numero_y_usuario(99, 1) is None
+        assert album_repo.get_by_number_and_user(99, 1) is None
 
 
 # ══════════════════════════════════════════
@@ -206,7 +207,7 @@ class TestPublicacionRepoCreate:
 
     def test_create_guarda_publicacion_con_datos_aplanados(self):
         """create() guarda los datos de la figurita aplanados en la publicación."""
-        pub = _publicacion_create(figurita_personal_id=1)
+        pub = _publicacion_create(figurita_personal_id="1")
 
         resultado = publicacion_repo.create(
             publicacion=pub,
@@ -219,23 +220,24 @@ class TestPublicacionRepoCreate:
         assert resultado["numero"] == 10
         assert resultado["equipo"] == "Argentina"
         assert resultado["jugador"] == "Messi"
-        assert resultado["figurita_personal_id"] == 1
+        assert resultado["figurita_personal_id"] == "1"
         assert resultado["tipo_intercambio"] == "intercambio_directo"
         assert resultado["usuario_id"] == 1
 
-    def test_create_asigna_id_autoincrementado(self):
+    def test_create_asigna_ids_unicos(self):
         pub = _publicacion_create()
 
         primera = publicacion_repo.create(pub, usuario_id=1, numero=1, equipo="A", jugador="J1")
         segunda = publicacion_repo.create(pub, usuario_id=2, numero=2, equipo="B", jugador="J2")
 
-        assert primera["id"] == 1
-        assert segunda["id"] == 2
+        assert isinstance(primera["id"], str)
+        assert isinstance(segunda["id"], str)
+        assert primera["id"] != segunda["id"]
 
 
 class TestPublicacionRepoGetYDelete:
 
-    def _crear(self, figurita_personal_id=1, usuario_id=1, numero=10, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
+    def _crear(self, figurita_personal_id="1", usuario_id=1, numero=10, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
         return publicacion_repo.create(
             _publicacion_create(figurita_personal_id=figurita_personal_id, tipo=tipo),
             usuario_id=usuario_id,
@@ -256,27 +258,27 @@ class TestPublicacionRepoGetYDelete:
         assert resultado["id"] == creada["id"]
 
     def test_get_by_id_retorna_none_si_no_existe(self):
-        assert publicacion_repo.get_by_id(999) is None
+        assert publicacion_repo.get_by_id("000000000000000000000000") is None
 
     def test_get_by_usuario_retorna_solo_las_del_usuario(self):
-        self._crear(figurita_personal_id=1, usuario_id=1, numero=10)
-        self._crear(figurita_personal_id=2, usuario_id=2, numero=20)
+        self._crear(figurita_personal_id="1", usuario_id=1, numero=10)
+        self._crear(figurita_personal_id="2", usuario_id=2, numero=20)
 
-        resultado = publicacion_repo.get_by_usuario(1)
+        resultado = publicacion_repo.get_by_user(1)
 
         assert len(resultado) == 1
         assert resultado[0]["usuario_id"] == 1
 
     def test_get_by_figurita_personal_retorna_publicacion_activa(self):
-        self._crear(figurita_personal_id=5)
+        self._crear(figurita_personal_id="5")
 
-        resultado = publicacion_repo.get_by_figurita_personal(5)
+        resultado = publicacion_repo.get_by_personal_figurita("5")
 
         assert resultado is not None
-        assert resultado["figurita_personal_id"] == 5
+        assert resultado["figurita_personal_id"] == "5"
 
     def test_get_by_figurita_personal_retorna_none_si_no_esta_publicada(self):
-        assert publicacion_repo.get_by_figurita_personal(99) is None
+        assert publicacion_repo.get_by_personal_figurita("000000000000000000000000") is None
 
     def test_delete_elimina_publicacion_existente(self):
         creada = self._crear()
@@ -287,10 +289,10 @@ class TestPublicacionRepoGetYDelete:
         assert publicacion_repo.get_all() == []
 
     def test_delete_retorna_false_si_no_existe(self):
-        assert publicacion_repo.delete(999) is False
+        assert publicacion_repo.delete("000000000000000000000000") is False
 
 
-class TestPublicacionRepoBuscar:
+class TestPublicacionRepoFind:
 
     def _crear(self, numero, usuario_id=1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO):
         return publicacion_repo.create(
@@ -301,35 +303,35 @@ class TestPublicacionRepoBuscar:
             jugador="Messi",
         )
 
-    def test_buscar_sin_filtros_retorna_todas(self):
+    def test_find_sin_filtros_retorna_todas(self):
         self._crear(1)
         self._crear(2, usuario_id=2)
 
-        assert len(publicacion_repo.buscar(None, None, None)) == 2
+        assert len(publicacion_repo.find(None, None, None)) == 2
 
-    def test_buscar_excluye_publicaciones_del_usuario_si_se_pasa_usuario_id(self):
+    def test_find_excluye_publicaciones_del_usuario_si_se_pasa_usuario_id(self):
         self._crear(1, usuario_id=1)
         self._crear(2, usuario_id=2)
 
-        resultado = publicacion_repo.buscar(None, None, None, usuario_id=1)
+        resultado = publicacion_repo.find(None, None, None, usuario_id=1)
 
         assert len(resultado) == 1
         assert resultado[0]["usuario_id"] == 2
 
-    def test_buscar_por_numero_exacto(self):
+    def test_find_por_numero_exacto(self):
         self._crear(10)
         self._crear(20)
 
-        resultado = publicacion_repo.buscar(10, None, None)
+        resultado = publicacion_repo.find(10, None, None)
 
         assert len(resultado) == 1
         assert resultado[0]["numero"] == 10
 
-    def test_buscar_por_tipo_intercambio(self):
+    def test_find_por_tipo_intercambio(self):
         self._crear(1, tipo=TipoIntercambio.INTERCAMBIO_DIRECTO)
         self._crear(2, usuario_id=2, tipo=TipoIntercambio.SUBASTA)
 
-        resultado = publicacion_repo.buscar(None, None, None, tipo_intercambio="intercambio_directo")
+        resultado = publicacion_repo.find(None, None, None, tipo_intercambio="intercambio_directo")
 
         assert len(resultado) == 1
         assert resultado[0]["tipo_intercambio"] == "intercambio_directo"
@@ -362,8 +364,8 @@ class TestAlbumService:
         figurita_en_repo = {"id": 1, "numero": 10, "usuario_id": 1}
         publicacion_activa = {"id": 1, "figurita_personal_id": 1}
 
-        with patch("app.services.album_service.album_repo.get_by_usuario", return_value=[figurita_en_repo]), \
-             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion_activa):
+        with patch("app.services.album_service.album_repo.get_by_user", return_value=[figurita_en_repo]), \
+             patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=publicacion_activa):
 
             resultado = album_service.listar_album(usuario_id=1)
 
@@ -372,8 +374,8 @@ class TestAlbumService:
     def test_listar_album_en_intercambio_false_si_no_tiene_publicacion(self):
         figurita_en_repo = {"id": 1, "numero": 10, "usuario_id": 1}
 
-        with patch("app.services.album_service.album_repo.get_by_usuario", return_value=[figurita_en_repo]), \
-             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+        with patch("app.services.album_service.album_repo.get_by_user", return_value=[figurita_en_repo]), \
+             patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=None):
 
             resultado = album_service.listar_album(usuario_id=1)
 
@@ -387,7 +389,7 @@ class TestAlbumService:
         publicacion = {"id": 1, "figurita_personal_id": 1}
 
         with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita), \
-             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion):
+             patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=publicacion):
 
             with pytest.raises(HTTPException) as exc:
                 album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
@@ -398,7 +400,7 @@ class TestAlbumService:
         figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10}
 
         with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita_de_otro), \
-             patch("app.services.album_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+             patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=None):
 
             resultado = album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
 
@@ -422,7 +424,7 @@ class TestPublicacionService:
     def test_publicar_falla_404_si_figurita_no_existe_en_album(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=999)
+        pub = _publicacion_create(figurita_personal_id="999")
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=None):
             with pytest.raises(HTTPException) as exc:
@@ -433,8 +435,8 @@ class TestPublicacionService:
     def test_publicar_falla_403_si_figurita_no_pertenece_al_usuario(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1)
-        figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10, "cantidad": 1}
+        pub = _publicacion_create(figurita_personal_id="1")
+        figurita_de_otro = {"id": "1", "usuario_id": 99, "numero": 10, "cantidad": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita_de_otro):
             with pytest.raises(HTTPException) as exc:
@@ -445,12 +447,12 @@ class TestPublicacionService:
     def test_publicar_falla_409_si_ya_esta_publicada(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 2}
-        publicacion_existente = {"id": 1}
+        pub = _publicacion_create(figurita_personal_id="1")
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 2}
+        publicacion_existente = {"id": "1"}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
-             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=publicacion_existente):
+             patch("app.services.publicacion_service.publicacion_repo.get_by_personal_figurita", return_value=publicacion_existente):
 
             with pytest.raises(HTTPException) as exc:
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
@@ -460,11 +462,11 @@ class TestPublicacionService:
     def test_publicar_falla_400_si_cantidad_supera_album(self):
         from fastapi import HTTPException
 
-        pub = _publicacion_create(figurita_personal_id=1, cantidad=5)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "cantidad": 1}
+        pub = _publicacion_create(figurita_personal_id="1", cantidad=5)
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
-             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=None):
+             patch("app.services.publicacion_service.publicacion_repo.get_by_personal_figurita", return_value=None):
 
             with pytest.raises(HTTPException) as exc:
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
@@ -473,12 +475,12 @@ class TestPublicacionService:
 
     def test_publicar_llama_a_repo_create_con_datos_aplanados(self):
         """publicar_figurita() crea la publicación con los datos de la figurita aplanados."""
-        pub = _publicacion_create(figurita_personal_id=1, cantidad=1)
-        figurita = {"id": 1, "usuario_id": 1, "numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2}
+        pub = _publicacion_create(figurita_personal_id="1", cantidad=1)
+        figurita = {"id": "1", "usuario_id": 1, "numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2}
         fake_result = {"id": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
-             patch("app.services.publicacion_service.publicacion_repo.get_by_figurita_personal", return_value=None), \
+             patch("app.services.publicacion_service.publicacion_repo.get_by_personal_figurita", return_value=None), \
              patch("app.services.publicacion_service.publicacion_repo.create", return_value=fake_result) as mock_create:
 
             publicacion_service.publicar_figurita(pub, usuario_id=1)
@@ -507,8 +509,8 @@ class TestPublicacionService:
 
     def test_obtener_sugerencias_retorna_vacio_si_no_hay_faltantes(self):
         """Sin faltantes registrados, no hay sugerencias posibles."""
-        with patch("app.services.publicacion_service.usuario_repo.get_faltantes", return_value=[]) as mock_faltantes, \
-             patch("app.services.publicacion_service.publicacion_repo.buscar") as mock_buscar:
+        with patch("app.services.publicacion_service.faltante_repo.get_missing", return_value=[]) as mock_faltantes, \
+             patch("app.services.publicacion_service.publicacion_repo.find") as mock_buscar:
 
             resultado = publicacion_service.obtener_sugerencias(usuario_id=1)
 
@@ -526,8 +528,8 @@ class TestPublicacionService:
         }
         oferente = {"id": 2, "nombre": "jeronimo"}
 
-        with patch("app.services.publicacion_service.usuario_repo.get_faltantes", return_value=faltantes), \
-             patch("app.services.publicacion_service.publicacion_repo.buscar", return_value=[publicacion_candidata]), \
+        with patch("app.services.publicacion_service.faltante_repo.get_missing", return_value=faltantes), \
+             patch("app.services.publicacion_service.publicacion_repo.find", return_value=[publicacion_candidata]), \
              patch("app.services.publicacion_service.usuario_repo.get_by_id", return_value=oferente):
 
             resultado = publicacion_service.obtener_sugerencias(usuario_id=1)

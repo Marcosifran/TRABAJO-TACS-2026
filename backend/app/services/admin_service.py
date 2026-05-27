@@ -4,7 +4,7 @@ from app.schemas.intercambio_sch import EstadoIntercambio
 def obtener_estadisticas() -> dict:
     usuarios      = usuario_repo.get_all()
     publicaciones = publicacion_repo.get_all()
-    intercambios  = intercambio_repo.listar_intercambios()
+    intercambios  = intercambio_repo.list_exchanges()
     subastas      = subasta_repo.get_all()
 
     estados = {e.value: 0 for e in EstadoIntercambio}

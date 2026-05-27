@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Button from '../components/ui/Button'
 import Tabs from '../components/ui/Tabs'
 import Modal from '../components/ui/Modal'
@@ -11,6 +11,7 @@ import Icon from '../components/ui/Icon'
 import { useUser } from '../context/UserContext'
 import { agregarAlAlbum, publicarFigurita, listarMisPublicaciones, retirarPublicacion } from '../api/publicaciones'
 import { registrarFaltante, listarFaltantes } from '../api/faltantes'
+import { getMaestroJugador } from '../api/maestro'
 import { listarMiAlbum } from '../api/album'
 
 const SELECCIONES = [
@@ -47,7 +48,9 @@ export default function CollectionPage() {
   const [loadingFalt, setLoadingFalt] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingFalt, setSubmittingFalt] = useState(false)
+  const [loadingMaestro, setLoadingMaestro] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
+  const maestroTimer = useRef(null)
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -139,6 +142,22 @@ export default function CollectionPage() {
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     }
+  }
+
+  function buscarEnMaestro(numero, setForm) {
+    clearTimeout(maestroTimer.current)
+    if (!numero || isNaN(numero)) return
+    maestroTimer.current = setTimeout(async () => {
+      setLoadingMaestro(true)
+      try {
+        const data = await getMaestroJugador(numero)
+        setForm(prev => ({ ...prev, equipo: data.equipo, seleccion: data.equipo, jugador: data.jugador }))
+      } catch {
+        // número no encontrado en el maestro, se deja editar manualmente
+      } finally {
+        setLoadingMaestro(false)
+      }
+    }, 500)
   }
 
   async function handleAddFaltante() {
@@ -309,7 +328,10 @@ export default function CollectionPage() {
             <Input
               label="Número" type="number" icon="tag" placeholder="Ej: 10"
               value={pubForm.numero}
-              onChange={v => setPubForm({ ...pubForm, numero: v })}
+              onChange={v => {
+                setPubForm({ ...pubForm, numero: v })
+                if (!pubForm._figId) buscarEnMaestro(v, setPubForm)
+              }}
               disabled={!!pubForm._figId}
             />
             <Input
@@ -319,17 +341,18 @@ export default function CollectionPage() {
             />
           </div>
           <Input
-            label="Selección / Equipo"
+            label="Selección / Equipo" icon="shield"
+            placeholder="Se completa al ingresar el número"
             value={pubForm.equipo}
-            onChange={v => setPubForm({ ...pubForm, equipo: v })}
-            options={SELECCIONES}
-            disabled={!!pubForm._figId}
+            onChange={() => {}}
+            disabled
           />
           <Input
-            label="Jugador / Descripción" icon="person" placeholder="Ej: Messi"
+            label="Jugador" icon="person"
+            placeholder="Se completa al ingresar el número"
             value={pubForm.jugador}
-            onChange={v => setPubForm({ ...pubForm, jugador: v })}
-            disabled={!!pubForm._figId}
+            onChange={() => {}}
+            disabled
           />
           <div>
             <label className="block text-xs font-medium text-on-surface-variant mb-2">
@@ -367,20 +390,27 @@ export default function CollectionPage() {
       <Modal open={showFalt} onClose={() => !submittingFalt && setShowFalt(false)} title="Registrar faltante" width={420}>
         <div className="flex flex-col gap-4">
           <Input
-            label="Número" type="number" icon="tag" placeholder="Ej: 321"
+            label={loadingMaestro ? 'Buscando...' : 'Número'}
+            type="number" icon={loadingMaestro ? 'progress_activity' : 'tag'} placeholder="Ej: 321"
             value={faltForm.numero}
-            onChange={v => setFaltForm({ ...faltForm, numero: v })}
+            onChange={v => {
+              setFaltForm({ ...faltForm, numero: v })
+              buscarEnMaestro(v, setFaltForm)
+            }}
           />
           <Input
-            label="Selección"
+            label="Selección / Equipo" icon="shield"
+            placeholder="Se completa al ingresar el número"
             value={faltForm.seleccion}
-            onChange={v => setFaltForm({ ...faltForm, seleccion: v })}
-            options={SELECCIONES}
+            onChange={() => {}}
+            disabled
           />
           <Input
-            label="Jugador (opcional)" icon="person" placeholder="Ej: Pedri"
+            label="Jugador" icon="person"
+            placeholder="Se completa al ingresar el número"
             value={faltForm.jugador}
-            onChange={v => setFaltForm({ ...faltForm, jugador: v })}
+            onChange={() => {}}
+            disabled
           />
           <div className="flex gap-2.5 justify-end mt-2">
             <Button variant="text" onClick={() => setShowFalt(false)} disabled={submittingFalt}>Cancelar</Button>

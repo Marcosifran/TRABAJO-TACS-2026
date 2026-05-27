@@ -1,5 +1,5 @@
 from app.schemas.figurita import FiguritaCreate
-from app.repositories import figurita_repo, usuario_repo
+from app.repositories import figurita_repo, usuario_repo, faltante_repo
 
 
 def listar() -> list[dict]:
@@ -22,7 +22,7 @@ def buscar(numero: int | None, equipo: str | None, jugador: str | None) -> list[
     Returns:
         Lista de figuritas que coinciden con los filtros aplicados.
     """
-    return figurita_repo.buscar(numero, equipo, jugador)
+    return figurita_repo.find(numero, equipo, jugador)
 
 def buscar_por_usuario(usuario_id: int) -> list[dict]:
     """
@@ -31,20 +31,20 @@ def buscar_por_usuario(usuario_id: int) -> list[dict]:
     Args:
         usuario_id: ID del usuario dueño de las figuritas.
     """
-    return figurita_repo.get_by_usuario_id(usuario_id)
+    return figurita_repo.get_by_user_id(usuario_id)
 
 def sugerir_intercambios(usuario_id: int) -> list[dict]:
     """
     Genera sugerencias automáticas de intercambio para el usuario.
     Cruza los faltantes del usuario con las figuritas publicadas por otros usuarios.
     """
-    faltantes = usuario_repo.get_faltantes(usuario_id)
+    faltantes = faltante_repo.get_missing(usuario_id)
     numeros_faltantes = [f["numero_figurita"] for f in faltantes]
 
     if not numeros_faltantes:
         return []
 
-    figuritas_candidatas = figurita_repo.get_sugerencias(numeros_faltantes, usuario_id)
+    figuritas_candidatas = figurita_repo.get_suggestions(numeros_faltantes, usuario_id)
 
     sugerencias = []
     for figurita in figuritas_candidatas:
@@ -71,7 +71,7 @@ def publicar(figurita: FiguritaCreate, usuario_id: int) -> dict:
     return figurita_repo.create(figurita, usuario_id)
 
 
-def eliminar(figurita_id: int, usuario_id: int) -> bool | None:
+def eliminar(figurita_id: str, usuario_id: int) -> bool | None:
     """
     Elimina una figurita del sistema por su ID, solo si pertenece al usuario.
 
