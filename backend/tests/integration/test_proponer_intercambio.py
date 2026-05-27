@@ -224,7 +224,7 @@ class TestProponerIntercambio:
             headers={"X-User-Token": token_user1},
         )
 
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_falla_si_usuario_destino_no_existe(self, client, token_user1):
         """No se puede proponer un intercambio a un usuario que no existe."""
@@ -241,6 +241,32 @@ class TestProponerIntercambio:
         )
 
         assert resp.status_code == 404
+
+    def test_listar_intercambios_incluye_ya_calificado(self, client, token_user1, token_user2):
+        """La lista de intercambios la arma el servicio y marca si ya fue calificado."""
+        agregar_y_publicar(client, token_user1, 1, "Argentina", "Jugador 1")
+        agregar_y_publicar(client, token_user2, 2, "Brasil", "Jugador 2")
+
+        resp_crear = client.post(
+            ENDPOINT_INTERCAMBIOS,
+            json={
+                "figuritas_ofrecidas_numero": [1],
+                "figurita_solicitada_numero": 2,
+                "solicitado_a_id": 2,
+            },
+            headers={"X-User-Token": token_user1},
+        )
+        assert resp_crear.status_code == 201
+
+        resp_listar = client.get(
+            ENDPOINT_INTERCAMBIOS,
+            headers={"X-User-Token": token_user1},
+        )
+
+        assert resp_listar.status_code == 200
+        enviados = resp_listar.json()["enviados"]
+        assert len(enviados) == 1
+        assert enviados[0]["ya_calificado"] is False
 
 
 # -------------------------

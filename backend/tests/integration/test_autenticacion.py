@@ -5,6 +5,10 @@ Verifica el comportamiento del mecanismo de autenticación por header X-User-Tok
 que es transversal a todos los endpoints protegidos de la aplicación.
 """
 
+from datetime import timedelta
+
+from app.security import create_access_token
+
 # Para testear usamos cualquier endpoint protegido.
 ENDPOINT_PROTEGIDO = "/api/v1/album/"
 
@@ -45,3 +49,43 @@ class TestAutenticacion:
         )
 
         assert resp.status_code == 201
+
+    def test_bearer_jwt_valido_permite_acceso(self, client, figurita_valida):
+        """Un JWT válido en Authorization: Bearer también permite acceder."""
+        token = create_access_token(subject=1, email="marcos@utn")
+
+        resp = client.post(
+            ENDPOINT_PROTEGIDO,
+            json=figurita_valida,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert resp.status_code == 201
+
+    def test_bearer_jwt_invalido_devuelve_401(self, client, figurita_valida):
+        """Un JWT manipulado o con firma inválida devuelve 401."""
+        token = create_access_token(subject=1, email="marcos@utn") + "corrupto"
+
+        resp = client.post(
+            ENDPOINT_PROTEGIDO,
+            json=figurita_valida,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert resp.status_code == 401
+
+    def test_bearer_jwt_expirado_devuelve_401(self, client, figurita_valida):
+        """Un JWT expirado no debe permitir acceso."""
+        token = create_access_token(
+            subject=1,
+            email="marcos@utn",
+            expires_delta=timedelta(minutes=-1),
+        )
+
+        resp = client.post(
+            ENDPOINT_PROTEGIDO,
+            json=figurita_valida,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert resp.status_code == 401

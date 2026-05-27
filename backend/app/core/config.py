@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     user_1_token: str = ""
     user_2_token: str = ""
 
+    # Configuración JWT para el backend.
+    jwt_secret: str = "dev-jwt-secret-change-me-please-use-env-overrides"
+    jwt_algorithm: str = "HS256"
+    jwt_exp_minutes: int = 480
     # Variables de MongoDB
     mongodb_url: str = "mongodb://localhost:27017" # Valor por defecto
     mongodb_db_name: str = "mundial_figuritas_db"

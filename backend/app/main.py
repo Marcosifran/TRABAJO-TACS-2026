@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.exceptions import register_exceptions_handlers
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.routers import album, publicaciones, usuarios, intercambios, subastas, admin, maestro
 from app.services import maestro_service
@@ -15,6 +16,9 @@ async def lifespan(app: FastAPI):
 
 # Creamos la aplicación FastAPI. El título y versión los toma desde config.py
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
+
+# Excepciones
+register_exceptions_handlers(app)
 
 # Seteamos CORS como middleware para permitir solicitudes desde cualquier origen.
 app.add_middleware(

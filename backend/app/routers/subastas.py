@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.subasta import SubastaCreate, SubastaResponse
-from app.schemas.oferta import OfertaCreate
+from app.schemas.oferta import OfertaCreate, OfertaDecision
 from app.services import subasta_service
 from app.dependencies import get_current_user
+from app.repositories import oferta_repo
 
-router = APIRouter(prefix="/subastas", tags=["Subastas"])
+router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(get_current_user)])
 
 @router.get(
     "/",
@@ -33,30 +34,29 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
     """
     Permite a un usuario poner una de sus figuritas en subasta.
     """
-    try:
-        nueva_subasta = subasta_service.crear_subasta(subasta_data, usuario["id"])
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    nueva_subasta = subasta_service.crear_subasta(subasta_data, usuario["id"])
     return {"mensaje": "Subasta creada exitosamente", "subasta": nueva_subasta}
 
-@router.post(
-    "/{subasta_id}/ofertas/{oferta_id}/aceptar",
+@router.patch(
+    "/{subasta_id}/ofertas/{oferta_id}",
     status_code=200,
 )
-def aceptar_oferta(subasta_id: str, oferta_id: str, usuario: dict = Depends(get_current_user)):
+def responder_oferta(subasta_id: str, oferta_id: str, decision: OfertaDecision, usuario: dict = Depends(get_current_user)):
     """
-    Permite al dueño de una subasta aceptar una oferta.
+    Responde una oferta: puede aceptarse o rechazarse usando el campo `estado`.
     """
-    try:
+    if decision.estado == "aceptada":
         resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
         return {"mensaje": "Oferta aceptada", "resultado": resultado}
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except ValueError as e:
-        detail = str(e)
-        if "no encontrada" in detail.lower() or "no existe" in detail.lower():
-            raise HTTPException(status_code=404, detail=detail)
-        raise HTTPException(status_code=400, detail=detail)
+    elif decision.estado == "rechazada":
+        # Rechazar simplemente elimina la oferta
+        deleted = oferta_repo.delete(oferta_id)
+        if not deleted:
+            raise ValueError("Oferta no encontrada")
+        return {"mensaje": "Oferta rechazada"}
+    else:
+        raise ValueError("Estado desconocido")
+
         
 
 @router.get(
@@ -70,10 +70,7 @@ def listar_ofertas(subasta_id: str):
     """
     Devuelve todas las ofertas recibidas para una subasta.
     """
-    try:
-        ofertas = subasta_service.listar_ofertas(subasta_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    ofertas = subasta_service.listar_ofertas(subasta_id)
     return {"ofertas": ofertas}
 
 @router.delete(
@@ -92,19 +89,12 @@ def cancelar_oferta(
     oferta_id: str,
     usuario: dict = Depends(get_current_user),
 ):
-    try:
-        subasta_service.cancelar_oferta(oferta_id, usuario["id"])
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except ValueError as e:
-        detail = str(e)
-        if "no encontrada" in detail.lower():
-            raise HTTPException(status_code=404, detail=detail)
-        raise HTTPException(status_code=400, detail=detail)
+
+    subasta_service.cancelar_oferta(oferta_id, usuario["id"])
 
 
 @router.post(
-    "/{subasta_id}/ofertar",
+    "/{subasta_id}/ofertas",
     status_code=201,
     responses={
         201: {"description": "Oferta registrada exitosamente"},
@@ -123,13 +113,7 @@ def ofertar_en_subasta(
     """
     Permite ofertar en una subasta especificada.
     """
-    try:
-        resultado = subasta_service.ofertar(subasta_id, oferta, usuario["id"])
-    except ValueError as e:
-        if "inexistente" in str(e).lower() or "no existe" in str(e).lower():
-            raise HTTPException(status_code=404, detail=str(e))
-        raise HTTPException(status_code=400, detail=str(e))
-        
+    resultado = subasta_service.ofertar(subasta_id, oferta, usuario["id"])        
     return resultado
 
 

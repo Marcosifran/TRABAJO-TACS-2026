@@ -154,16 +154,16 @@ class TestCalificarTrasIntercambio:
 
 class TestReputacion:
 
-    def test_sin_calificaciones_promedio_null(self, client):
-        resp = client.get("/api/v1/usuarios/1/reputacion")
+    def test_sin_calificaciones_promedio_null(self, client, token_user1):
+        resp = client.get("/api/v1/usuarios/1/reputacion", headers={"X-User-Token": token_user1})
         assert resp.status_code == 200
         data = resp.json()
         assert data["usuario_id"] == 1
         assert data["cantidad_calificaciones"] == 0
         assert data["promedio_puntuacion"] is None
 
-    def test_usuario_inexistente_404(self, client):
-        resp = client.get("/api/v1/usuarios/99999/reputacion")
+    def test_usuario_inexistente_404(self, client, token_user1):
+        resp = client.get("/api/v1/usuarios/99999/reputacion", headers={"X-User-Token": token_user1})
         assert resp.status_code == 404
 
     def test_promedio_con_varias_calificaciones(self, client, token_user1, token_user2):
@@ -196,6 +196,6 @@ class TestReputacion:
             headers={"X-User-Token": token_user2},
         )
 
-        rep = client.get("/api/v1/usuarios/1/reputacion").json()
+        rep = client.get("/api/v1/usuarios/1/reputacion", headers={"X-User-Token": token_user1}).json()
         assert rep["cantidad_calificaciones"] == 2
         assert rep["promedio_puntuacion"] == 4.5

@@ -4,6 +4,7 @@ pydantic
 pydantic-settings
 pytest
 httpx
+PyJWT
 pymongo[srv]
 requests
 beautifulsoup4

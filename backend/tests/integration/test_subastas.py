@@ -85,10 +85,10 @@ class TestCrearSubasta:
         assert resp.status_code == 400
 
     def test_figurita_inexistente_falla(self, client, token_user1):
-        """Intentar subastar una publicación que no existe devuelve 400."""
+        """Intentar subastar una publicación que no existe devuelve 404."""
         resp = _crear_subasta(client, token_user1, publicacion_id="000000000000000000000000")
 
-        assert resp.status_code == 400
+        assert resp.status_code == 404
 
     def test_figurita_de_otro_usuario_falla(self, client, token_user1, token_user2):
         """No se puede subastar una publicación que pertenece a otro usuario."""
@@ -111,7 +111,7 @@ class TestCrearSubasta:
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         _crear_subasta(client, token_user1, pub_id)
 
-        resp = client.get(ENDPOINT_SUBASTAS)
+        resp = client.get(ENDPOINT_SUBASTAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         subastas = resp.json()["subastas"]
@@ -141,7 +141,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
             headers={"X-User-Token": token_user2},
         )
@@ -160,7 +160,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_extra]},
             headers={"X-User-Token": token_user1},
         )
@@ -174,7 +174,7 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}999/ofertar",
+            f"{ENDPOINT_SUBASTAS}000000000000000000000000/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
             headers={"X-User-Token": token_user2},
         )
@@ -186,7 +186,7 @@ class TestOfertarEnSubasta:
         subasta_id = self._setup_subasta(client, token_user1)
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": []},
             headers={"X-User-Token": token_user2},
         )
@@ -198,7 +198,7 @@ class TestOfertarEnSubasta:
         subasta_id = self._setup_subasta(client, token_user1)
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": ["000000000000000000000000"]},
             headers={"X-User-Token": token_user2},
         )
@@ -214,12 +214,13 @@ class TestOfertarEnSubasta:
         )
 
         resp = client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user1_extra]},
             headers={"X-User-Token": token_user2},
         )
 
         assert resp.status_code == 400
+
 
 
 # ────────────────────
@@ -233,7 +234,7 @@ class TestHistorialOfertas:
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         subasta_id = _crear_subasta(client, token_user1, pub_id).json()["subasta"]["id"]
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         assert resp.json()["ofertas"] == []
@@ -247,12 +248,12 @@ class TestHistorialOfertas:
         )
 
         client.post(
-            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertar",
+            f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
             headers={"X-User-Token": token_user2},
         )
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
         ofertas = resp.json()["ofertas"]
@@ -261,8 +262,8 @@ class TestHistorialOfertas:
         assert ofertas[0]["usuario_id"] == 2
         assert album_user2 in ofertas[0]["ofrecidas"]
 
-    def test_subasta_inexistente_devuelve_404(self, client):
+    def test_subasta_inexistente_devuelve_404(self, client, token_user1):
         """Consultar historial de una subasta inexistente devuelve 404."""
-        resp = client.get(f"{ENDPOINT_SUBASTAS}999/ofertas")
+        resp = client.get(f"{ENDPOINT_SUBASTAS}000000000000000000000000/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 404

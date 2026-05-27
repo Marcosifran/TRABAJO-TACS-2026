@@ -24,3 +24,8 @@ def find_by_exchange_and_qualifier(exchange_id: str, califier_id: int) -> dict |
 
 def list_by_qualified(calificado_id: int) -> list[dict]:
     return list(_get_collection().find({"calificado_id": calificado_id}, {"_id": 0}))
+
+
+# Spanish compatibility wrapper
+def buscar_por_intercambio_y_calificador(intercambio_id: str, calificador_id: int) -> dict | None:
+    return find_by_exchange_and_qualifier(intercambio_id, calificador_id)

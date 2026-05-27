@@ -1,5 +1,6 @@
 from bson import ObjectId
 from app.schemas.intercambio_sch import IntercambioCreate
+from app.schemas.intercambio_sch import EstadoIntercambio
 from app.core.database import get_db
 
 def _get_collection():
@@ -14,7 +15,7 @@ def create_exchange(intercambio: IntercambioCreate, propuesto_por: int, solicita
         "solicitado_a": solicitado_a,
         "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
         "figurita_solicitada": intercambio.figurita_solicitada_numero,
-        "estado": "pendiente",
+        "estado": EstadoIntercambio.PENDIENTE.value,
     }
     _get_collection().insert_one(nuevo)
     del nuevo["_id"]
@@ -47,3 +48,16 @@ def list_exchanges_by_user(usuario_id: int) -> dict[str, list[dict]]:
     enviados = find_exchanges_sent(usuario_id)
     recibidos = find_exchanges_received(usuario_id)
     return {"enviados": enviados, "recibidos": recibidos}
+
+
+# Spanish-named compatibility wrappers (some services/routers use Spanish verbs)
+def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
+    return create_exchange(intercambio, propuesto_por, solicitado_a)
+
+
+def listar_intercambios_por_usuario(usuario_id: int) -> dict[str, list[dict]]:
+    return list_exchanges_by_user(usuario_id)
+
+
+def responder_intercambio(intercambio_id: str, estado: str) -> dict | None:
+    return answer_exchange(intercambio_id, estado)

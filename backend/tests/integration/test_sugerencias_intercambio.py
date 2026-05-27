@@ -11,7 +11,7 @@ Cubre el endpoint GET /api/v1/usuarios/sugerencias verificando:
 
 import pytest
 
-ENDPOINT_SUGERENCIAS  = "/api/v1/usuarios/sugerencias"
+ENDPOINT_SUGERENCIAS  = "/api/v1/publicaciones/sugerencias"
 ENDPOINT_FALTANTES    = "/api/v1/usuarios/faltantes"
 ENDPOINT_ALBUM        = "/api/v1/album/"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones/"

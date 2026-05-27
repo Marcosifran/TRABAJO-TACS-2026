@@ -4,9 +4,8 @@ from app.schemas.usuario import UsuarioResponse
 from app.schemas.calificacion_sch import ReputacionResponse
 from app.services import usuario_service, album_service,publicacion_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
-from app.repositories import usuario_repo
 
-router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
 
 
 @router.get(
@@ -36,13 +35,8 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
     },
 )
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
-    try:
-        resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
-    except ValueError as e:
-        # Si el error es por datos duplicados, informamos con 409.
-        raise HTTPException(status_code=409, detail=str(e))
-    if resultado is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
     return {"mensaje": "Faltante registrado", "data": resultado}
 
 
@@ -62,7 +56,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     return {"usuario_id": usuario["id"], "faltantes": faltantes}
 
 
-# Devuelve sugerencias de intercambio: figuritas de otros usuarios que cubren los faltantes del usuario autenticado
+# Note: `/usuarios/sugerencias` removed; keep `/publicaciones/sugerencias` as canonical route
 @router.get(
     "/sugerencias",
     responses={
@@ -70,7 +64,11 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
         401: {"description": "Token ausente o inválido"},
     },
 )
-def obtener_sugerencias(usuario: dict = Depends(get_current_user)):
+def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
+    """
+    Estas sugerencias estaban doblemente disponibles en `/usuarios/sugerencias` y `/publicaciones/sugerencias`. Se mantiene esta ruta por compatibilidad, 
+    pero utilizaremos la ruta de publicaciones para obtener sugerencias.
+    """
     sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
     return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
 
