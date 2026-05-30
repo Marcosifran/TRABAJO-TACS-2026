@@ -23,7 +23,7 @@ export default function ProfilePage() {
       .then(data => setPublicaciones(data))
       .catch(() => {})
     listarFaltantes()
-      .then(data => setFaltanCount(data.faltantes.length))
+      .then(data => setFaltanCount((data || []).length))
       .catch(() => {})
     listarIntercambios()
       .then(data => {

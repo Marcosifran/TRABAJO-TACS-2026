@@ -41,7 +41,7 @@ export default function TradesPage() {
       setEnviadas(data.enviados || [])
 
       const sugsData = await obtenerSugerencias()
-      setSugerencias(sugsData.sugerencias || [])
+      setSugerencias(sugsData || [])
     } catch (e) {
       setSnack({ open: true, message: 'Error cargando intercambios: ' + e.message, type: 'error' })
     } finally {

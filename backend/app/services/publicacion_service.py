@@ -1,19 +1,24 @@
-from fastapi import HTTPException
 from app.repositories import album_repo, publicacion_repo, usuario_repo, faltante_repo
 from app.schemas.publicacion_sch import PublicacionCreate
+from app.domain.errors import (
+    DomainNotFoundError,
+    DomainPermissionError,
+    DomainConflictError,
+    DomainValidationError,
+)
+
 
 def publicar_figurita(publicacion: PublicacionCreate, usuario_id: int) -> dict:
-    """ pone una figurita del album personal en oferta publica para intercambio. Valida que la figurita exista, sea del usuario, no este ya publicaca y la cantidad no supere a la cantidad en album"""
     figurita = album_repo.get_by_id(publicacion.figurita_personal_id)
 
     if not figurita:
-        raise HTTPException(status_code=404, detail="Figurita no encontrada en el álbum del usuario")
+        raise DomainNotFoundError("Figurita no encontrada en el álbum del usuario")
     if figurita["usuario_id"] != usuario_id:
-        raise HTTPException(status_code=403, detail="La figurita no pertenece al usuario")
+        raise DomainPermissionError("La figurita no pertenece al usuario")
     if publicacion_repo.get_by_personal_figurita(publicacion.figurita_personal_id):
-        raise HTTPException(status_code=409, detail="La figurita ya está publicada para intercambio")
+        raise DomainConflictError("La figurita ya está publicada para intercambio")
     if publicacion.cantidad_disponible > figurita["cantidad"]:
-        raise HTTPException(status_code=400, detail="La cantidad disponible no puede ser mayor a la cantidad en el álbum")
+        raise DomainValidationError("La cantidad disponible no puede ser mayor a la cantidad en el álbum")
 
     return publicacion_repo.create(
         publicacion=publicacion,
@@ -23,6 +28,7 @@ def publicar_figurita(publicacion: PublicacionCreate, usuario_id: int) -> dict:
         jugador=figurita["jugador"],
     )
 
+
 def listar_publicaciones(
     numero: int | None,
     equipo: str | None,
@@ -30,7 +36,6 @@ def listar_publicaciones(
     tipo_intercambio: str | None,
     excluir_usuario_id: int | None
 ) -> list[dict]:
-    """Retorna las figuritas disponibles poara intercambio aplicando filtros, excluir es para no ver sus propias ofertas"""
     return publicacion_repo.find(
         numero=numero,
         equipo=equipo,
@@ -39,21 +44,17 @@ def listar_publicaciones(
         usuario_id=excluir_usuario_id,
     )
 
-def retirar_publicacion(publicacion_id: str, usuario_id: int) -> bool | None:
-    """ Retira una figurita de la oferta publica"""
+
+def retirar_publicacion(publicacion_id: str, usuario_id: int) -> None:
     publicacion = publicacion_repo.get_by_id(publicacion_id)
-
     if publicacion is None:
-        return False
-
+        raise DomainNotFoundError("Publicación no encontrada")
     if publicacion["usuario_id"] != usuario_id:
-        return None
-
+        raise DomainPermissionError("No tiene permiso para retirar esta publicación")
     publicacion_repo.delete(publicacion_id)
-    return True
+
 
 def obtener_sugerencias(usuario_id: int) -> list[dict]:
-    """ Genera sugerencias automaticas de intercambio para el usuario, desde faltantes del usuario con publicaciones de otros"""
     faltantes = faltante_repo.get_missing(usuario_id)
 
     if not faltantes:
@@ -80,9 +81,6 @@ def obtener_sugerencias(usuario_id: int) -> list[dict]:
 
     return sugerencias
 
-def mis_publicaciones(usuario_id: int) -> list[dict]:
-    """
-    Retorna las publicaciones activas del usuario autenticado.
-    """
-    return publicacion_repo.get_by_user(usuario_id)
 
+def mis_publicaciones(usuario_id: int) -> list[dict]:
+    return publicacion_repo.get_by_user(usuario_id)

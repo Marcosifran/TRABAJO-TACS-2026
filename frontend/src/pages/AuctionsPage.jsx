@@ -127,7 +127,7 @@ export default function AuctionsPage() {
     setLoadingMisOfertas(true);
     try {
       const data = await listarMisOfertas();
-      setMisOfertas(data.ofertas || []);
+      setMisOfertas(data || []);
     } catch (e) {
       setSnack({ open: true, message: e.message, type: "error" });
     } finally {
@@ -151,7 +151,7 @@ export default function AuctionsPage() {
     setLoadingOfertas(true);
     try {
       const data = await listarOfertas(sub.id);
-      setOfertas(data.ofertas || []);
+      setOfertas(data || []);
     } catch (e) {
       setSnack({ open: true, message: e.message, type: "error" });
     } finally {

@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.schemas.faltante import FaltanteCreate
-from app.schemas.usuario import UsuarioResponse
 from app.schemas.calificacion_sch import ReputacionResponse
-from app.services import usuario_service, album_service,publicacion_service, calificacion_service, subasta_service
+from app.services import usuario_service, album_service, publicacion_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
@@ -17,14 +16,9 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(
     },
 )
 def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
-    """
-    Devuelve las figuritas publicadas por el usuario autenticado.
-    """
-    figuritas = album_service.listar_album(usuario["id"])
-    return figuritas
+    return album_service.listar_album(usuario["id"])
 
 
-# Registra una figurita faltante para el usuario autenticado vía token
 @router.post(
     "/faltantes",
     status_code=201,
@@ -36,11 +30,9 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
     },
 )
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
-
     return usuario_service.registrar_faltante(usuario["id"], faltante)
 
 
-# Devuelve los faltantes del usuario que hace el request
 @router.get(
     "/faltantes",
     status_code=200,
@@ -51,13 +43,9 @@ def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_cur
     },
 )
 def listar_faltantes(usuario: dict = Depends(get_current_user)):
-    faltantes = usuario_service.listar_faltantes(usuario["id"])
-    if faltantes is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return faltantes
+    return usuario_service.listar_faltantes(usuario["id"])
 
 
-# Note: `/usuarios/sugerencias` removed; keep `/publicaciones/sugerencias` as canonical route
 @router.get(
     "/sugerencias",
     status_code=200,
@@ -67,12 +55,8 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     },
 )
 def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
-    """
-    Estas sugerencias estaban doblemente disponibles en `/usuarios/sugerencias` y `/publicaciones/sugerencias`. Se mantiene esta ruta por compatibilidad, 
-    pero utilizaremos la ruta de publicaciones para obtener sugerencias.
-    """
-    sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
-    return sugerencias
+    """Alias de /publicaciones/sugerencias mantenido por compatibilidad."""
+    return publicacion_service.obtener_sugerencias(usuario["id"])
 
 
 @router.get(
@@ -86,6 +70,7 @@ def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
 def obtener_reputacion(usuario_id: int):
     return calificacion_service.obtener_reputacion(usuario_id)
 
+
 @router.get(
     "/ofertas",
     status_code=200,
@@ -95,9 +80,7 @@ def obtener_reputacion(usuario_id: int):
     },
 )
 def listar_mis_ofertas(usuario: dict = Depends(get_current_user)):
-    """Devuelve las ofertas enviadas por el usuario autenticado a subastas de otros."""
-    ofertas = subasta_service.listar_mis_ofertas(usuario["id"])
-    return ofertas
+    return subasta_service.listar_mis_ofertas(usuario["id"])
 
 
 @router.get(
@@ -109,8 +92,4 @@ def listar_mis_ofertas(usuario: dict = Depends(get_current_user)):
     },
 )
 def listar_subastas_usuario(usuario: dict = Depends(get_current_user)):
-    """
-    Devuelve las subastas creadas de forma activa por el usuario autenticado.
-    """
-    subastas = subasta_service.listar_subastas_usuario(usuario["id"])
-    return subastas
+    return subasta_service.listar_subastas_usuario(usuario["id"])

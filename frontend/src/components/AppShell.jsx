@@ -54,7 +54,7 @@ export default function AppShell({ children }) {
     async function pollSugs() {
       try {
         const data = await obtenerSugerencias()
-        const sugs = data.sugerencias || []
+        const sugs = data || []
         const ids  = new Set(sugs.map(s => s.publicacion.id))
         if (seenSugIds.current === null) { seenSugIds.current = ids; return }
         const nuevas = sugs.filter(s => !seenSugIds.current.has(s.publicacion.id))
@@ -110,7 +110,7 @@ export default function AppShell({ children }) {
       try {
         const data = await listarSubastas()
         const ahora = Date.now()
-        const porVencer = (data.subastas || []).filter(s => {
+        const porVencer = (data || []).filter(s => {
           const ms = new Date(s.fin) - ahora
           return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
         })

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from app.schemas.figurita import FiguritaCreate
 from app.services import figurita_service
 from app.dependencies import get_current_user
-from app.repositories import figurita_repo
 
 router = APIRouter(prefix="/figuritas", tags=["Figuritas"], dependencies=[Depends(get_current_user)])
+
 
 @router.get(
     "/",
@@ -19,16 +19,12 @@ def buscar_figuritas(
     equipo: Optional[str] = Query(None, min_length=1, description="Nombre del equipo o selección (búsqueda parcial)"),
     jugador: Optional[str] = Query(None, min_length=1, description="Nombre del jugador (búsqueda parcial)"),
 ):
-    """
-    Devuelve las figuritas disponibles. Permite filtrar opcionalmente por número, equipo y/o jugador.
-    Si no se proporciona ningún filtro, devuelve todas las figuritas publicadas.
-    """
     return figurita_service.buscar(numero, equipo, jugador)
 
 
-# El usuario que publica se obtiene del token, no del body
 @router.post(
     "/",
+    status_code=201,
     responses={
         201: {"description": "Figurita publicada exitosamente"},
         400: {"description": "Datos inválidos para la figurita"},
@@ -37,7 +33,6 @@ def buscar_figuritas(
 )
 def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_user)):
     return figurita_service.publicar(figu, usuario["id"])
-     
 
 
 @router.delete(
@@ -51,10 +46,4 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
     },
 )
 def eliminar_figurita(figurita_id: str, usuario: dict = Depends(get_current_user)):
-    resultado = figurita_service.eliminar(figurita_id, usuario["id"])
-    if resultado is False:
-        raise HTTPException(status_code=404, detail="Figurita no encontrada")
-    if resultado is None:
-        raise HTTPException(status_code=403, detail="No tenés permiso para eliminar esta figurita")
-    return {"mensaje": "Figurita eliminada"}
-
+    figurita_service.eliminar(figurita_id, usuario["id"])

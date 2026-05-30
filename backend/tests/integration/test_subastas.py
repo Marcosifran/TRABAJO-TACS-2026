@@ -94,7 +94,7 @@ class TestCrearSubasta:
         pub_id, _ = agregar_y_publicar(client, token_user2, 10, "Argentina", "Messi", tipo="subasta")
         resp = _crear_subasta(client, token_user1, pub_id)
 
-        assert resp.status_code == 400
+        assert resp.status_code == 403
 
     def test_figurita_ya_en_subasta_falla(self, client, token_user1):
         """No se puede crear una segunda subasta para la misma publicación."""
@@ -103,7 +103,7 @@ class TestCrearSubasta:
 
         resp = _crear_subasta(client, token_user1, pub_id)
 
-        assert resp.status_code == 400
+        assert resp.status_code == 409
 
     def test_listar_subastas_activas(self, client, token_user1):
         """La subasta creada aparece en el listado de subastas activas."""
@@ -147,9 +147,8 @@ class TestOfertarEnSubasta:
 
         assert resp.status_code == 201
         data = resp.json()
-        assert data["mensaje"] == "Oferta realizada"
-        assert data["oferta"]["subasta_id"] == subasta_id
-        assert data["oferta"]["usuario_id"] == 2
+        assert data["subasta_id"] == subasta_id
+        assert data["usuario_id"] == 2
 
     def test_no_se_puede_ofertar_en_subasta_propia(self, client, token_user1):
         """El dueño de la subasta no puede ofertar en ella."""
@@ -164,7 +163,7 @@ class TestOfertarEnSubasta:
             headers={"X-User-Token": token_user1},
         )
 
-        assert resp.status_code == 400
+        assert resp.status_code == 403
 
     def test_subasta_inexistente_devuelve_404(self, client, token_user2):
         """Ofertar en una subasta que no existe devuelve 404."""
@@ -218,7 +217,7 @@ class TestOfertarEnSubasta:
             headers={"X-User-Token": token_user2},
         )
 
-        assert resp.status_code == 400
+        assert resp.status_code == 403
 
 
 

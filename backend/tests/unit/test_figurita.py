@@ -383,7 +383,7 @@ class TestAlbumService:
 
     def test_eliminar_falla_con_409_si_tiene_publicacion_activa(self):
         """No se puede eliminar una figurita que está publicada."""
-        from fastapi import HTTPException
+        from app.domain.errors import DomainConflictError
 
         figurita = {"id": 1, "usuario_id": 1, "numero": 10}
         publicacion = {"id": 1, "figurita_personal_id": 1}
@@ -391,26 +391,26 @@ class TestAlbumService:
         with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita), \
              patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=publicacion):
 
-            with pytest.raises(HTTPException) as exc:
+            with pytest.raises(DomainConflictError):
                 album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
 
-        assert exc.value.status_code == 409
-
     def test_eliminar_retorna_none_si_no_es_duenio(self):
+        from app.domain.errors import DomainPermissionError
+
         figurita_de_otro = {"id": 1, "usuario_id": 99, "numero": 10}
 
         with patch("app.services.album_service.album_repo.get_by_id", return_value=figurita_de_otro), \
              patch("app.services.album_service.publicacion_repo.get_by_personal_figurita", return_value=None):
 
-            resultado = album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
-
-        assert resultado is None
+            with pytest.raises(DomainPermissionError):
+                album_service.eliminar_del_album(figurita_id=1, usuario_id=1)
 
     def test_eliminar_retorna_false_si_no_existe(self):
-        with patch("app.services.album_service.album_repo.get_by_id", return_value=None):
-            resultado = album_service.eliminar_del_album(figurita_id=999, usuario_id=1)
+        from app.domain.errors import DomainNotFoundError
 
-        assert resultado is False
+        with patch("app.services.album_service.album_repo.get_by_id", return_value=None):
+            with pytest.raises(DomainNotFoundError):
+                album_service.eliminar_del_album(figurita_id=999, usuario_id=1)
 
 
 # ══════════════════════════════════════════
@@ -422,30 +422,26 @@ from app.services import publicacion_service
 class TestPublicacionService:
 
     def test_publicar_falla_404_si_figurita_no_existe_en_album(self):
-        from fastapi import HTTPException
+        from app.domain.errors import DomainNotFoundError
 
         pub = _publicacion_create(figurita_personal_id="999")
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=None):
-            with pytest.raises(HTTPException) as exc:
+            with pytest.raises(DomainNotFoundError):
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
 
-        assert exc.value.status_code == 404
-
     def test_publicar_falla_403_si_figurita_no_pertenece_al_usuario(self):
-        from fastapi import HTTPException
+        from app.domain.errors import DomainPermissionError
 
         pub = _publicacion_create(figurita_personal_id="1")
         figurita_de_otro = {"id": "1", "usuario_id": 99, "numero": 10, "cantidad": 1}
 
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita_de_otro):
-            with pytest.raises(HTTPException) as exc:
+            with pytest.raises(DomainPermissionError):
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
 
-        assert exc.value.status_code == 403
-
     def test_publicar_falla_409_si_ya_esta_publicada(self):
-        from fastapi import HTTPException
+        from app.domain.errors import DomainConflictError
 
         pub = _publicacion_create(figurita_personal_id="1")
         figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 2}
@@ -454,13 +450,11 @@ class TestPublicacionService:
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
              patch("app.services.publicacion_service.publicacion_repo.get_by_personal_figurita", return_value=publicacion_existente):
 
-            with pytest.raises(HTTPException) as exc:
+            with pytest.raises(DomainConflictError):
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
 
-        assert exc.value.status_code == 409
-
     def test_publicar_falla_400_si_cantidad_supera_album(self):
-        from fastapi import HTTPException
+        from app.domain.errors import DomainValidationError
 
         pub = _publicacion_create(figurita_personal_id="1", cantidad=5)
         figurita = {"id": "1", "usuario_id": 1, "numero": 10, "cantidad": 1}
@@ -468,10 +462,8 @@ class TestPublicacionService:
         with patch("app.services.publicacion_service.album_repo.get_by_id", return_value=figurita), \
              patch("app.services.publicacion_service.publicacion_repo.get_by_personal_figurita", return_value=None):
 
-            with pytest.raises(HTTPException) as exc:
+            with pytest.raises(DomainValidationError):
                 publicacion_service.publicar_figurita(pub, usuario_id=1)
-
-        assert exc.value.status_code == 400
 
     def test_publicar_llama_a_repo_create_con_datos_aplanados(self):
         """publicar_figurita() crea la publicación con los datos de la figurita aplanados."""
@@ -494,18 +486,20 @@ class TestPublicacionService:
         )
 
     def test_retirar_retorna_none_si_no_es_duenio(self):
+        from app.domain.errors import DomainPermissionError
+
         publicacion_de_otro = {"id": 1, "usuario_id": 99}
 
         with patch("app.services.publicacion_service.publicacion_repo.get_by_id", return_value=publicacion_de_otro):
-            resultado = publicacion_service.retirar_publicacion(publicacion_id=1, usuario_id=1)
-
-        assert resultado is None
+            with pytest.raises(DomainPermissionError):
+                publicacion_service.retirar_publicacion(publicacion_id=1, usuario_id=1)
 
     def test_retirar_retorna_false_si_no_existe(self):
-        with patch("app.services.publicacion_service.publicacion_repo.get_by_id", return_value=None):
-            resultado = publicacion_service.retirar_publicacion(publicacion_id=999, usuario_id=1)
+        from app.domain.errors import DomainNotFoundError
 
-        assert resultado is False
+        with patch("app.services.publicacion_service.publicacion_repo.get_by_id", return_value=None):
+            with pytest.raises(DomainNotFoundError):
+                publicacion_service.retirar_publicacion(publicacion_id=999, usuario_id=1)
 
     def test_obtener_sugerencias_retorna_vacio_si_no_hay_faltantes(self):
         """Sin faltantes registrados, no hay sugerencias posibles."""

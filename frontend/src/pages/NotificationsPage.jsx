@@ -40,9 +40,9 @@ export default function NotificationsPage() {
           listarSubastas(),
         ])
         setPropuestas(intercambiosData.recibidos?.filter(i => i.estado === 'pendiente') || [])
-        setSugerencias(sugsData.sugerencias || [])
+        setSugerencias(sugsData || [])
         const ahora = Date.now()
-        setSubastas((subsData.subastas || []).filter(s => {
+        setSubastas((subsData || []).filter(s => {
           const ms = new Date(s.fin) - ahora
           return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
         }))
