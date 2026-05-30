@@ -1,6 +1,7 @@
 import Icon from './ui/Icon'
 import Avatar from './ui/Avatar'
 import Button from './ui/Button'
+import FiguritaRow from './FiguritaRow'
 
 const FLAG_COLORS = {
   Argentina:      ['#74ACDF', '#FFFFFF', '#74ACDF'],
@@ -31,7 +32,7 @@ function cardGradient(seleccion) {
 export default function FiguritaCard({ figurita, onTrade, compact = false }) {
   if (compact) {
     return (
-      <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-variant transition-colors">
+      <FiguritaRow className="gap-3 px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-variant">
         <div
           className="w-10 h-12 rounded-md shrink-0 flex items-center justify-center"
           style={{ background: cardGradient(figurita.seleccion) }}
@@ -47,7 +48,7 @@ export default function FiguritaCard({ figurita, onTrade, compact = false }) {
             x{figurita.cantidad}
           </span>
         )}
-      </div>
+      </FiguritaRow>
     )
   }
 

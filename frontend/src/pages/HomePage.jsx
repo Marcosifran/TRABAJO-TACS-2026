@@ -15,6 +15,7 @@ import { listarMiAlbum } from '../api/album'
 import { listarSubastas, ofertarSubasta } from '../api/subastas'
 import WorldCupSchedule from '../sections/WorldCupSchedule'
 import { useUser } from '../context/UserContext'
+import { isAuctionActive } from '../utils/auctionTime'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -78,7 +79,7 @@ export default function HomePage() {
         setMiAlbum(album.figuritas || album)
         const ahora = Date.now()
         const list = (subs || [])
-          .filter(s => s.estado === 'activa' && new Date(s.fin) > ahora)
+          .filter(s => isAuctionActive(s, ahora))
           .sort((a, b) => new Date(a.fin) - new Date(b.fin))
           .slice(0, 4)
         setSubastasPorFinalizar(list)

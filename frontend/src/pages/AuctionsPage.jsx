@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNow } from "../hooks/useNow";
+import { isAuctionActive } from "../utils/auctionTime";
 import Button from "../components/ui/Button";
 import Tabs from "../components/ui/Tabs";
 import Modal from "../components/ui/Modal";
@@ -27,7 +29,7 @@ const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
   const { user, users } = useUser();
-  const [now, setNow] = useState(() => Date.now());
+  const now = useNow();
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -82,8 +84,6 @@ export default function AuctionsPage() {
 
   useEffect(() => {
     cargarDatos();
-    const tick = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(tick);
   }, []);
 
   async function handleCreate() {
@@ -221,9 +221,7 @@ export default function AuctionsPage() {
   opcionesSubasta.unshift({ value: "", label: "Seleccioná una figurita..." });
 
   // Filtramos las activas para que no muestre las finalizadas
-  const activasFiltradas = subastas.filter(
-    (sub) => sub.estado === "activa" && new Date(sub.fin).getTime() > now,
-  );
+  const activasFiltradas = subastas.filter((sub) => isAuctionActive(sub, now));
 
   // Decidimos qué lista usar según la pestaña
   const listaSubastas = tab === "activas" ? activasFiltradas : misSubastas;
@@ -297,11 +295,7 @@ export default function AuctionsPage() {
                       ).join(", ")}
                     </span>
                     {(() => {
-                      const finMs = oferta.subasta?.fin
-                        ? new Date(oferta.subasta.fin).getTime()
-                        : 0;
-                      const activa =
-                        oferta.subasta?.estado === "activa" && finMs > now;
+                      const activa = isAuctionActive(oferta.subasta, now);
 
                       // Si sigue activa, mostramos el texto normal
                       if (activa) {
@@ -329,8 +323,7 @@ export default function AuctionsPage() {
                       );
                     })()}
                   </div>
-                  {oferta.subasta?.estado === "activa" &&
-                    new Date(oferta.subasta?.fin).getTime() > now && (
+                  {isAuctionActive(oferta.subasta, now) && (
                       <Button
                         variant="outlined"
                         icon="cancel"
@@ -539,9 +532,7 @@ export default function AuctionsPage() {
                     ).join(", ")}
                   </div>
 
-                  {}
-                  {offersModal?.estado === "activa" &&
-                    new Date(offersModal?.fin).getTime() > now && (
+                  {isAuctionActive(offersModal, now) && (
                       <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
                         <Button
                           icon="check_circle"

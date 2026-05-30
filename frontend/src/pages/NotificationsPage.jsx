@@ -7,7 +7,7 @@ import { useUser } from '../context/UserContext'
 import { listarIntercambios } from '../api/intercambios'
 import { obtenerSugerencias } from '../api/faltantes'
 import { listarSubastas } from '../api/subastas'
-import { formatTiempoRestante } from '../utils/auctionTime'
+import { formatTiempoRestante, isAuctionActive } from '../utils/auctionTime'
 
 const STORAGE_KEY = 'figuswap-alertas-leidas'
 const FADE_MS     = 400
@@ -43,8 +43,9 @@ export default function NotificationsPage() {
         setSugerencias(sugsData || [])
         const ahora = Date.now()
         setSubastas((subsData || []).filter(s => {
-          const ms = new Date(s.fin) - ahora
-          return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
+          if (!isAuctionActive(s, ahora)) return false
+          const ms = new Date(s.fin).getTime() - ahora
+          return ms < 24 * 3600 * 1000
         }))
       } catch { /* ignorar */ }
       finally { setLoading(false) }

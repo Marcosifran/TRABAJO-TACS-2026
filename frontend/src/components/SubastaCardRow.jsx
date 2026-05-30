@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import Button from "./ui/Button";
-import { lineaCierraEn } from "../utils/auctionTime";
+import { lineaCierraEn, isAuctionActive } from "../utils/auctionTime";
+import { useNow } from "../hooks/useNow";
 
 export default function SubastaCardRow({
   sub,
@@ -13,15 +13,8 @@ export default function SubastaCardRow({
 }) {
   const currentUserId = users.indexOf(user) + 1;
   const isOwner = sub.usuario_id === currentUserId;
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(id);
-  }, []);
-
-  const finMs = sub.fin ? new Date(sub.fin).getTime() : 0;
-  const activa = sub.estado === "activa" && finMs > now;
+  const now = useNow();
+  const activa = isAuctionActive(sub, now);
   const cierre = lineaCierraEn(sub.fin);
 
   return (

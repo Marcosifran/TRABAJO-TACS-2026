@@ -13,6 +13,17 @@ export function formatTiempoRestante(finIso) {
 }
 
 /**
+ * Devuelve true si la subasta está activa y su fecha de fin aún no llegó.
+ * @param {object} sub - Objeto subasta con campos `estado` y `fin`
+ * @param {number} [now] - Timestamp de referencia (default: Date.now())
+ */
+export function isAuctionActive(sub, now = Date.now()) {
+  if (!sub || sub.estado !== 'activa') return false
+  const fin = sub.fin ? new Date(sub.fin).getTime() : 0
+  return fin > now
+}
+
+/**
  * Texto para mostrar en tarjetas: "Cierra en …" o "Finalizada".
  */
 export function lineaCierraEn(finIso) {
