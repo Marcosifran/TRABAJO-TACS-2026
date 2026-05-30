@@ -19,7 +19,7 @@ def publicar_figurita(
 
     return publicacion_service.publicar_figurita(publicacion, usuario["id"])
 
-@router.get("/", response_model=list[PublicacionResponse])
+@router.get("/", response_model=list[PublicacionResponse], status_code=200)
 def listar_publicaciones(
     numero: int | None = Query(default=None, description="Número de la figurita"),
     equipo: str | None = Query(default=None, description="Equipo de la figurita"),

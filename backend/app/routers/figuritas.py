@@ -9,6 +9,7 @@ router = APIRouter(prefix="/figuritas", tags=["Figuritas"], dependencies=[Depend
 
 @router.get(
     "/",
+    status_code=200,
     responses={
         200: {"description": "Lista de figuritas que coinciden con los filtros aplicados"},
     },
@@ -22,8 +23,7 @@ def buscar_figuritas(
     Devuelve las figuritas disponibles. Permite filtrar opcionalmente por número, equipo y/o jugador.
     Si no se proporciona ningún filtro, devuelve todas las figuritas publicadas.
     """
-    resultado = figurita_service.buscar(numero, equipo, jugador)
-    return {"figuritasDisponibles": resultado}
+    return figurita_service.buscar(numero, equipo, jugador)
 
 
 # El usuario que publica se obtiene del token, no del body
@@ -37,14 +37,14 @@ def buscar_figuritas(
     },
 )
 def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_user)):
-    nueva = figurita_service.publicar(figu, usuario["id"])
-    return {"mensaje": "Figurita a intercambiar publicada", "data": nueva}
+    return figurita_service.publicar(figu, usuario["id"])
+     
 
 
 @router.delete(
     "/{figurita_id}",
     responses={
-        200: {"description": "Figurita eliminada exitosamente"},
+        204: {"description": "Figurita eliminada exitosamente"},
         401: {"description": "Token ausente o inválido"},
         403: {"description": "No tenés permiso para eliminar esta figurita"},
         404: {"description": "Figurita no encontrada"},

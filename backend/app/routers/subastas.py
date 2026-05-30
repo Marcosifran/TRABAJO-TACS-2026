@@ -9,6 +9,7 @@ router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(
 
 @router.get(
     "/",
+    status_code=200,
     responses={
         200: {"description": "Lista de todas las subastas registradas"},
     },
@@ -29,13 +30,11 @@ def listar_subastas():
         404: {"description": "Subasta u oferta no encontrada"},
     },
 )
-
 def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_current_user)):
     """
     Permite a un usuario poner una de sus figuritas en subasta.
     """
-    nueva_subasta = subasta_service.crear_subasta(subasta_data, usuario["id"])
-    return {"mensaje": "Subasta creada exitosamente", "subasta": nueva_subasta}
+    return subasta_service.crear_subasta(subasta_data, usuario["id"])
 
 @router.patch(
     "/{subasta_id}/ofertas/{oferta_id}",
@@ -61,6 +60,7 @@ def responder_oferta(subasta_id: str, oferta_id: str, decision: OfertaDecision, 
 
 @router.get(
     "/{subasta_id}/ofertas",
+    status_code=200,
     responses={
         200: {"description": "Lista de ofertas recibidas para la subasta"},
         404: {"description": "Subasta no encontrada"},
@@ -103,8 +103,6 @@ def cancelar_oferta(
         404: {"description": "Subasta o figuritas ofrecidas no encontradas"},
     },
 )
-
-
 def ofertar_en_subasta(
     subasta_id: str,
     oferta: OfertaCreate,

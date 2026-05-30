@@ -56,7 +56,7 @@ export default function TradesPage() {
   useEffect(() => {
     if (sugTradeModal) {
       listarMiAlbum()
-        .then(setSugAlbum)
+        .then(data => setSugAlbum(data.figuritas || data))
         .catch(e => setSnack({ open: true, message: 'Error cargando álbum: ' + e.message, type: 'error' }))
     }
   }, [sugTradeModal])

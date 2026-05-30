@@ -14,7 +14,7 @@ def agregar_al_album(
 
     return album_service.agregar_al_album(figurita, usuario["id"])   
 
-@router.get("/", response_model=list[FiguritaAlbumResponse])
+@router.get("/", response_model=list[FiguritaAlbumResponse], status_code=200)
 def listar_album(
     numero: int | None = Query(default=None),
     equipo: str | None = Query(default=None),

@@ -59,7 +59,7 @@ export default function CollectionPage() {
         listarMiAlbum(),
         listarMisPublicaciones()
       ])
-      setAlbum(albumData)
+      setAlbum(albumData.figuritas || albumData)
       setPublicaciones(pubsData)
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })

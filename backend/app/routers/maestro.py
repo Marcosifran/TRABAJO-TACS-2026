@@ -19,6 +19,7 @@ def listar_equipos():
 
 @router.get(
     "/{numero}",
+    status_code=200,
     response_model=JugadorMaestroResponse,
     summary="Obtener jugador por número de figurita",
     description=(

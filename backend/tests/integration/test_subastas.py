@@ -73,9 +73,8 @@ class TestCrearSubasta:
 
         assert resp.status_code == 201
         data = resp.json()
-        assert "subasta" in data
-        assert data["subasta"]["figurita_id"] == pub_id
-        assert data["subasta"]["usuario_id"] == 1
+        assert data["figurita_id"] == pub_id
+        assert data["usuario_id"] == 1
 
     def test_figurita_tipo_intercambio_directo_falla(self, client, token_user1):
         """Una publicación con tipo 'intercambio_directo' no puede ponerse en subasta."""
@@ -131,7 +130,7 @@ class TestOfertarEnSubasta:
         """
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         resp = _crear_subasta(client, token_user1, pub_id)
-        return resp.json()["subasta"]["id"]
+        return resp.json()["id"]
 
     def test_flujo_feliz(self, client, token_user1, token_user2):
         """User2 oferta en la subasta de user1 con su propia figurita del álbum."""
@@ -208,7 +207,7 @@ class TestOfertarEnSubasta:
     def test_ofertar_con_figurita_ajena_falla(self, client, token_user1, token_user2):
         """No se puede ofrecer una figurita del álbum que pertenece a otro usuario."""
         pub_user1, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
-        subasta_id = _crear_subasta(client, token_user1, pub_user1).json()["subasta"]["id"]
+        subasta_id = _crear_subasta(client, token_user1, pub_user1).json()["id"]
         _, album_user1_extra = agregar_y_publicar(
             client, token_user1, 99, "Uruguay", "Extra", tipo="intercambio_directo"
         )
@@ -232,7 +231,7 @@ class TestHistorialOfertas:
     def test_subasta_sin_ofertas_devuelve_lista_vacia(self, client, token_user1):
         """Una subasta recién creada no tiene ofertas."""
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
-        subasta_id = _crear_subasta(client, token_user1, pub_id).json()["subasta"]["id"]
+        subasta_id = _crear_subasta(client, token_user1, pub_id).json()["id"]
 
         resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
@@ -242,7 +241,7 @@ class TestHistorialOfertas:
     def test_historial_refleja_oferta_realizada(self, client, token_user1, token_user2):
         """Tras ofertar, el historial contiene la oferta con los datos correctos."""
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
-        subasta_id = _crear_subasta(client, token_user1, pub_id).json()["subasta"]["id"]
+        subasta_id = _crear_subasta(client, token_user1, pub_id).json()["id"]
         _, album_user2 = agregar_y_publicar(
             client, token_user2, 7, "Brasil", "Vinicius", tipo="intercambio_directo"
         )

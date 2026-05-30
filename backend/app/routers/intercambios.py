@@ -32,6 +32,7 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
 
 @router.get(
     "/",
+    status_code=200,
     responses={
         200: {"description": "Lista de intercambios donde el usuario es proponente o receptor"},
         401: {"description": "Token ausente o inválido"},

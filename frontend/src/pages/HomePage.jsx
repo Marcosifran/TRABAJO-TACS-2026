@@ -40,7 +40,7 @@ export default function HomePage() {
 
   useEffect(() => {
     listarMiAlbum()
-      .then(data => setFiguritasCount(data.length))
+      .then(data => setFiguritasCount((data.figuritas || data).length))
       .catch(() => {})
     listarFaltantes()
       .then(data => setFaltanCount(data.faltantes.length))
@@ -75,7 +75,7 @@ export default function HomePage() {
         const map = {}
         ;[...pubs, ...otrasPubs].forEach(p => { map[p.id] = p })
         setPubsMap(map)
-        setMiAlbum(album)
+        setMiAlbum(album.figuritas || album)
         const ahora = Date.now()
         const list = (subs.subastas || [])
           .filter(s => s.estado === 'activa' && new Date(s.fin) > ahora)

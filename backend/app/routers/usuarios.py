@@ -10,6 +10,7 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(
 
 @router.get(
     "/figuritas",
+    status_code=200,
     responses={
         200: {"description": "Figuritas publicadas por el usuario autenticado"},
         401: {"description": "Token ausente o inválido"},
@@ -36,13 +37,13 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
 )
 def registrar_faltante(faltante: FaltanteCreate, usuario: dict = Depends(get_current_user)):
 
-    resultado = usuario_service.registrar_faltante(usuario["id"], faltante)
-    return {"mensaje": "Faltante registrado", "data": resultado}
+    return usuario_service.registrar_faltante(usuario["id"], faltante)
 
 
 # Devuelve los faltantes del usuario que hace el request
 @router.get(
     "/faltantes",
+    status_code=200,
     responses={
         200: {"description": "Lista de figuritas faltantes del usuario autenticado"},
         401: {"description": "Token ausente o inválido"},
@@ -59,6 +60,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
 # Note: `/usuarios/sugerencias` removed; keep `/publicaciones/sugerencias` as canonical route
 @router.get(
     "/sugerencias",
+    status_code=200,
     responses={
         200: {"description": "Sugerencias de intercambio basadas en los faltantes del usuario"},
         401: {"description": "Token ausente o inválido"},
@@ -86,6 +88,7 @@ def obtener_reputacion(usuario_id: int):
 
 @router.get(
     "/ofertas",
+    status_code=200,
     responses={
         200: {"description": "Ofertas enviadas por el usuario autenticado a subastas"},
         401: {"description": "Token ausente o inválido"},
@@ -99,6 +102,7 @@ def listar_mis_ofertas(usuario: dict = Depends(get_current_user)):
 
 @router.get(
     "/subastas",
+    status_code=200,
     responses={
         200: {"description": "Subastas creadas por el usuario autenticado"},
         401: {"description": "Token ausente o inválido"},

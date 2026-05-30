@@ -30,7 +30,7 @@ class TestRegistrarFaltanteExitoso:
         )
 
         assert resp.status_code == 201
-        data = resp.json()["data"]
+        data = resp.json()
         assert data["numero_figurita"] == 42
         assert "id" in data
         assert data["usuario_id"] is not None
@@ -46,7 +46,7 @@ class TestRegistrarFaltanteExitoso:
         resp = client.post(ENDPOINT, json=payload, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 201
-        data = resp.json()["data"]
+        data = resp.json()
         assert data["numero_figurita"] == 7
         assert data["equipo"] == "Alemania"
         assert data["jugador"] == "Muller"
@@ -65,7 +65,7 @@ class TestRegistrarFaltanteExitoso:
         )
 
         assert resp.status_code == 201
-        data = resp.json()["data"]
+        data = resp.json()
         assert data["numero_figurita"] == 15
         assert data["equipo"] == "Francia"
         assert data["jugador"] is None
@@ -79,7 +79,7 @@ class TestRegistrarFaltanteExitoso:
         )
 
         usuario_id_esperado = 1  # user1 tiene id=1
-        assert resp.json()["data"]["usuario_id"] == usuario_id_esperado
+        assert resp.json()["usuario_id"] == usuario_id_esperado
 
     def test_registrar_multiples_faltantes(self, client, token_user1):
         """Un usuario puede registrar varios faltantes distintos."""
