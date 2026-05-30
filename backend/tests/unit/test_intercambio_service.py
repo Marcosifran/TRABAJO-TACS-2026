@@ -5,7 +5,7 @@ Cubre las funciones de validación y la lógica de transferencia de figuritas.
 Usa mocks para aislar de la base de datos; no necesita TestClient.
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app.services import intercambio_service
 from app.schemas.intercambio_sch import IntercambioCreate
 from app.domain.errors import DomainValidationError, DomainNotFoundError
