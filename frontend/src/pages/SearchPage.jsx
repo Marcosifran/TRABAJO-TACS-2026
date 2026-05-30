@@ -80,7 +80,7 @@ export default function SearchPage() {
     if (tradeModal) {
       Promise.all([listarMiAlbum(), listarMisPublicaciones()])
         .then(([album, pubs]) => {
-          setMyAlbum(album)
+          setMyAlbum(album.figuritas || album)
           setMyPubs(pubs)
         })
         .catch(e => setSnack({ open: true, message: 'Error cargando datos: ' + e.message, type: 'error' }))

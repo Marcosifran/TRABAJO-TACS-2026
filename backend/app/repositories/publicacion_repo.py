@@ -1,3 +1,4 @@
+from typing import Any
 from bson import ObjectId
 from app.schemas.publicacion_sch import PublicacionCreate
 from app.core.database import get_db
@@ -31,12 +32,17 @@ def find(
         usuario_id: int | None = None,
 ) -> list[dict]:
     """Busca publicaciones por número, equipo, jugador o usuario."""
-    query = {}
-    if numero is not None: query["numero"] = numero
-    if equipo is not None: query["equipo"] = {"$regex": equipo, "$options": "i"}
-    if jugador is not None: query["jugador"] = {"$regex": jugador, "$options": "i"}
-    if tipo_intercambio is not None: query["tipo_intercambio"] = {"$regex": f"^{tipo_intercambio}$", "$options": "i"}
-    if usuario_id is not None: query["usuario_id"] = {"$ne": usuario_id}
+    query: dict[str, Any] = {}
+    if numero is not None:
+        query["numero"] = numero
+    if equipo is not None:
+        query["equipo"] = {"$regex": equipo, "$options": "i"}
+    if jugador is not None:
+        query["jugador"] = {"$regex": jugador, "$options": "i"}
+    if tipo_intercambio is not None:
+        query["tipo_intercambio"] = {"$regex": f"^{tipo_intercambio}$", "$options": "i"}
+    if usuario_id is not None:
+        query["usuario_id"] = {"$ne": usuario_id}
     return list(_get_collection().find(query, {"_id": 0}))
 
 def create(

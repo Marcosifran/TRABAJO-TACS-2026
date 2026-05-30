@@ -40,10 +40,10 @@ export default function HomePage() {
 
   useEffect(() => {
     listarMiAlbum()
-      .then(data => setFiguritasCount(data.length))
+      .then(data => setFiguritasCount((data.figuritas || data).length))
       .catch(() => {})
     listarFaltantes()
-      .then(data => setFaltanCount(data.faltantes.length))
+      .then(data => setFaltanCount((data || []).length))
       .catch(() => {})
     listarIntercambios()
       .then(data => setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)))
@@ -57,7 +57,7 @@ export default function HomePage() {
       .then(data => setUltimasPublicadas(data.slice(-4).reverse()))
       .catch(() => {})
     obtenerSugerencias()
-      .then(data => setSugerencias(data.sugerencias || []))
+      .then(data => setSugerencias(data || []))
       .catch(() => {})
   }, [user])
 
@@ -75,9 +75,9 @@ export default function HomePage() {
         const map = {}
         ;[...pubs, ...otrasPubs].forEach(p => { map[p.id] = p })
         setPubsMap(map)
-        setMiAlbum(album)
+        setMiAlbum(album.figuritas || album)
         const ahora = Date.now()
-        const list = (subs.subastas || [])
+        const list = (subs || [])
           .filter(s => s.estado === 'activa' && new Date(s.fin) > ahora)
           .sort((a, b) => new Date(a.fin) - new Date(b.fin))
           .slice(0, 4)

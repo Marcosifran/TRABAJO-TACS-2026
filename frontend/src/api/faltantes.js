@@ -16,5 +16,5 @@ export function obtenerReputacion(id) {
 }
 
 export function obtenerSugerencias() {
-  return apiFetch('/usuarios/sugerencias')
+  return apiFetch('/publicaciones/sugerencias')
 }

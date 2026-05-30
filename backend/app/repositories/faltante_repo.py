@@ -1,5 +1,4 @@
 from bson import ObjectId
-from app.core.config import settings
 from app.core.database import get_db
 
 def _get_faltantes_collection():

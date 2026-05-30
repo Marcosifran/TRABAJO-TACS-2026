@@ -59,7 +59,7 @@ export default function CollectionPage() {
         listarMiAlbum(),
         listarMisPublicaciones()
       ])
-      setAlbum(albumData)
+      setAlbum(albumData.figuritas || albumData)
       setPublicaciones(pubsData)
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
@@ -72,7 +72,7 @@ export default function CollectionPage() {
     setLoadingFalt(true)
     try {
       const data = await listarFaltantes()
-      setFaltantes(data.faltantes)
+      setFaltantes(data || [])
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     } finally {

@@ -1,3 +1,4 @@
+from typing import Any
 from app.repositories import usuario_repo, publicacion_repo, intercambio_repo, subasta_repo
 from app.schemas.intercambio_sch import EstadoIntercambio
 
@@ -9,7 +10,7 @@ def obtener_estadisticas() -> dict:
 
     estados = {e.value: 0 for e in EstadoIntercambio}
     for i in intercambios:
-        e = i.get("estado", "pendiente")
+        e = i.get("estado", EstadoIntercambio.PENDIENTE.value)
         if e in estados:
             estados[e] += 1
 
@@ -17,16 +18,13 @@ def obtener_estadisticas() -> dict:
     for p in publicaciones:
         eq = p.get("equipo", "Desconocido")
         conteo_selecciones[eq] = conteo_selecciones.get(eq, 0) + 1
-    top_selecciones = sorted(
-        [{"seleccion": k, "cantidad": v} for k, v in conteo_selecciones.items()],
-        key=lambda x: x["cantidad"],
-        reverse=True,
-    )[:5]
+    filas: list[dict[str, Any]] = [{"seleccion": k, "cantidad": v} for k, v in conteo_selecciones.items()]
+    top_selecciones = sorted(filas, key=lambda x: x["cantidad"], reverse=True)[:5]
 
     return {
         "usuarios":               len(usuarios),
         "figuritas_publicadas":   len(publicaciones),
-        "intercambios_aceptados": estados["aceptado"],
+        "intercambios_aceptados": estados[EstadoIntercambio.ACEPTADO.value],
         "subastas_activas":       len(subastas),
         "intercambios_por_estado": estados,
         "top_selecciones":        top_selecciones,

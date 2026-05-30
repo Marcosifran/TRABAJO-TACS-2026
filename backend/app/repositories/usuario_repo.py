@@ -18,6 +18,11 @@ _db_usuarios: list[dict] = [
 ]
 
 
+def get_seeded_token(user_index: int) -> str:
+    """Token del usuario sembrado por índice (0-based). Uso exclusivo de tests."""
+    return _db_usuarios[user_index]["token"]
+
+
 def get_all() -> list[dict]:
     db_users = list(_get_usuarios_collection().find({}, {"_id": 0}))
     return _db_usuarios + db_users

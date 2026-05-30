@@ -55,15 +55,14 @@ class TestListarAlbumPersonal:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["figuritas"] == []
-        assert "usuario_id" in data
+        assert data == []
 
     def test_devuelve_sus_propias_figuritas(self, client, token_user1, figurita_user1):
         """El usuario ve exactamente las figuritas que tiene en su álbum."""
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        figuritas = resp.json()["figuritas"]
+        figuritas = resp.json()
         assert len(figuritas) == 1
         assert figuritas[0]["id"] == figurita_user1["id"]
         assert figuritas[0]["numero"] == figurita_user1["numero"]
@@ -81,22 +80,22 @@ class TestListarAlbumPersonal:
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        assert len(resp.json()["figuritas"]) == 3
+        assert len(resp.json()) == 3
 
     def test_no_incluye_figuritas_de_otros_usuarios(self, client, token_user1, figurita_user2):
         """Las figuritas de user2 no aparecen en el álbum de user1."""
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        assert resp.json()["figuritas"] == []
+        assert resp.json() == []
 
     def test_cada_usuario_ve_solo_las_suyas(self, client, token_user1, token_user2, figurita_user1, figurita_user2):
         """user1 y user2 ven únicamente sus propias figuritas."""
         resp1 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
         resp2 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user2})
 
-        figuritas_user1 = resp1.json()["figuritas"]
-        figuritas_user2 = resp2.json()["figuritas"]
+        figuritas_user1 = resp1.json()
+        figuritas_user2 = resp2.json()
 
         assert len(figuritas_user1) == 1
         assert figuritas_user1[0]["id"] == figurita_user1["id"]
@@ -115,7 +114,7 @@ class TestCampoEnIntercambio:
         """Una figurita recién agregada al álbum tiene en_intercambio = False."""
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
 
-        figurita = resp.json()["figuritas"][0]
+        figurita = resp.json()[0]
         assert figurita["en_intercambio"] is False
 
     def test_figurita_publicada_aparece_en_intercambio(self, client, token_user1, figurita_user1):
@@ -132,7 +131,7 @@ class TestCampoEnIntercambio:
 
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
 
-        figurita = resp.json()["figuritas"][0]
+        figurita = resp.json()[0]
         assert figurita["en_intercambio"] is True
 
     def test_retirar_publicacion_vuelve_en_intercambio_a_false(self, client, token_user1, figurita_user1):
@@ -154,7 +153,7 @@ class TestCampoEnIntercambio:
         )
 
         resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
-        figurita = resp.json()["figuritas"][0]
+        figurita = resp.json()[0]
         assert figurita["en_intercambio"] is False
 
 

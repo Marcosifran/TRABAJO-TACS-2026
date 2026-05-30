@@ -87,30 +87,30 @@ class TestListarJugadores:
     def test_sin_filtro_devuelve_todos(self, client, maestro_con_datos):
         resp = client.get(ENDPOINT)
         assert resp.status_code == 200
-        jugadores = resp.json()["jugadores"]
+        jugadores = resp.json()
         assert len(jugadores) == len(_JUGADORES_PRUEBA)
 
     def test_filtro_equipo_devuelve_solo_ese_equipo(self, client, maestro_con_datos):
         resp = client.get(ENDPOINT, params={"equipo": "Argentina"})
         assert resp.status_code == 200
-        jugadores = resp.json()["jugadores"]
+        jugadores = resp.json()
         assert len(jugadores) == 3
         assert all(j["equipo"] == "Argentina" for j in jugadores)
 
     def test_filtro_equipo_es_case_insensitive(self, client, maestro_con_datos):
         resp = client.get(ENDPOINT, params={"equipo": "argentina"})
         assert resp.status_code == 200
-        assert len(resp.json()["jugadores"]) == 3
+        assert len(resp.json()) == 3
 
     def test_filtro_equipo_inexistente_devuelve_lista_vacia(self, client, maestro_con_datos):
         resp = client.get(ENDPOINT, params={"equipo": "Wakanda"})
         assert resp.status_code == 200
-        assert resp.json()["jugadores"] == []
+        assert resp.json() == []
 
     def test_sin_datos_devuelve_lista_vacia(self, client):
         resp = client.get(ENDPOINT)
         assert resp.status_code == 200
-        assert resp.json()["jugadores"] == []
+        assert resp.json() == []
 
 
 # ────────────────────────────────────────────

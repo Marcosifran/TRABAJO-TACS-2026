@@ -1,9 +1,10 @@
+from typing import Any
 from pymongo import MongoClient
 from app.core.config import settings
 
 class Database:
-    client : MongoClient = None
-    db = None
+    client: MongoClient | None = None
+    db: Any = None
 
 db_instance = Database()
 
