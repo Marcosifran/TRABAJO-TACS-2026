@@ -113,7 +113,7 @@ class TestCrearSubasta:
         resp = client.get(ENDPOINT_SUBASTAS, headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        subastas = resp.json()["subastas"]
+        subastas = resp.json()
         assert any(s["figurita_id"] == pub_id for s in subastas)
 
 
@@ -236,7 +236,7 @@ class TestHistorialOfertas:
         resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        assert resp.json()["ofertas"] == []
+        assert resp.json() == []
 
     def test_historial_refleja_oferta_realizada(self, client, token_user1, token_user2):
         """Tras ofertar, el historial contiene la oferta con los datos correctos."""
@@ -255,7 +255,7 @@ class TestHistorialOfertas:
         resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
 
         assert resp.status_code == 200
-        ofertas = resp.json()["ofertas"]
+        ofertas = resp.json()
         assert len(ofertas) == 1
         assert ofertas[0]["subasta_id"] == subasta_id
         assert ofertas[0]["usuario_id"] == 2

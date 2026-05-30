@@ -41,6 +41,7 @@ def obtener_jugador(numero: int):
 
 @router.get(
     "/",
+    status_code=200,
     summary="Listar jugadores del maestro",
     description=(
         "Devuelve todos los jugadores del maestro. "
@@ -60,7 +61,7 @@ def listar_jugadores(
         jugadores = maestro_service.get_por_equipo(equipo)
     else:
         jugadores = maestro_service.get_todos()
-    return {"jugadores": jugadores}
+    return jugadores
 
 
 @router.post(

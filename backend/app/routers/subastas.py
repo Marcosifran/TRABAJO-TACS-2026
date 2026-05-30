@@ -18,7 +18,7 @@ def listar_subastas():
     """
     Devuelve las subastas activas.
     """
-    return {"subastas": subasta_service.listar_subastas()}
+    return subasta_service.listar_subastas()
 
 @router.post(
     "/",
@@ -46,7 +46,7 @@ def responder_oferta(subasta_id: str, oferta_id: str, decision: OfertaDecision, 
     """
     if decision.estado == "aceptada":
         resultado = subasta_service.aceptar_oferta(subasta_id, oferta_id, usuario["id"])
-        return {"mensaje": "Oferta aceptada", "resultado": resultado}
+        return resultado
     elif decision.estado == "rechazada":
         # Rechazar simplemente elimina la oferta
         deleted = oferta_repo.delete(oferta_id)
@@ -71,7 +71,7 @@ def listar_ofertas(subasta_id: str):
     Devuelve todas las ofertas recibidas para una subasta.
     """
     ofertas = subasta_service.listar_ofertas(subasta_id)
-    return {"ofertas": ofertas}
+    return ofertas
 
 @router.delete(
     "/{subasta_id}/ofertas/{oferta_id}",

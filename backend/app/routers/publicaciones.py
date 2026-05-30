@@ -40,7 +40,7 @@ def listar_publicaciones(
 
 # Note: `/publicaciones/mias` removed in favor of `GET /publicaciones?incluir_propias=true`
 
-@router.get("/sugerencias", response_model=SugerenciasEnvelope)
+@router.get("/sugerencias", response_model=SugerenciasEnvelope, status_code=200)
 def obtener_sugerencias(
     usuario: dict = Depends(get_current_user)
 ):

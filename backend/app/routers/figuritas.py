@@ -29,7 +29,6 @@ def buscar_figuritas(
 # El usuario que publica se obtiene del token, no del body
 @router.post(
     "/",
-    status_code=201,
     responses={
         201: {"description": "Figurita publicada exitosamente"},
         400: {"description": "Datos inválidos para la figurita"},
@@ -43,6 +42,7 @@ def publicar_figurita(figu: FiguritaCreate, usuario: dict = Depends(get_current_
 
 @router.delete(
     "/{figurita_id}",
+    status_code=204,
     responses={
         204: {"description": "Figurita eliminada exitosamente"},
         401: {"description": "Token ausente o inválido"},

@@ -21,7 +21,7 @@ def listar_figuritas_usuario(usuario: dict = Depends(get_current_user)):
     Devuelve las figuritas publicadas por el usuario autenticado.
     """
     figuritas = album_service.listar_album(usuario["id"])
-    return {"usuario_id": usuario["id"], "figuritas": figuritas}
+    return figuritas
 
 
 # Registra una figurita faltante para el usuario autenticado vía token
@@ -54,7 +54,7 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     faltantes = usuario_service.listar_faltantes(usuario["id"])
     if faltantes is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"usuario_id": usuario["id"], "faltantes": faltantes}
+    return faltantes
 
 
 # Note: `/usuarios/sugerencias` removed; keep `/publicaciones/sugerencias` as canonical route
@@ -72,7 +72,7 @@ def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
     pero utilizaremos la ruta de publicaciones para obtener sugerencias.
     """
     sugerencias = publicacion_service.obtener_sugerencias(usuario["id"])
-    return {"usuario_id": usuario["id"], "sugerencias": sugerencias}
+    return sugerencias
 
 
 @router.get(
@@ -97,7 +97,7 @@ def obtener_reputacion(usuario_id: int):
 def listar_mis_ofertas(usuario: dict = Depends(get_current_user)):
     """Devuelve las ofertas enviadas por el usuario autenticado a subastas de otros."""
     ofertas = subasta_service.listar_mis_ofertas(usuario["id"])
-    return {"usuario_id": usuario["id"], "ofertas": ofertas}
+    return ofertas
 
 
 @router.get(
@@ -113,4 +113,4 @@ def listar_subastas_usuario(usuario: dict = Depends(get_current_user)):
     Devuelve las subastas creadas de forma activa por el usuario autenticado.
     """
     subastas = subasta_service.listar_subastas_usuario(usuario["id"])
-    return {"usuario_id": usuario["id"], "subastas": subastas}
+    return subastas
