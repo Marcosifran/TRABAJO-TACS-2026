@@ -165,9 +165,9 @@ def _transferir_figurita(numero: int, de_usuario_id: int, a_usuario_id: int) -> 
         fig["cantidad"] -= 1
         if fig["cantidad"] <= 0:
             album_repo.delete(fig["id"])
-            for pub in publicacion_repo.get_all():
-                if pub["numero"] == numero and pub["usuario_id"] == de_usuario_id:
-                    publicacion_repo.delete(pub["id"])
+            for p in publicacion_repo.get_all():
+                if p["numero"] == numero and p["usuario_id"] == de_usuario_id:
+                    publicacion_repo.delete(p["id"])
         else:
             pub: dict | None = next(
                 (p for p in publicacion_repo.get_all()
