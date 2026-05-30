@@ -1,3 +1,4 @@
+from typing import Any
 from bson import ObjectId
 from app.schemas.publicacion_sch import PublicacionCreate
 from app.core.database import get_db
@@ -31,7 +32,7 @@ def find(
         usuario_id: int | None = None,
 ) -> list[dict]:
     """Busca publicaciones por número, equipo, jugador o usuario."""
-    query = {}
+    query: dict[str, Any] = {}
     if numero is not None:
         query["numero"] = numero
     if equipo is not None:

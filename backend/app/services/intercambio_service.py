@@ -68,7 +68,7 @@ def obtener_publicaciones_para_intercambio(
             raise DomainNotFoundError(f"La figurita {numero} está publicada como subasta")
 
     # Mantenemos la lógica de que la solicitada SÍ debe estar publicada
-    publicaciones_ofrecidas = [] 
+    publicaciones_ofrecidas: list[dict] = []
 
     # Buscamos la publicación del receptor con el número solicitado
     publicacion_solicitada = next(
@@ -169,10 +169,10 @@ def _transferir_figurita(numero: int, de_usuario_id: int, a_usuario_id: int) -> 
                 if pub["numero"] == numero and pub["usuario_id"] == de_usuario_id:
                     publicacion_repo.delete(pub["id"])
         else:
-            pub = next(
+            pub: dict | None = next(
                 (p for p in publicacion_repo.get_all()
                  if p["numero"] == numero and p["usuario_id"] == de_usuario_id),
-                None,
+                None,  # type: ignore[arg-type]
             )
             if pub:
                 pub["cantidad_disponible"] -= 1

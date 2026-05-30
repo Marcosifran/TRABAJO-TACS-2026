@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from app.core.config import settings
 
 class Database:
-    client : MongoClient = None
+    client: MongoClient | None = None
     db = None
 
 db_instance = Database()

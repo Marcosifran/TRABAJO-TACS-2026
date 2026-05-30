@@ -1,3 +1,4 @@
+from typing import Any
 from bson import ObjectId
 from app.schemas.figurita import FiguritaCreate
 from app.core.database import get_db
@@ -16,7 +17,7 @@ def find_by_number_and_user(numero: int, usuario_id: int) -> dict | None:
 
 def find(numero: int | None, equipo: str | None, jugador: str | None) -> list[dict]:
     """Filtra las figuritas disponibles según criterios opcionales."""
-    query = {}
+    query: dict[str, Any] = {}
     if numero is not None:
         query["numero"] = numero
     if equipo is not None:

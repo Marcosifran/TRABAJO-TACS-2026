@@ -43,7 +43,7 @@ def _parsear(html: str) -> list[dict]:
     for tabla in contenido.find_all("table", class_="wikitable"):
         # Solo filas directas de la tabla (o su thead/tbody), ignora tablas anidadas
         filas = [tr for tr in tabla.find_all("tr")
-                 if tr.parent == tabla or tr.parent.parent == tabla]
+                 if tr.parent == tabla or (tr.parent is not None and tr.parent.parent == tabla)]
         if len(filas) < 2:
             continue
 
