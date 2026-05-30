@@ -12,8 +12,7 @@ from app.domain.errors import (
     DomainPermissionError,
     DomainValidationError,
 )
-from app.schemas.intercambio_sch import IntercambioCreate, IntercambioDecision
-from app.schemas.intercambio_sch import EstadoIntercambio
+from app.schemas.intercambio_sch import IntercambioCreate, IntercambioDecision, EstadoIntercambio, EstadoRespuestaIntercambio
 from app.schemas.album_sch import FiguritaAlbumCreate
 
 def validar_numeros_distintos(intercambio: IntercambioCreate) -> None:
@@ -239,7 +238,7 @@ def responder_intercambio(
     if intercambio["estado"] != EstadoIntercambio.PENDIENTE.value:
         raise DomainValidationError("El intercambio ya fue respondido")
 
-    if decision.estado.value == "aceptado":
+    if decision.estado == EstadoRespuestaIntercambio.ACEPTADO:
         realizar_intercambio_aceptado(intercambio)
 
     intercambio_actualizado = intercambio_repo.answer_exchange(

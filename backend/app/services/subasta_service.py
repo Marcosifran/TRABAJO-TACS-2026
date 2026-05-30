@@ -1,6 +1,6 @@
 import datetime as dt
 from app.repositories import subasta_repo, publicacion_repo, oferta_repo, album_repo
-from app.schemas.subasta import SubastaCreate
+from app.schemas.subasta import SubastaCreate, EstadoSubasta
 from app.schemas.oferta import OfertaCreate
 from app.domain.errors import (
     DomainNotFoundError,
@@ -12,7 +12,7 @@ from app.domain.errors import (
 
 def _esta_activa(subasta: dict) -> bool:
     """Verifica en tiempo real si la subasta está dentro del rango activo."""
-    if subasta.get("estado") != "activa":
+    if subasta.get("estado") != EstadoSubasta.ACTIVA.value:
         return False
     ahora = dt.datetime.now(dt.timezone.utc)
     fin = subasta.get("fin")
@@ -169,14 +169,14 @@ def _aceptar_oferta(subasta_id: str, oferta_id: str, usuario_id: int) -> dict:
             if pub_fantasma:
                 publicacion_repo.delete(pub_fantasma["id"])
 
-    subasta["estado"] = "finalizada"
+    subasta["estado"] = EstadoSubasta.FINALIZADA.value
     subasta["oferta_ganadora_id"] = oferta_id
     subasta_repo.update(subasta)
     publicacion_repo.delete(figurita_subastada_id)
 
     return {
         "subasta_id": subasta_id,
-        "estado": "finalizada",
+        "estado": EstadoSubasta.FINALIZADA.value,
         "ganador_id": ofertante_id,
     }
 

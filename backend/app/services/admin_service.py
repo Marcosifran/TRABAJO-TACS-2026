@@ -9,7 +9,7 @@ def obtener_estadisticas() -> dict:
 
     estados = {e.value: 0 for e in EstadoIntercambio}
     for i in intercambios:
-        e = i.get("estado", "pendiente")
+        e = i.get("estado", EstadoIntercambio.PENDIENTE.value)
         if e in estados:
             estados[e] += 1
 
@@ -26,7 +26,7 @@ def obtener_estadisticas() -> dict:
     return {
         "usuarios":               len(usuarios),
         "figuritas_publicadas":   len(publicaciones),
-        "intercambios_aceptados": estados["aceptado"],
+        "intercambios_aceptados": estados[EstadoIntercambio.ACEPTADO.value],
         "subastas_activas":       len(subastas),
         "intercambios_por_estado": estados,
         "top_selecciones":        top_selecciones,
