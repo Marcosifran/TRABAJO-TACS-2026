@@ -20,13 +20,13 @@ def client():
 @pytest.fixture
 def token_user1():
     """Token del usuario 1, cargado desde el entorno."""
-    return usuario_repo._db_usuarios[0]["token"]
+    return usuario_repo.get_seeded_token(0)
 
 
 @pytest.fixture
 def token_user2():
     """Token del usuario 2, cargado desde el entorno."""
-    return usuario_repo._db_usuarios[1]["token"]
+    return usuario_repo.get_seeded_token(1)
 
 
 @pytest.fixture

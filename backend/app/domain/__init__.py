@@ -1,7 +1,7 @@
 from app.domain.errors import (
-    DomainConflictError,
-    DomainError,
-    DomainNotFoundError,
-    DomainPermissionError,
-    DomainValidationError,
+    DomainConflictError as DomainConflictError,
+    DomainError as DomainError,
+    DomainNotFoundError as DomainNotFoundError,
+    DomainPermissionError as DomainPermissionError,
+    DomainValidationError as DomainValidationError,
 )

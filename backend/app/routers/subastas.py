@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Response
-from app.schemas.subasta import SubastaCreate, SubastaResponse
+from app.schemas.subasta import SubastaCreate
 from app.schemas.oferta import OfertaCreate, OfertaDecision
 from app.services import subasta_service
 from app.dependencies import get_current_user

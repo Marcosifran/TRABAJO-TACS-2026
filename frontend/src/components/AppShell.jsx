@@ -18,7 +18,7 @@ const NAV = [
   { to: '/subastas',     icon: 'gavel',                label: 'Subastas' },
   { to: '/alertas',      icon: 'notifications',         label: 'Alertas' },
   { to: '/perfil',       icon: 'person',               label: 'Perfil' },
-  { to: '/admin',        icon: 'admin_panel_settings',  label: 'Admin' },
+  { to: '/admin',        icon: 'admin_panel_settings',  label: 'Admin', adminOnly: true },
 ]
 
 const POLL_INTERVAL = 20000 // 20 segundos
@@ -152,7 +152,7 @@ export default function AppShell({ children }) {
 
         {/* Nav items */}
         <div className="flex-1 px-3">
-          {NAV.map(item => {
+          {NAV.filter(item => !item.adminOnly || user.es_admin).map(item => {
             const isActive = item.to === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.to)

@@ -42,8 +42,11 @@ jobs:
       - name: Lint
         run: ruff check .
 
-      - name: Run tests
-        run: pytest tests/ -v
+      - name: Type check
+        run: mypy app/ --ignore-missing-imports
+
+      - name: Tests with coverage
+        run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=60
         env:
           USER_1_TOKEN: test-token-user1
           USER_2_TOKEN: test-token-user2

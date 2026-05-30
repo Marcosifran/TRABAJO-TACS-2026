@@ -8,8 +8,6 @@ Incluye cobertura de:
 - Limpieza de faltantes al aceptar
 """
 
-import pytest
-
 ENDPOINT_ALBUM         = "/api/v1/album/"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones/"
 ENDPOINT_FALTANTES     = "/api/v1/usuarios/faltantes"

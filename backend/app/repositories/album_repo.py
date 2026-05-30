@@ -16,10 +16,14 @@ def get_by_user(usuario_id: int) -> list[dict]:
 
 def find(numero: int | None, equipo: str | None, jugador: str | None, usuario_id: int | None = None) -> list[dict]:
     query = {}
-    if usuario_id is not None: query["usuario_id"] = usuario_id
-    if numero is not None: query["numero"] = numero
-    if equipo is not None: query["equipo"] = {"$regex": equipo, "$options": "i"}
-    if jugador is not None: query["jugador"] = {"$regex": jugador, "$options": "i"}
+    if usuario_id is not None:
+        query["usuario_id"] = usuario_id
+    if numero is not None:
+        query["numero"] = numero
+    if equipo is not None:
+        query["equipo"] = {"$regex": equipo, "$options": "i"}
+    if jugador is not None:
+        query["jugador"] = {"$regex": jugador, "$options": "i"}
     return list(_get_collection().find(query, {"_id": 0}))
 
 def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> dict:

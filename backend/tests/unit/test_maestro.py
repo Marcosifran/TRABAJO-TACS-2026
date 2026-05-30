@@ -7,7 +7,7 @@ Cubre:
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from app.scraping.wikipedia_scraper import _parsear
 from app.services import maestro_service

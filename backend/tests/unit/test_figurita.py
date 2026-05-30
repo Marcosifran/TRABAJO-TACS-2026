@@ -12,9 +12,10 @@ Cubre:
 import pytest
 from unittest.mock import patch
 
-from app.repositories import album_repo, publicacion_repo, faltante_repo
+from app.repositories import album_repo, publicacion_repo
 from app.schemas.album_sch import FiguritaAlbumCreate
 from app.schemas.publicacion_sch import PublicacionCreate, TipoIntercambio
+from app.services import album_service, publicacion_service
 
 
 # ══════════════════════════════════════════
@@ -341,8 +342,6 @@ class TestPublicacionRepoFind:
 # album_service
 # ══════════════════════════════════════════
 
-from app.services import album_service
-
 class TestAlbumService:
 
     def test_agregar_al_album_llama_a_repo_create(self):
@@ -416,8 +415,6 @@ class TestAlbumService:
 # ══════════════════════════════════════════
 # publicacion_service
 # ══════════════════════════════════════════
-
-from app.services import publicacion_service
 
 class TestPublicacionService:
 

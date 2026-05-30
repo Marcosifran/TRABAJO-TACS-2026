@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.schemas.faltante import FaltanteCreate
 from app.schemas.calificacion_sch import ReputacionResponse
-from app.services import usuario_service, album_service, publicacion_service, calificacion_service, subasta_service
+from app.services import usuario_service, album_service, calificacion_service, subasta_service
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])

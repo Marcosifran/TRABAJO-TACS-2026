@@ -6,9 +6,6 @@ Cubre el endpoint POST /api/v1/figuritas/ verificando:
 - Validaciones de campos (número, cantidad, tipo de intercambio)
 - Persistencia: la figurita publicada aparece en la búsqueda
 """
-import pytest
-
-
 ENDPOINT_ALBUM = "/api/v1/album/"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones/"
 

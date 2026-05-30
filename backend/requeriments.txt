@@ -9,3 +9,5 @@ pymongo[srv]
 requests
 beautifulsoup4
 ruff
+mypy
+pytest-cov
