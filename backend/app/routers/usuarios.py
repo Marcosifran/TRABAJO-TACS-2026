@@ -46,18 +46,6 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
     return usuario_service.listar_faltantes(usuario["id"])
 
 
-@router.get(
-    "/sugerencias",
-    status_code=200,
-    responses={
-        200: {"description": "Sugerencias de intercambio basadas en los faltantes del usuario"},
-        401: {"description": "Token ausente o inválido"},
-    },
-)
-def obtener_sugerencias_compat(usuario: dict = Depends(get_current_user)):
-    """Alias de /publicaciones/sugerencias mantenido por compatibilidad."""
-    return publicacion_service.obtener_sugerencias(usuario["id"])
-
 
 @router.get(
     "/{usuario_id}/reputacion",
