@@ -65,7 +65,9 @@
 @layer base {
   * { box-sizing: border-box; }
   body {
-    @apply bg-surface text-on-surface font-sans;
+    background: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: 'Google Sans', 'Segoe UI', system-ui, sans-serif;
     margin: 0;
   }
 }
@@ -85,3 +87,44 @@
 }
 .animate-modal { animation: modalIn 0.22s ease; }
 .animate-snack  { animation: snackIn  0.25s ease; }
+
+.perspective {
+  perspective: 1200px;
+}
+
+.tilt-card {
+  position: relative;
+
+  border-radius: 24px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    135deg,
+    #18181b,
+    #27272a
+  );
+
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+.tilt-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at var(--mouse-x, 50%)
+      var(--mouse-y, 50%),
+      rgba(255,255,255,.25),
+      transparent 35%
+    );
+
+  pointer-events: none;
+}
+
+.tilt-card > * {
+  transform: translateZ(40px);
+}
