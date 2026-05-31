@@ -41,6 +41,10 @@ export function listarMisOfertas() {
     return apiFetch('/usuarios/ofertas')
 }
 
+export function cancelarSubasta(subastaId) {
+    return apiFetch(`/subastas/${subastaId}`, { method: 'DELETE' })
+}
+
 export function cancelarOferta(subastaId, ofertaId) {
     return apiFetch(`/subastas/${subastaId}/ofertas/${ofertaId}`, { method: 'DELETE' })
 }

@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNow } from "../hooks/useNow";
+import { isAuctionActive } from "../utils/auctionTime";
 import Button from "../components/ui/Button";
+import Icon from "../components/ui/Icon";
 import Tabs from "../components/ui/Tabs";
 import Modal from "../components/ui/Modal";
 import Input from "../components/ui/Input";
@@ -9,6 +12,7 @@ import {
   listarSubastas,
   listarMisSubastas,
   crearSubasta,
+  cancelarSubasta,
   ofertarSubasta,
   listarOfertas,
   listarMisOfertas,
@@ -27,7 +31,7 @@ const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
   const { user, users } = useUser();
-  const [now, setNow] = useState(() => Date.now());
+  const now = useNow();
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -45,6 +49,7 @@ export default function AuctionsPage() {
 
   const [createModal, setCreate] = useState(false);
   const [newAuction, setNewAuction] = useState(EMPTY_AUCTION);
+  const [confirmCancelModal, setConfirmCancelModal] = useState(null);
 
   const [snack, setSnack] = useState({
     open: false,
@@ -62,8 +67,8 @@ export default function AuctionsPage() {
         buscarPublicaciones(),
         listarMiAlbum(),
       ]);
-      setSubastas(subs.subastas || []);
-      setMisSubastas(misSubs.subastas || []);
+      setSubastas(subs || []);
+      setMisSubastas(misSubs || []);
       setMisPublicaciones(pubs.filter((p) => p.tipo_intercambio === "subasta"));
       setMiAlbum(album);
       const map = {};
@@ -82,8 +87,6 @@ export default function AuctionsPage() {
 
   useEffect(() => {
     cargarDatos();
-    const tick = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(tick);
   }, []);
 
   async function handleCreate() {
@@ -103,7 +106,7 @@ export default function AuctionsPage() {
       fin.setHours(fin.getHours() + Number(newAuction.duracion));
 
       await crearSubasta({
-        figurita_id: Number(newAuction.figurita_id),
+        figurita_id: newAuction.figurita_id,
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
       });
@@ -140,6 +143,22 @@ export default function AuctionsPage() {
       await cancelarOferta(oferta.subasta_id, oferta.id);
       setMisOfertas((prev) => prev.filter((o) => o.id !== oferta.id));
       setSnack({ open: true, message: "Oferta cancelada", type: "info" });
+    } catch (e) {
+      setSnack({ open: true, message: e.message, type: "error" });
+    }
+  }
+
+  function handleCancelarSubasta(sub) {
+    setConfirmCancelModal(sub);
+  }
+
+  async function handleConfirmarCancelacion() {
+    const sub = confirmCancelModal;
+    setConfirmCancelModal(null);
+    try {
+      await cancelarSubasta(sub.id);
+      setSnack({ open: true, message: "Subasta cancelada", type: "info" });
+      cargarDatos();
     } catch (e) {
       setSnack({ open: true, message: e.message, type: "error" });
     }
@@ -214,16 +233,19 @@ export default function AuctionsPage() {
   }
 
   // Preparamos las opciones para el select (solo publicaciones tipo subasta)
-  const opcionesSubasta = misPublicaciones.map((p) => ({
-    value: p.id,
-    label: `Pub #${p.id} - ${p.jugador} (${p.equipo})`,
-  }));
+  const figuritasEnSubastaActiva = new Set(
+    misSubastas.filter((s) => isAuctionActive(s, now)).map((s) => s.figurita_id)
+  );
+  const opcionesSubasta = misPublicaciones
+    .filter((p) => !figuritasEnSubastaActiva.has(p.id))
+    .map((p) => ({
+      value: p.id,
+      label: `${p.jugador} (${p.equipo})`,
+    }));
   opcionesSubasta.unshift({ value: "", label: "Seleccioná una figurita..." });
 
   // Filtramos las activas para que no muestre las finalizadas
-  const activasFiltradas = subastas.filter(
-    (sub) => sub.estado === "activa" && new Date(sub.fin).getTime() > now,
-  );
+  const activasFiltradas = subastas.filter((sub) => isAuctionActive(sub, now));
 
   // Decidimos qué lista usar según la pestaña
   const listaSubastas = tab === "activas" ? activasFiltradas : misSubastas;
@@ -279,7 +301,9 @@ export default function AuctionsPage() {
                 >
                   <div className="flex flex-col gap-1">
                     <span className="font-bold text-primary text-base">
-                      Subasta #{oferta.subasta_id}
+                      {oferta.figurita_subastada
+                        ? `${oferta.figurita_subastada.jugador} — ${oferta.subasta ? (users[oferta.subasta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.subasta.usuario_id}`) : ""}`
+                        : `Subasta #${oferta.subasta_id}`}
                     </span>
                     <span className="text-sm text-on-surface-variant">
                       Figurita subastada:{" "}
@@ -297,11 +321,7 @@ export default function AuctionsPage() {
                       ).join(", ")}
                     </span>
                     {(() => {
-                      const finMs = oferta.subasta?.fin
-                        ? new Date(oferta.subasta.fin).getTime()
-                        : 0;
-                      const activa =
-                        oferta.subasta?.estado === "activa" && finMs > now;
+                      const activa = isAuctionActive(oferta.subasta, now);
 
                       // Si sigue activa, mostramos el texto normal
                       if (activa) {
@@ -329,8 +349,7 @@ export default function AuctionsPage() {
                       );
                     })()}
                   </div>
-                  {oferta.subasta?.estado === "activa" &&
-                    new Date(oferta.subasta?.fin).getTime() > now && (
+                  {isAuctionActive(oferta.subasta, now) && (
                       <Button
                         variant="outlined"
                         icon="cancel"
@@ -369,6 +388,7 @@ export default function AuctionsPage() {
                   setOfferIds([]);
                 }}
                 onVerOfertas={abrirOfertas}
+                onCancelar={handleCancelarSubasta}
               />
             ))}
           </div>
@@ -379,7 +399,7 @@ export default function AuctionsPage() {
       <Modal
         open={!!bidModal}
         onClose={() => setBidModal(null)}
-        title={`Ofertar en Subasta #${bidModal?.id}`}
+        title={bidModal && pubsMap[bidModal.figurita_id] ? `Ofertar — ${pubsMap[bidModal.figurita_id].jugador}` : "Ofertar"}
         width={520}
       >
         {bidModal && (
@@ -498,7 +518,7 @@ export default function AuctionsPage() {
       <Modal
         open={!!offersModal}
         onClose={() => setOffersModal(null)}
-        title={`Ofertas recibidas — Subasta #${offersModal?.id}`}
+        title={offersModal && pubsMap[offersModal.figurita_id] ? `Ofertas — ${pubsMap[offersModal.figurita_id].jugador}` : "Ofertas recibidas"}
         width={500}
       >
         {offersModal && (
@@ -539,26 +559,61 @@ export default function AuctionsPage() {
                     ).join(", ")}
                   </div>
 
-                  {}
-                  {offersModal?.estado === "activa" &&
-                    new Date(offersModal?.fin).getTime() > now && (
-                      <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
-                        <Button
-                          icon="check_circle"
-                          onClick={() => handleAceptarOferta(oferta.id)}
-                          disabled={loading}
-                        >
-                          {loading ? "Aceptando..." : "Aceptar oferta"}
-                        </Button>
-                      </div>
-                    )}
-                  {}
+                  {offersModal.oferta_ganadora_id === oferta.id ? (
+                    <div className="flex items-center gap-1.5 mt-2 pt-3 border-t border-outline-variant/50">
+                      <Icon name="military_tech" size={18} className="text-green-600" />
+                      <span className="text-sm font-bold text-green-600">Oferta ganadora</span>
+                    </div>
+                  ) : !offersModal.oferta_ganadora_id && (
+                    <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
+                      <Button
+                        icon="check_circle"
+                        onClick={() => handleAceptarOferta(oferta.id)}
+                        disabled={loading}
+                      >
+                        {loading ? "Aceptando..." : "Aceptar oferta"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
             <div className="flex justify-end mt-2">
               <Button variant="text" onClick={() => setOffersModal(null)}>
                 Cerrar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Confirm cancel modal */}
+      <Modal
+        open={!!confirmCancelModal}
+        onClose={() => setConfirmCancelModal(null)}
+        title="Cancelar subasta"
+        width={420}
+      >
+        {confirmCancelModal && (
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1">
+              <p className="text-on-surface text-sm">
+                ¿Estás seguro que querés cancelar la subasta de{" "}
+                <span className="font-semibold">
+                  {pubsMap[confirmCancelModal.figurita_id]?.jugador ?? "esta figurita"}
+                </span>
+                ?
+              </p>
+              <p className="text-on-surface-variant text-xs">
+                Se eliminarán todas las ofertas recibidas y la figurita quedará disponible para subastar nuevamente.
+              </p>
+            </div>
+            <div className="flex gap-2.5 justify-end pt-4 border-t border-outline-variant">
+              <Button variant="text" onClick={() => setConfirmCancelModal(null)}>
+                Volver
+              </Button>
+              <Button variant="error" icon="cancel" onClick={handleConfirmarCancelacion}>
+                Cancelar subasta
               </Button>
             </div>
           </div>

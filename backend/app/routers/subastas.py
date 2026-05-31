@@ -34,6 +34,21 @@ def crear_subasta(subasta_data: SubastaCreate, usuario: dict = Depends(get_curre
     return subasta_service.crear_subasta(subasta_data, usuario["id"])
 
 
+@router.delete(
+    "/{subasta_id}",
+    status_code=204,
+    responses={
+        204: {"description": "Subasta cancelada exitosamente"},
+        401: {"description": "Token ausente o inválido"},
+        403: {"description": "No sos el creador de la subasta"},
+        404: {"description": "Subasta no encontrada"},
+        409: {"description": "La subasta ya está finalizada o tiene oferta aceptada"},
+    },
+)
+def cancelar_subasta(subasta_id: str, usuario: dict = Depends(get_current_user)):
+    subasta_service.cancelar_subasta(subasta_id, usuario["id"])
+
+
 @router.patch(
     "/{subasta_id}/ofertas/{oferta_id}",
     responses={

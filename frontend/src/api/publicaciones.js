@@ -18,7 +18,7 @@ export function publicarFigurita({ figurita_personal_id, tipo_intercambio, canti
 
 /** Retorna las publicaciones activas del usuario autenticado. */
 export function listarMisPublicaciones() {
-  return apiFetch('/publicaciones?incluir_propias=true')
+  return apiFetch('/usuarios/publicaciones')
 }
 
 /** Retira una publicación propia. */

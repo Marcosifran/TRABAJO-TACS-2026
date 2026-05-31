@@ -41,7 +41,13 @@ def crear_subasta(subasta_data: SubastaCreate, usuario_id: int) -> dict:
         raise DomainConflictError("Esta figurita ya se encuentra en subasta")
 
     return subasta_repo.create(
-        subasta_data.figurita_id, usuario_id, subasta_data.inicio, subasta_data.fin
+        subasta_data.figurita_id,
+        usuario_id,
+        subasta_data.inicio,
+        subasta_data.fin,
+        figurita_jugador=publicacion.get("jugador"),
+        figurita_equipo=publicacion.get("equipo"),
+        figurita_numero=publicacion.get("numero"),
     )
 
 
@@ -137,8 +143,11 @@ def _aceptar_oferta(subasta_id: str, oferta_id: str, usuario_id: int) -> dict:
     if subasta["usuario_id"] != usuario_id:
         raise DomainPermissionError("No podés aceptar una oferta que no es tuya")
 
-    if not _esta_activa(subasta):
-        raise DomainValidationError("La subasta no está activa o ya finalizó")
+    if subasta.get("estado") == EstadoSubasta.INACTIVA.value:
+        raise DomainValidationError("La subasta aún no comenzó")
+
+    if subasta.get("oferta_ganadora_id"):
+        raise DomainValidationError("Esta subasta ya tiene una oferta ganadora")
 
     oferta = oferta_repo.get_by_id(oferta_id)
     if not oferta:
@@ -191,6 +200,22 @@ def responder_oferta(subasta_id: str, oferta_id: str, estado: str, usuario_id: i
     raise DomainValidationError(f"Estado de oferta inválido: {estado}")
 
 
+def cancelar_subasta(subasta_id: str, usuario_id: int) -> None:
+    subasta = subasta_repo.get_by_id(subasta_id)
+    if not subasta:
+        raise DomainNotFoundError("Subasta no encontrada")
+    if subasta["usuario_id"] != usuario_id:
+        raise DomainPermissionError("Solo el creador puede cancelar la subasta")
+    if subasta.get("oferta_ganadora_id"):
+        raise DomainValidationError("No podés cancelar una subasta que ya tiene oferta aceptada")
+    if subasta.get("estado") in (EstadoSubasta.FINALIZADA.value, EstadoSubasta.CANCELADA.value):
+        raise DomainValidationError("La subasta ya está finalizada o cancelada")
+    for oferta in oferta_repo.get_by_auction(subasta_id):
+        oferta_repo.delete(oferta["id"])
+    subasta["estado"] = EstadoSubasta.CANCELADA.value
+    subasta_repo.update(subasta)
+
+
 def listar_subastas_usuario(usuario_id: int) -> list[dict]:
     return subasta_repo.get_by_user(usuario_id)
 
@@ -204,11 +229,20 @@ def listar_mis_ofertas(usuario_id: int) -> list[dict]:
         enriquecida["subasta"] = subasta
         if subasta:
             pub = publicacion_repo.get_by_id(subasta["figurita_id"])
-            enriquecida["figurita_subastada"] = {
-                "jugador": pub["jugador"],
-                "equipo": pub["equipo"],
-                "numero": pub["numero"],
-            } if pub else None
+            if pub:
+                enriquecida["figurita_subastada"] = {
+                    "jugador": pub["jugador"],
+                    "equipo": pub["equipo"],
+                    "numero": pub["numero"],
+                }
+            elif subasta.get("figurita_jugador"):
+                enriquecida["figurita_subastada"] = {
+                    "jugador": subasta["figurita_jugador"],
+                    "equipo": subasta["figurita_equipo"],
+                    "numero": subasta["figurita_numero"],
+                }
+            else:
+                enriquecida["figurita_subastada"] = None
         enriquecida["ofrecidas_detalle"] = [
             {"id": fig["id"], "numero": fig["numero"], "equipo": fig["equipo"], "jugador": fig["jugador"]}
             for album_id in oferta["ofrecidas"]

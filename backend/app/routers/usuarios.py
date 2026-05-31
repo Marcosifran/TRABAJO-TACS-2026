@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.schemas.faltante import FaltanteCreate
 from app.schemas.calificacion_sch import ReputacionResponse
-from app.services import usuario_service, album_service, calificacion_service, subasta_service
+from app.services import usuario_service, album_service, calificacion_service, subasta_service, publicacion_service
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
@@ -57,6 +57,18 @@ def listar_faltantes(usuario: dict = Depends(get_current_user)):
 )
 def obtener_reputacion(usuario_id: int):
     return calificacion_service.obtener_reputacion(usuario_id)
+
+
+@router.get(
+    "/publicaciones",
+    status_code=200,
+    responses={
+        200: {"description": "Publicaciones del usuario autenticado"},
+        401: {"description": "Token ausente o inválido"},
+    },
+)
+def listar_mis_publicaciones(usuario: dict = Depends(get_current_user)):
+    return publicacion_service.mis_publicaciones(usuario["id"])
 
 
 @router.get(

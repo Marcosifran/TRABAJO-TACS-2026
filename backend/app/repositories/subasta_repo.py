@@ -6,7 +6,15 @@ from app.schemas.subasta import EstadoSubasta
 def _get_collection():
     return get_db()["subastas"]
 
-def create(figurita_id: str, usuario_id: int, inicio: dt.datetime, fin: dt.datetime) -> dict:
+def create(
+    figurita_id: str,
+    usuario_id: int,
+    inicio: dt.datetime,
+    fin: dt.datetime,
+    figurita_jugador: str | None = None,
+    figurita_equipo: str | None = None,
+    figurita_numero: int | None = None,
+) -> dict:
     ahora = dt.datetime.now(dt.timezone.utc)
     estado = EstadoSubasta.ACTIVA.value if inicio <= ahora <= fin else EstadoSubasta.INACTIVA.value
     oid = ObjectId()
@@ -17,19 +25,32 @@ def create(figurita_id: str, usuario_id: int, inicio: dt.datetime, fin: dt.datet
         "usuario_id": usuario_id,
         "inicio": inicio,
         "fin": fin,
-        "estado": estado
+        "estado": estado,
+        "figurita_jugador": figurita_jugador,
+        "figurita_equipo": figurita_equipo,
+        "figurita_numero": figurita_numero,
     }
     _get_collection().insert_one(nueva_subasta)
     del nueva_subasta["_id"]
     return nueva_subasta
 
+def _expirar_vencidas() -> None:
+    """Marca como finalizadas las subastas activas cuya fecha de fin ya pasó."""
+    ahora = dt.datetime.now(dt.timezone.utc)
+    _get_collection().update_many(
+        {"estado": EstadoSubasta.ACTIVA.value, "fin": {"$lt": ahora}},
+        {"$set": {"estado": EstadoSubasta.FINALIZADA.value}},
+    )
+
 def get_all() -> list[dict]:
+    _expirar_vencidas()
     return list(_get_collection().find({"estado": EstadoSubasta.ACTIVA.value}, {"_id": 0}))
 
 def get_by_id(subasta_id: str) -> dict | None:
     return _get_collection().find_one({"id": subasta_id}, {"_id": 0})
 
 def get_by_figurita(figurita_id: str) -> dict | None:
+    _expirar_vencidas()
     return _get_collection().find_one(
         {"figurita_id": figurita_id, "estado": EstadoSubasta.ACTIVA.value}, {"_id": 0}
     )
