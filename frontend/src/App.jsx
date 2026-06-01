@@ -10,6 +10,7 @@ import AuctionsPage from './pages/AuctionsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
+import AdminCalificacionesPage from './pages/AdminCalificacionesPage'
 
 export default function App() {
   return (
@@ -18,15 +19,16 @@ export default function App() {
       <BrowserRouter>
         <AppShell>
           <Routes>
-            <Route path="/"              element={<HomePage />} />
-            <Route path="/coleccion"     element={<CollectionPage />} />
-            <Route path="/buscar"        element={<SearchPage />} />
-            <Route path="/intercambios"  element={<TradesPage />} />
-            <Route path="/subastas"      element={<AuctionsPage />} />
-            <Route path="/alertas"       element={<NotificationsPage />} />
-            <Route path="/perfil"        element={<ProfilePage />} />
-            <Route path="/admin"         element={<AdminPage />} />
-            <Route path="*"              element={<Navigate to="/" replace />} />
+            <Route path="/"                       element={<HomePage />} />
+            <Route path="/coleccion"              element={<CollectionPage />} />
+            <Route path="/buscar"                 element={<SearchPage />} />
+            <Route path="/intercambios"           element={<TradesPage />} />
+            <Route path="/subastas"               element={<AuctionsPage />} />
+            <Route path="/alertas"                element={<NotificationsPage />} />
+            <Route path="/perfil"                 element={<ProfilePage />} />
+            <Route path="/admin"                  element={<AdminPage />} />
+            <Route path="/admin/calificaciones"   element={<AdminCalificacionesPage />} />
+            <Route path="*"                       element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>
       </BrowserRouter>

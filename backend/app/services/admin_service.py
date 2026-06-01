@@ -1,5 +1,5 @@
 from typing import Any
-from app.repositories import usuario_repo, publicacion_repo, intercambio_repo, subasta_repo
+from app.repositories import usuario_repo, publicacion_repo, intercambio_repo, subasta_repo, calificacion_repo
 from app.schemas import EstadoIntercambio
 
 
@@ -30,3 +30,21 @@ def obtener_estadisticas() -> dict:
         "intercambios_por_estado": estados,
         "top_selecciones": top_selecciones,
     }
+
+
+def listar_calificaciones() -> list[dict]:
+    calificaciones = calificacion_repo.list_all()
+    usuarios_por_id = {u["id"]: u["nombre"] for u in usuario_repo.get_all()}
+    resultado = []
+    for c in calificaciones:
+        resultado.append({
+            "id": c["id"],
+            "intercambio_id": c["intercambio_id"],
+            "calificador_id": c["calificador_id"],
+            "calificador_nombre": usuarios_por_id.get(c["calificador_id"], f"Usuario {c['calificador_id']}"),
+            "calificado_id": c["calificado_id"],
+            "calificado_nombre": usuarios_por_id.get(c["calificado_id"], f"Usuario {c['calificado_id']}"),
+            "puntuacion": c["puntuacion"],
+            "comentario": c.get("comentario"),
+        })
+    return resultado
