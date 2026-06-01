@@ -1,6 +1,5 @@
 from app.repositories import calificacion_repo, intercambio_repo, usuario_repo
-from app.schemas.calificacion_sch import CalificacionCreate, ReputacionResponse
-from app.schemas.intercambio_sch import EstadoIntercambio
+from app.schemas import CalificacionCreate, ReputacionResponse, EstadoIntercambio
 from app.domain.errors import (
     DomainNotFoundError,
     DomainValidationError,
@@ -14,19 +13,19 @@ def crear_calificacion(intercambio_id: str, calificador_id: int, data: Calificac
     if not intercambio:
         raise DomainNotFoundError("Intercambio no encontrado")
 
-    if intercambio["estado"] != EstadoIntercambio.ACEPTADO.value:
+    if intercambio.estado != EstadoIntercambio.ACEPTADO:
         raise DomainValidationError("Solo podés calificar después de un intercambio aceptado")
 
-    if calificador_id not in (intercambio["propuesto_por"], intercambio["solicitado_a"]):
+    if calificador_id not in (intercambio.propuesto_por, intercambio.solicitado_a):
         raise DomainPermissionError("No participás en este intercambio")
 
     if calificacion_repo.find_by_exchange_and_qualifier(intercambio_id, calificador_id):
         raise DomainConflictError("Ya calificaste este intercambio")
 
     calificado_id = (
-        intercambio["solicitado_a"]
-        if calificador_id == intercambio["propuesto_por"]
-        else intercambio["propuesto_por"]
+        intercambio.solicitado_a
+        if calificador_id == intercambio.propuesto_por
+        else intercambio.propuesto_por
     )
 
     return calificacion_repo.create(

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.dependencies import get_current_user
 from app.services import album_service
-from app.schemas.album_sch import FiguritaAlbumCreate, FiguritaAlbumResponse
+from app.schemas import FiguritaAlbumCreate, FiguritaAlbumResponse
 
 router = APIRouter(prefix="/album", tags=["Album"])
 
