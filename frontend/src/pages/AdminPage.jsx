@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
+import Avatar from '../components/ui/Avatar'
+import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import { obtenerEstadisticas } from '../api/admin'
+import { obtenerEstadisticas, listarCalificaciones } from '../api/admin'
 
 const CARDS = [
   { key: 'usuarios',               icon: 'group',      label: 'Usuarios',              colorVar: 'var(--color-primary)' },
@@ -17,15 +20,25 @@ const ESTADO_CONFIG = {
   rechazado:  { label: 'Rechazados',  color: 'var(--color-error)' },
 }
 
+const PREVIEW_COUNT = 5
+
 export default function AdminPage() {
-  const [stats,   setStats]   = useState(null)
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const [stats,           setStats]           = useState(null)
+  const [loading,         setLoading]         = useState(true)
+  const [calificaciones,  setCalificaciones]  = useState([])
+  const [loadingCals,     setLoadingCals]     = useState(true)
 
   useEffect(() => {
     obtenerEstadisticas()
       .then(data => setStats(data))
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    listarCalificaciones()
+      .then(data => setCalificaciones(data))
+      .catch(() => {})
+      .finally(() => setLoadingCals(false))
   }, [])
 
   const totalIntercambios = stats
@@ -127,6 +140,69 @@ export default function AdminPage() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Calificaciones */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-3.5">
+          <h2 className="text-lg font-semibold">
+            Calificaciones recientes
+            {!loadingCals && calificaciones.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-on-surface-variant">({calificaciones.length} total)</span>
+            )}
+          </h2>
+          {!loadingCals && calificaciones.length > 0 && (
+            <Button variant="text" size="sm" icon="open_in_new" onClick={() => navigate('/admin/calificaciones')}>
+              Ver todas
+            </Button>
+          )}
+        </div>
+        {loadingCals ? (
+          <div className="flex items-center gap-3 py-8 text-on-surface-variant text-sm">
+            <Icon name="progress_activity" size={20} className="animate-spin" /> Cargando...
+          </div>
+        ) : calificaciones.length === 0 ? (
+          <EmptyState icon="star" title="Sin calificaciones" subtitle="Las calificaciones aparecerán acá cuando los usuarios califiquen sus intercambios" />
+        ) : (
+          <Card>
+            <div className="flex flex-col divide-y divide-outline/20">
+              {calificaciones.slice(-PREVIEW_COUNT).reverse().map(cal => (
+                <div key={cal.id} className="flex items-start gap-4 py-3.5 first:pt-0 last:pb-0">
+                  <Avatar name={cal.calificador_nombre} size={36} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-medium text-sm text-on-surface">{cal.calificador_nombre}</span>
+                      <Icon name="arrow_forward" size={14} className="text-on-surface-variant" />
+                      <span className="font-medium text-sm text-on-surface">{cal.calificado_nombre}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Icon
+                          key={i}
+                          name="star"
+                          size={14}
+                          style={{ color: i < cal.puntuacion ? 'var(--color-gold, #f59e0b)' : 'var(--color-outline)' }}
+                        />
+                      ))}
+                      <span className="ml-1 text-xs text-on-surface-variant">{cal.puntuacion}/5</span>
+                    </div>
+                    {cal.comentario && (
+                      <p className="text-sm text-on-surface-variant mt-1 italic">"{cal.comentario}"</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {calificaciones.length > PREVIEW_COUNT && (
+              <button
+                onClick={() => navigate('/admin/calificaciones')}
+                className="w-full mt-3 pt-3 border-t border-outline/20 text-sm text-primary font-medium hover:text-primary/80 transition-colors text-center"
+              >
+                Ver las {calificaciones.length - PREVIEW_COUNT} restantes
+              </button>
+            )}
+          </Card>
+        )}
       </div>
     </div>
   )

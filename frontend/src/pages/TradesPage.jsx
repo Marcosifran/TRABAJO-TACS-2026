@@ -116,7 +116,24 @@ export default function TradesPage() {
     )
   }
 
+  const [filtroEstado, setFiltroEstado] = useState('todos')
+
   const currentList = tab === 'recibidas' ? recibidas : enviadas
+  const filteredList = filtroEstado === 'todos'
+    ? currentList
+    : currentList.filter(item => item.estado === filtroEstado)
+
+  function handleTabChange(newTab) {
+    setTab(newTab)
+    setFiltroEstado('todos')
+  }
+
+  const FILTROS = [
+    { id: 'todos',     label: 'Todos' },
+    { id: 'pendiente', label: 'Pendiente' },
+    { id: 'aceptado',  label: 'Aceptado' },
+    { id: 'rechazado', label: 'Rechazado' },
+  ]
 
   return (
     <div className="p-8 max-w-[900px]">
@@ -129,10 +146,40 @@ export default function TradesPage() {
           { id: 'sugerencias', label: 'Sugerencias automáticas' },
         ]}
         active={tab}
-        onChange={setTab}
+        onChange={handleTabChange}
       />
 
-      <div className="mt-5">
+      {tab !== 'sugerencias' && (
+        <div className="flex gap-2 mt-4 flex-wrap">
+          {FILTROS.map(f => {
+            const conteo = f.id === 'todos'
+              ? currentList.length
+              : currentList.filter(i => i.estado === f.id).length
+            return (
+              <button
+                key={f.id}
+                onClick={() => setFiltroEstado(f.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  filtroEstado === f.id
+                    ? 'bg-primary text-on-primary border-primary'
+                    : 'bg-surface border-outline text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {f.label}
+                {conteo > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${
+                    filtroEstado === f.id ? 'bg-on-primary/20' : 'bg-surface-container-high'
+                  }`}>
+                    {conteo}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="mt-4">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Icon name="progress_activity" size={32} className="animate-spin text-on-surface-variant" />
@@ -183,18 +230,25 @@ export default function TradesPage() {
             )}
           </div>
         ) : (
-          currentList.length === 0 ? (
+          filteredList.length === 0 ? (
             <EmptyState
               icon="swap_horiz"
-              title={tab === 'recibidas' ? 'Sin propuestas recibidas' : 'Sin propuestas enviadas'}
-              subtitle={tab === 'recibidas'
-                ? 'Cuando alguien te proponga un intercambio aparecerá acá'
-                : 'Las propuestas que enviés a otros usuarios aparecerán acá'
+              title={
+                currentList.length === 0
+                  ? (tab === 'recibidas' ? 'Sin propuestas recibidas' : 'Sin propuestas enviadas')
+                  : `Sin intercambios ${filtroEstado === 'todos' ? '' : filtroEstado + 's'}`
+              }
+              subtitle={
+                currentList.length === 0
+                  ? (tab === 'recibidas'
+                      ? 'Cuando alguien te proponga un intercambio aparecerá acá'
+                      : 'Las propuestas que enviés a otros usuarios aparecerán acá')
+                  : 'Probá con otro filtro'
               }
             />
           ) : (
             <div className="flex flex-col gap-3">
-              {currentList.map(item => (
+              {filteredList.map(item => (
                 <Card key={item.id} className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
