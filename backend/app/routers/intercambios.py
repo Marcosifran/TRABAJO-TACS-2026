@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, IntercambioDecision
-from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
+from app.schemas import IntercambioCreate, IntercambioResponse, IntercambioDecision
+from app.schemas import CalificacionCreate, CalificacionResponse
 from app.dependencies import get_current_user
 from app.services import intercambio_service, calificacion_service
 

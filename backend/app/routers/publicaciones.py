@@ -1,11 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.dependencies import get_current_user
 from app.services import publicacion_service
-from app.schemas.publicacion_sch import (
-    PublicacionCreate,
-    PublicacionResponse,
-    SugerenciaResponse,
-)
+from app.schemas import PublicacionCreate, PublicacionResponse, SugerenciaResponse
 
 router = APIRouter(prefix="/publicaciones", tags=["Publicaciones"])
 

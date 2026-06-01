@@ -8,8 +8,11 @@ import datetime as dt
 import pytest
 from unittest.mock import patch
 from app.services import subasta_service
-from app.schemas.subasta import SubastaCreate, EstadoSubasta
-from app.schemas.oferta import OfertaCreate
+from app.schemas import SubastaCreate, EstadoSubasta, TipoIntercambio
+from app.schemas import OfertaCreate
+from app.domain.subasta import Subasta
+from app.domain.publicacion import Publicacion
+from app.domain.oferta import Oferta
 from app.domain.errors import (
     DomainNotFoundError,
     DomainValidationError,
@@ -31,6 +34,35 @@ def _subasta_create(figurita_id: str = "abc123", horas: int = 1) -> SubastaCreat
     )
 
 
+def _subasta(**kwargs) -> Subasta:
+    ahora = _ahora()
+    defaults = {
+        "id": "sub1",
+        "figurita_id": "abc123",
+        "usuario_id": 1,
+        "inicio": ahora - dt.timedelta(minutes=5),
+        "fin": ahora + dt.timedelta(hours=1),
+        "estado": EstadoSubasta.ACTIVA,
+    }
+    defaults.update(kwargs)
+    return Subasta(**defaults)
+
+
+def _publicacion(**kwargs) -> Publicacion:
+    defaults = {
+        "id": "pub1",
+        "usuario_id": 1,
+        "figurita_personal_id": "fig1",
+        "tipo_intercambio": TipoIntercambio.SUBASTA,
+        "cantidad_disponible": 1,
+        "numero": 10,
+        "equipo": "ARG",
+        "jugador": "Messi",
+    }
+    defaults.update(kwargs)
+    return Publicacion(**defaults)
+
+
 # ══════════════════════════════════════════
 # _esta_activa
 # ══════════════════════════════════════════
@@ -38,25 +70,15 @@ def _subasta_create(figurita_id: str = "abc123", horas: int = 1) -> SubastaCreat
 class TestEstaActiva:
 
     def test_retorna_false_si_estado_no_es_activa(self):
-        subasta = {"estado": EstadoSubasta.INACTIVA.value, "fin": _ahora().isoformat()}
-        assert subasta_service._esta_activa(subasta) is False
-
-    def test_retorna_false_si_fin_es_none(self):
-        subasta = {"estado": EstadoSubasta.ACTIVA.value, "fin": None}
+        subasta = _subasta(estado=EstadoSubasta.INACTIVA)
         assert subasta_service._esta_activa(subasta) is False
 
     def test_retorna_true_dentro_del_rango(self):
-        subasta = {
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() + dt.timedelta(hours=1)).isoformat(),
-        }
+        subasta = _subasta(fin=_ahora() + dt.timedelta(hours=1))
         assert subasta_service._esta_activa(subasta) is True
 
     def test_retorna_false_si_subasta_vencida(self):
-        subasta = {
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() - dt.timedelta(hours=1)).isoformat(),
-        }
+        subasta = _subasta(fin=_ahora() - dt.timedelta(hours=1))
         assert subasta_service._esta_activa(subasta) is False
 
 
@@ -72,21 +94,21 @@ class TestCrearSubasta:
                 subasta_service.crear_subasta(_subasta_create(), usuario_id=1)
 
     def test_falla_si_publicacion_pertenece_a_otro_usuario(self):
-        pub = {"usuario_id": 2, "tipo_intercambio": "subasta"}
+        pub = _publicacion(usuario_id=2)
         with patch("app.services.subasta_service.publicacion_repo.get_by_id", return_value=pub):
             with pytest.raises(DomainPermissionError):
                 subasta_service.crear_subasta(_subasta_create(), usuario_id=1)
 
     def test_falla_si_tipo_no_es_subasta(self):
-        pub = {"usuario_id": 1, "tipo_intercambio": "intercambio_directo"}
+        pub = _publicacion(tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO)
         with patch("app.services.subasta_service.publicacion_repo.get_by_id", return_value=pub):
             with pytest.raises(DomainValidationError):
                 subasta_service.crear_subasta(_subasta_create(), usuario_id=1)
 
     def test_falla_si_ya_existe_subasta_activa_para_esa_figurita(self):
-        pub = {"usuario_id": 1, "tipo_intercambio": "subasta"}
+        pub = _publicacion()
         with patch("app.services.subasta_service.publicacion_repo.get_by_id", return_value=pub), \
-             patch("app.services.subasta_service.subasta_repo.get_by_figurita", return_value={"id": "existente"}):
+             patch("app.services.subasta_service.subasta_repo.get_by_figurita", return_value=_subasta()):
             with pytest.raises(DomainConflictError):
                 subasta_service.crear_subasta(_subasta_create(), usuario_id=1)
 
@@ -106,47 +128,27 @@ class TestOfertar:
                 subasta_service.ofertar("sub1", self._oferta_create(), usuario_id=2)
 
     def test_falla_si_subasta_no_esta_activa(self):
-        subasta = {
-            "id": "sub1",
-            "usuario_id": 1,
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() - dt.timedelta(hours=1)).isoformat(),
-        }
+        subasta = _subasta(fin=_ahora() - dt.timedelta(hours=1))
         with patch("app.services.subasta_service.subasta_repo.get_by_id", return_value=subasta):
             with pytest.raises(DomainValidationError):
                 subasta_service.ofertar("sub1", self._oferta_create(), usuario_id=2)
 
     def test_falla_si_usuario_oferta_en_su_propia_subasta(self):
-        subasta = {
-            "id": "sub1",
-            "usuario_id": 1,
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() + dt.timedelta(hours=1)).isoformat(),
-        }
+        subasta = _subasta()
         with patch("app.services.subasta_service.subasta_repo.get_by_id", return_value=subasta):
             with pytest.raises(DomainPermissionError):
                 subasta_service.ofertar("sub1", self._oferta_create(), usuario_id=1)
 
     def test_falla_si_lista_de_figuritas_vacia(self):
-        subasta = {
-            "id": "sub1",
-            "usuario_id": 1,
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() + dt.timedelta(hours=1)).isoformat(),
-        }
+        subasta = _subasta()
         with patch("app.services.subasta_service.subasta_repo.get_by_id", return_value=subasta), \
              patch("app.services.subasta_service.oferta_repo.get_by_auction", return_value=[]):
             with pytest.raises(DomainValidationError):
                 subasta_service.ofertar("sub1", OfertaCreate(figuritas_ofrecidas=[]), usuario_id=2)
 
     def test_falla_si_usuario_ya_tiene_oferta_en_esa_subasta(self):
-        subasta = {
-            "id": "sub1",
-            "usuario_id": 1,
-            "estado": EstadoSubasta.ACTIVA.value,
-            "fin": (_ahora() + dt.timedelta(hours=1)).isoformat(),
-        }
-        oferta_existente = [{"usuario_id": 2}]
+        subasta = _subasta()
+        oferta_existente = [Oferta(id="o1", subasta_id="sub1", usuario_id=2, ofrecidas=["fig1"])]
         with patch("app.services.subasta_service.subasta_repo.get_by_id", return_value=subasta), \
              patch("app.services.subasta_service.oferta_repo.get_by_auction", return_value=oferta_existente):
             with pytest.raises(DomainConflictError):

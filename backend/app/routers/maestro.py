@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas.maestro_sch import JugadorMaestroResponse
+from app.schemas import JugadorMaestroResponse
 from app.services import maestro_service
 
 router = APIRouter(prefix="/maestro", tags=["Maestro de Figuritas"])

@@ -7,7 +7,9 @@ Usa mocks para aislar de la base de datos; no necesita TestClient.
 import pytest
 from unittest.mock import patch
 from app.services import intercambio_service
-from app.schemas.intercambio_sch import IntercambioCreate
+from app.schemas import IntercambioCreate, TipoIntercambio
+from app.domain.album import FiguritaAlbum
+from app.domain.publicacion import Publicacion
 from app.domain.errors import DomainValidationError, DomainNotFoundError
 
 
@@ -19,6 +21,32 @@ def _intercambio_create(**kwargs) -> IntercambioCreate:
     }
     defaults.update(kwargs)
     return IntercambioCreate(**defaults)
+
+
+def _figurita_album(**kwargs) -> FiguritaAlbum:
+    defaults = {
+        "id": "fig1",
+        "usuario_id": 1,
+        "numero": 10,
+        "equipo": "ARG",
+        "jugador": "Messi",
+        "cantidad": 1,
+    }
+    defaults.update(kwargs)
+    return FiguritaAlbum(**defaults)
+
+
+def _publicacion(cantidad_disponible: int = 1) -> Publicacion:
+    return Publicacion(
+        id="p1",
+        usuario_id=1,
+        figurita_personal_id="fig1",
+        tipo_intercambio=TipoIntercambio.INTERCAMBIO_DIRECTO,
+        cantidad_disponible=cantidad_disponible,
+        numero=10,
+        equipo="ARG",
+        jugador="Messi",
+    )
 
 
 # ══════════════════════════════════════════
@@ -40,7 +68,7 @@ class TestValidarNumeroDistintos:
             figuritas_ofrecidas_numero=[1, 2],
             figurita_solicitada_numero=3,
         )
-        intercambio_service.validar_numeros_distintos(intercambio)  # no debe lanzar
+        intercambio_service.validar_numeros_distintos(intercambio)
 
 
 # ══════════════════════════════════════════
@@ -63,7 +91,7 @@ class TestValidarUsuarioDestino:
     def test_pasa_si_destinatario_existe_y_es_distinto(self):
         intercambio = _intercambio_create(solicitado_a_id=2)
         with patch("app.services.intercambio_service.usuario_repo.get_by_id", return_value={"id": 2}):
-            intercambio_service.validar_usuario_destino(intercambio, usuario_id=1)  # no debe lanzar
+            intercambio_service.validar_usuario_destino(intercambio, usuario_id=1)
 
 
 # ══════════════════════════════════════════
@@ -75,22 +103,22 @@ class TestValidarCantidadDisponible:
     def test_falla_si_ofrecida_sin_stock(self):
         with pytest.raises(DomainValidationError):
             intercambio_service.validar_cantidad_disponible(
-                [{"cantidad_disponible": 0}],
-                {"cantidad_disponible": 1},
+                [_publicacion(cantidad_disponible=0)],
+                _publicacion(cantidad_disponible=1),
             )
 
     def test_falla_si_solicitada_sin_stock(self):
         with pytest.raises(DomainValidationError):
             intercambio_service.validar_cantidad_disponible(
-                [{"cantidad_disponible": 1}],
-                {"cantidad_disponible": 0},
+                [_publicacion(cantidad_disponible=1)],
+                _publicacion(cantidad_disponible=0),
             )
 
     def test_pasa_si_todas_tienen_stock(self):
         intercambio_service.validar_cantidad_disponible(
-            [{"cantidad_disponible": 2}, {"cantidad_disponible": 1}],
-            {"cantidad_disponible": 1},
-        )  # no debe lanzar
+            [_publicacion(cantidad_disponible=2), _publicacion(cantidad_disponible=1)],
+            _publicacion(cantidad_disponible=1),
+        )
 
 
 # ══════════════════════════════════════════
@@ -100,23 +128,23 @@ class TestValidarCantidadDisponible:
 class TestTransferirFigurita:
 
     def test_elimina_figurita_del_cedente_cuando_queda_sin_stock(self):
-        fig_cedente = {"id": "fig1", "equipo": "ARG", "jugador": "Messi", "cantidad": 1}
+        fig_cedente = _figurita_album(cantidad=1)
 
         with patch("app.services.intercambio_service.album_repo.get_by_number_and_user", side_effect=[fig_cedente, None]), \
-             patch("app.services.intercambio_service.album_repo.delete") as mock_delete, \
+             patch("app.services.intercambio_service.album_repo.adjust_cantidad", return_value=None) as mock_adjust, \
              patch("app.services.intercambio_service.publicacion_repo.get_all", return_value=[]), \
              patch("app.services.intercambio_service.album_repo.create"), \
              patch("app.services.intercambio_service.faltante_repo.remove_missing"):
 
             intercambio_service._transferir_figurita(10, de_usuario_id=1, a_usuario_id=2)
 
-        mock_delete.assert_called_once_with("fig1")
+        mock_adjust.assert_called_once_with("fig1", -1)
 
     def test_crea_entrada_en_album_del_receptor_si_no_la_tiene(self):
-        fig_cedente = {"id": "fig1", "equipo": "ARG", "jugador": "Messi", "cantidad": 1}
+        fig_cedente = _figurita_album(cantidad=1)
 
         with patch("app.services.intercambio_service.album_repo.get_by_number_and_user", side_effect=[fig_cedente, None]), \
-             patch("app.services.intercambio_service.album_repo.delete"), \
+             patch("app.services.intercambio_service.album_repo.adjust_cantidad", return_value=None), \
              patch("app.services.intercambio_service.publicacion_repo.get_all", return_value=[]), \
              patch("app.services.intercambio_service.album_repo.create") as mock_create, \
              patch("app.services.intercambio_service.faltante_repo.remove_missing"):
@@ -126,10 +154,10 @@ class TestTransferirFigurita:
         mock_create.assert_called_once()
 
     def test_elimina_faltante_del_receptor(self):
-        fig_cedente = {"id": "fig1", "equipo": "ARG", "jugador": "Messi", "cantidad": 1}
+        fig_cedente = _figurita_album(cantidad=1)
 
         with patch("app.services.intercambio_service.album_repo.get_by_number_and_user", side_effect=[fig_cedente, None]), \
-             patch("app.services.intercambio_service.album_repo.delete"), \
+             patch("app.services.intercambio_service.album_repo.adjust_cantidad", return_value=None), \
              patch("app.services.intercambio_service.publicacion_repo.get_all", return_value=[]), \
              patch("app.services.intercambio_service.album_repo.create"), \
              patch("app.services.intercambio_service.faltante_repo.remove_missing") as mock_remove:

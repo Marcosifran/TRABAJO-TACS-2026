@@ -1,37 +1,54 @@
 from typing import Any
 from bson import ObjectId
-from app.schemas.publicacion_sch import PublicacionCreate
-from app.core.database import get_db
+from pymongo import ReturnDocument
 
-"""Repositorio de publicaciones, maneja las operaciones relacionadas con las publicaciones de intercambio."""
+from app.core.database import get_db
+from app.domain.publicacion import Publicacion
+from app.schemas import PublicacionCreate, TipoIntercambio
+
 
 def _get_collection():
     return get_db()["publicaciones"]
 
-def get_all() -> list[dict]:
-    """Obtiene todas las publicaciones de intercambio."""
-    return list(_get_collection().find({}, {"_id": 0}))
 
-def get_by_id(publicacion_id: str) -> dict | None:
-    """Obtiene una publicación por su ID."""
-    return _get_collection().find_one({"id": publicacion_id}, {"_id": 0})
+def _from_doc(doc: dict) -> Publicacion:
+    return Publicacion(
+        id=doc["id"],
+        usuario_id=doc["usuario_id"],
+        figurita_personal_id=doc["figurita_personal_id"],
+        tipo_intercambio=TipoIntercambio(doc["tipo_intercambio"]),
+        cantidad_disponible=doc["cantidad_disponible"],
+        numero=doc["numero"],
+        equipo=doc["equipo"],
+        jugador=doc["jugador"],
+    )
 
-def get_by_user(usuario_id: int) -> list[dict]:
-    """Obtiene todas las publicaciones de un usuario específico."""
-    return list(_get_collection().find({"usuario_id": usuario_id}, {"_id": 0}))
 
-def get_by_personal_figurita(figurita_personal_id: str) -> dict | None:
-    """Obtiene la publicación activa que ofrece una figurita personal específica."""
-    return _get_collection().find_one({"figurita_personal_id": figurita_personal_id}, {"_id": 0})
+def get_all() -> list[Publicacion]:
+    return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
+
+
+def get_by_id(publicacion_id: str) -> Publicacion | None:
+    doc = _get_collection().find_one({"id": publicacion_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None
+
+
+def get_by_user(usuario_id: int) -> list[Publicacion]:
+    return [_from_doc(doc) for doc in _get_collection().find({"usuario_id": usuario_id}, {"_id": 0})]
+
+
+def get_by_personal_figurita(figurita_personal_id: str) -> Publicacion | None:
+    doc = _get_collection().find_one({"figurita_personal_id": figurita_personal_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None
+
 
 def find(
-        numero: int | None,
-        equipo: str | None,
-        jugador: str | None,
-        tipo_intercambio: str | None = None,
-        usuario_id: int | None = None,
-) -> list[dict]:
-    """Busca publicaciones por número, equipo, jugador o usuario."""
+    numero: int | None,
+    equipo: str | None,
+    jugador: str | None,
+    tipo_intercambio: str | None = None,
+    usuario_id: int | None = None,
+) -> list[Publicacion]:
     query: dict[str, Any] = {}
     if numero is not None:
         query["numero"] = numero
@@ -43,18 +60,18 @@ def find(
         query["tipo_intercambio"] = {"$regex": f"^{tipo_intercambio}$", "$options": "i"}
     if usuario_id is not None:
         query["usuario_id"] = {"$ne": usuario_id}
-    return list(_get_collection().find(query, {"_id": 0}))
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0})]
+
 
 def create(
-        publicacion: PublicacionCreate,
-        usuario_id: int,
-        numero: int,
-        equipo: str,
-        jugador: str
-) -> dict:
-    """Crea una nueva publicación de intercambio."""
+    publicacion: PublicacionCreate,
+    usuario_id: int,
+    numero: int,
+    equipo: str,
+    jugador: str,
+) -> Publicacion:
     oid = ObjectId()
-    nueva = {
+    doc = {
         "_id": oid,
         "id": str(oid),
         "usuario_id": usuario_id,
@@ -63,13 +80,30 @@ def create(
         "cantidad_disponible": publicacion.cantidad_disponible,
         "numero": numero,
         "equipo": equipo,
-        "jugador": jugador
+        "jugador": jugador,
     }
-    _get_collection().insert_one(nueva)
-    del nueva["_id"]
-    return nueva
+    _get_collection().insert_one(doc)
+    del doc["_id"]
+    return _from_doc(doc)
+
+
+def adjust_cantidad(publicacion_id: str, delta: int) -> Publicacion | None:
+    pub = get_by_id(publicacion_id)
+    if pub is None:
+        return None
+    nueva_cantidad = pub.cantidad_disponible + delta
+    if nueva_cantidad <= 0:
+        delete(publicacion_id)
+        return None
+    doc = _get_collection().find_one_and_update(
+        {"id": publicacion_id},
+        {"$set": {"cantidad_disponible": nueva_cantidad}},
+        return_document=ReturnDocument.AFTER,
+        projection={"_id": 0},
+    )
+    return _from_doc(doc) if doc else None
+
 
 def delete(publicacion_id: str) -> bool:
-    """Elimina una publicación de intercambio."""
     res = _get_collection().delete_one({"id": publicacion_id})
     return res.deleted_count > 0
