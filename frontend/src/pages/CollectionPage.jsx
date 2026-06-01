@@ -243,7 +243,7 @@ export default function CollectionPage() {
               onAction={() => { setPubForm(EMPTY_PUB); setShowPub(true) }}
             />
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
               {cards.map(f => (
                 <div key={f.id} className="flex flex-col items-center">
                   <FiguritaCard
@@ -251,29 +251,27 @@ export default function CollectionPage() {
                     showTradeType={false}
                     size="collection"
                     backActions={(
-                      <div className="flex w-full gap-1">
-                        <Button
-                          size="sm"
-                          className="flex-1 min-w-0 h-7 px-0 py-0 text-[10px] leading-none whitespace-nowrap border-0"
+                      <div className="flex flex-col w-full gap-1">
+                        <button
+                          className="w-full h-6 rounded-lg text-[10px] font-medium leading-none"
                           style={{
-                            backgroundColor: f.tipo === 'intercambio' ? 'var(--color-trade)' : 'var(--color-surface-variant)',
-                            color: f.tipo === 'intercambio' ? 'white' : 'var(--color-on-surface-variant)',
+                            backgroundColor: f.tipo === 'intercambio' ? 'var(--color-trade)' : 'rgba(255,255,255,0.25)',
+                            color: 'white',
                           }}
                           onClick={() => f.tipo === 'intercambio' ? handleRetirar(f._pubId) : openPublishExisting(f, 'intercambio_directo')}
                         >
-                          Intercambio
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1 min-w-0 h-7 px-0 py-0 text-[10px] leading-none whitespace-nowrap border-0"
+                          {f.tipo === 'intercambio' ? '✕ Intercambio' : '+ Intercambio'}
+                        </button>
+                        <button
+                          className="w-full h-6 rounded-lg text-[10px] font-medium leading-none"
                           style={{
-                            backgroundColor: f.tipo === 'subasta' ? 'var(--color-auction)' : 'var(--color-surface-variant)',
-                            color: f.tipo === 'subasta' ? 'white' : 'var(--color-on-surface-variant)',
+                            backgroundColor: f.tipo === 'subasta' ? 'var(--color-auction)' : 'rgba(255,255,255,0.25)',
+                            color: 'white',
                           }}
                           onClick={() => f.tipo === 'subasta' ? handleRetirar(f._pubId) : openPublishExisting(f, 'subasta')}
                         >
-                          Subasta
-                        </Button>
+                          {f.tipo === 'subasta' ? '✕ Subasta' : '+ Subasta'}
+                        </button>
                       </div>
                     )}
                   />
@@ -295,22 +293,22 @@ export default function CollectionPage() {
             onAction={() => setShowFalt(true)}
           />
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
             {faltantes.map(f => (
-              <div
-                key={f.id}
-                className="rounded-2xl border border-outline-variant bg-surface-container p-4 flex flex-col gap-1"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-primary">#{f.numero_figurita}</span>
-                  <Icon name="playlist_add" size={20} className="text-on-surface-variant" />
-                </div>
-                {f.equipo && (
-                  <span className="text-sm font-medium text-on-surface">{f.equipo}</span>
-                )}
-                {f.jugador && (
-                  <span className="text-xs text-on-surface-variant">{f.jugador}</span>
-                )}
+              <div key={f.id} className="flex flex-col items-center">
+                <FiguritaCard
+                  figurita={{
+                    id: f.id,
+                    numero: f.numero_figurita,
+                    seleccion: f.equipo,
+                    jugador: f.jugador,
+                    tipo: null,
+                    cantidad: null,
+                    owner: null,
+                  }}
+                  showTradeType={false}
+                  size="collection"
+                />
               </div>
             ))}
           </div>

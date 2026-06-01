@@ -7,25 +7,26 @@ import FiguritaRow from './FiguritaRow'
 import { getMaestroJugador } from '../api/maestro'
 
 const FLAG_COLORS = {
+  // ── English names (maestro canonical) ──────────────────────────────────────
   Germany:        ['#000000', '#DD0000', '#FFCE00'],
   Colombia:       ['#FCD116', '#003893', '#CE1126'],
   Haiti:          ['#00209F', '#D21034', '#00209F'],
   Paraguay:       ['#D52B1E', '#FFFFFF', '#0038A8'],
   "Saudi Arabia": ['#006C35', '#FFFFFF', '#006C35'],
-  "South Korea": ['#FFFFFF', '#CD2E3A', '#0047A0'],
-  England:        ['#FFFFFF', '#CE1124', '#FFFFFF'],
+  "South Korea":  ['#CD2E3A', '#FFFFFF', '#0047A0'],
+  England:        ['#CE1124', '#FFFFFF', '#CE1124'],
   Portugal:       ['#006600', '#FF0000', '#006600'],
   Algeria:        ['#006233', '#FFFFFF', '#D21034'],
-  "Ivory Coast": ['#F77F00', '#FFFFFF', '#009E60'],
+  "Ivory Coast":  ['#F77F00', '#FFFFFF', '#009E60'],
   Iraq:           ['#CE1126', '#FFFFFF', '#000000'],
-  "Czech Republic": ['#FFFFFF', '#11457E', '#D7141A'],
-  Argentina:      ['#74ACDF', '#FFFFFF', '#74ACDF'],
+  "Czech Republic": ['#11457E', '#FFFFFF', '#D7141A'],
+  Argentina:      ['#3B8CC7', '#74ACDF', '#3B8CC7'],
   Croatia:        ['#FF0000', '#FFFFFF', '#171796'],
   Iran:           ['#239F40', '#FFFFFF', '#DA0000'],
-  "DR Congo":    ['#007FFF', '#CE1021', '#F7D618'],
+  "DR Congo":     ['#007FFF', '#CE1021', '#F7D618'],
   Australia:      ['#012169', '#FFFFFF', '#012169'],
   Curacao:        ['#002B7F', '#F9E814', '#002B7F'],
-  Japan:          ['#FFFFFF', '#BC002D', '#FFFFFF'],
+  Japan:          ['#BC002D', '#FFFFFF', '#BC002D'],
   Senegal:        ['#00853F', '#FCD116', '#CE1126'],
   Austria:        ['#ED2939', '#FFFFFF', '#ED2939'],
   Ecuador:        ['#FCD116', '#003893', '#CE1126'],
@@ -33,7 +34,7 @@ const FLAG_COLORS = {
   "South Africa": ['#007749', '#FFB81C', '#000000'],
   Belgium:        ['#000000', '#FFD100', '#EF3340'],
   Egypt:          ['#CE1126', '#FFFFFF', '#000000'],
-  Morocco:        ['#C1272D', '#C1272D', '#006233'],
+  Morocco:        ['#C1272D', '#006233', '#C1272D'],
   Sweden:         ['#006AA7', '#FECC00', '#006AA7'],
   "Bosnia and Herzegovina": ['#002395', '#FECC00', '#002395'],
   Scotland:       ['#0065BD', '#FFFFFF', '#0065BD'],
@@ -45,16 +46,49 @@ const FLAG_COLORS = {
   France:         ['#002395', '#FFFFFF', '#ED2939'],
   Netherlands:    ['#AE1C28', '#FFFFFF', '#21468B'],
   Tunisia:        ['#E70013', '#FFFFFF', '#E70013'],
-  "Cape Verde":  ['#003893', '#FFFFFF', '#CF2027'],
+  "Cape Verde":   ['#003893', '#FFFFFF', '#CF2027'],
   "United States": ['#B22234', '#FFFFFF', '#3C3B6E'],
-  "New Zealand": ['#012169', '#FFFFFF', '#C8102E'],
+  "New Zealand":  ['#012169', '#FFFFFF', '#C8102E'],
   Turkey:         ['#E30A17', '#FFFFFF', '#E30A17'],
   Canada:         ['#FF0000', '#FFFFFF', '#FF0000'],
   Ghana:          ['#006B3F', '#FCD116', '#CE1126'],
   Panama:         ['#005293', '#FFFFFF', '#D21034'],
   Uzbekistan:     ['#0099B5', '#FFFFFF', '#1EB53A'],
-  Uruguay:        ['#FFFFFF', '#0038A8', '#FFFFFF'],
+  Uruguay:        ['#0038A8', '#74A9E8', '#0038A8'],
   Qatar:          ['#8D1B3D', '#FFFFFF', '#8D1B3D'],
+  // ── Spanish aliases (seed data / datos viejos en BD) ────────────────────────
+  Brasil:         ['#009C3B', '#FFDF00', '#009C3B'],
+  Francia:        ['#002395', '#FFFFFF', '#ED2939'],
+  Alemania:       ['#000000', '#DD0000', '#FFCE00'],
+  España:         ['#AA151B', '#F1BF00', '#AA151B'],
+  México:         ['#006847', '#FFFFFF', '#CE1126'],
+  Canadá:         ['#FF0000', '#FFFFFF', '#FF0000'],
+  Inglaterra:     ['#CE1124', '#FFFFFF', '#CE1124'],
+  Holanda:        ['#AE1C28', '#FFFFFF', '#21468B'],
+  "Países Bajos": ['#AE1C28', '#FFFFFF', '#21468B'],
+  Bélgica:        ['#000000', '#FFD100', '#EF3340'],
+  Marruecos:      ['#C1272D', '#006233', '#C1272D'],
+  Suiza:          ['#FF0000', '#FFFFFF', '#FF0000'],
+  Noruega:        ['#BA0C2F', '#FFFFFF', '#00205B'],
+  Suecia:         ['#006AA7', '#FECC00', '#006AA7'],
+  Túnez:          ['#E70013', '#FFFFFF', '#E70013'],
+  Senegal:        ['#00853F', '#FCD116', '#CE1126'],
+  USA:            ['#B22234', '#FFFFFF', '#3C3B6E'],
+  Japón:          ['#BC002D', '#FFFFFF', '#BC002D'],
+  Croacia:        ['#FF0000', '#FFFFFF', '#171796'],
+  Irán:           ['#239F40', '#FFFFFF', '#DA0000'],
+  Turquía:        ['#E30A17', '#FFFFFF', '#E30A17'],
+  Panamá:         ['#005293', '#FFFFFF', '#D21034'],
+  Ecuador:        ['#FCD116', '#003893', '#CE1126'],
+  "Arabia Saudita": ['#006C35', '#FFFFFF', '#006C35'],
+  "Corea del Sur": ['#CD2E3A', '#FFFFFF', '#0047A0'],
+  "Costa de Marfil": ['#F77F00', '#FFFFFF', '#009E60'],
+  "República Checa": ['#11457E', '#FFFFFF', '#D7141A'],
+  "Bosnia y Herzegovina": ['#002395', '#FECC00', '#002395'],
+  "Nueva Zelanda": ['#012169', '#FFFFFF', '#C8102E'],
+  "Sudáfrica":    ['#007749', '#FFB81C', '#000000'],
+  "Congo DR":     ['#007FFF', '#CE1021', '#F7D618'],
+  "Cabo Verde":   ['#003893', '#FFFFFF', '#CF2027'],
 }
 const CAT_ICONS = {
   Escudo: 'shield', Jugador: 'person', Estadio: 'stadium',
@@ -63,7 +97,7 @@ const CAT_ICONS = {
 
 function cardGradient(seleccion) {
   const c = FLAG_COLORS[seleccion] || ['#666', '#999', '#666']
-  return `linear-gradient(135deg, ${c[0]}, ${c[2]})`
+  return `linear-gradient(135deg, ${c[0]}, ${c[1]}, ${c[2]})`
 }
 
 export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null }) {
@@ -71,11 +105,11 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
   const [maestro, setMaestro] = useState(null)
   const isCollection = size === 'collection'
   const isSmall = size === 'sm'
-  const sizeClass = isCollection ? 'w-[160px] h-[255px]' : isSmall ? 'w-[12.8rem] h-[19.2rem]' : 'w-64 h-96'
-  const cardPadding = isCollection ? 'p-3' : isSmall ? 'p-3' : 'p-6'
-  const frontNumberClass = isCollection ? 'text-3xl' : isSmall ? 'text-3xl' : 'text-7xl'
-  const frontNameClass = isCollection ? 'text-sm' : isSmall ? 'text-base' : 'text-2xl'
-  const frontSelectionClass = isCollection ? 'text-xs' : isSmall ? 'text-xs' : 'text-lg'
+  const sizeClass = isCollection ? 'w-[136px] h-[218px]' : isSmall ? 'w-[11rem] h-[17rem]' : 'w-52 h-80'
+  const cardPadding = isCollection ? 'p-3' : isSmall ? 'p-3' : 'p-5'
+  const frontNumberClass = isCollection ? 'text-2xl' : isSmall ? 'text-2xl' : 'text-5xl'
+  const frontNameClass = isCollection ? 'text-xs' : isSmall ? 'text-sm' : 'text-xl'
+  const frontSelectionClass = isCollection ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-base'
 
   useEffect(() => {
     if (isFlipped && !maestro) {
@@ -113,12 +147,13 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
     <div className={sizeClass}>
       <TiltCard>
         <div
-          className={`w-full h-full text-white flex flex-col justify-between ${cardPadding}`}
+          className="relative w-full h-full text-white"
           style={{ background: gradient }}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className={`transition-opacity duration-300 ${isFlipped ? 'opacity-0' : 'opacity-100'}`}>
+          <div className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+               style={{ textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>
             <div className={`${frontNumberClass} font-bold`}>#{figurita.numero}</div>
             <div>
               <div className={`${frontNameClass} font-bold`}>{figurita.jugador}</div>
@@ -127,7 +162,7 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
           </div>
 
           {/* Back of the card (details) */}
-          <div className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div>
               <div className="flex items-center gap-1.5">
                 <Avatar name={figurita.owner || '?'} size={22} />
@@ -138,7 +173,6 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
                   <>
                     <p>País: {maestro.equipo}</p>
                     <p>Posición: {maestro.posicion}</p>
-                    <p>Nro Camiseta: {maestro.numero_camiseta}</p>
                   </>
                 ) : (
                   <p>Cargando...</p>
@@ -148,10 +182,10 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
             <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
               {backActions}
               {showTradeType && figurita.tipo === 'intercambio' && (
-                <div className="bg-blue-500 text-white text-center py-1 rounded-lg">Intercambio</div>
+                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-trade)' }}>Intercambio</div>
               )}
               {showTradeType && figurita.tipo === 'subasta' && (
-                <div className="bg-yellow-500 text-white text-center py-1 rounded-lg">Subasta</div>
+                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-auction)' }}>Subasta</div>
               )}
             </div>
           </div>
