@@ -33,6 +33,16 @@ export default {
       fontFamily: {
         sans: ["'Google Sans'", "'Segoe UI'", 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        '2xs':     ['11px', { lineHeight: '14px' }],
+        'xs-plus': ['13px', { lineHeight: '18px' }],
+        'sm-plus': ['15px', { lineHeight: '22px' }],
+        'lg-plus': ['18px', { lineHeight: '24px' }],
+      },
+      spacing: {
+        '38': '38px',
+        '68': '68px',
+      },
       borderRadius: {
         '2xl': '16px',
         '3xl': '24px',

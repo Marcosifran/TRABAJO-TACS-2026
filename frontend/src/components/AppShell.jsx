@@ -227,8 +227,7 @@ export default function AppShell({ children }) {
         {notifs.map(n => (
           <div
             key={n.id}
-            className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px]"
-            style={{ animation: 'slideInRight 0.3s ease' }}
+            className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px] animate-slide-in-right"
           >
             <div className="bg-primary-container rounded-full p-2 shrink-0">
               <Icon name={n.icon} size={20} className="text-primary" />
@@ -247,12 +246,6 @@ export default function AppShell({ children }) {
         ))}
       </div>
 
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(110%); opacity: 0; }
-          to   { transform: translateX(0);    opacity: 1; }
-        }
-      `}</style>
     </div>
   )
 }
