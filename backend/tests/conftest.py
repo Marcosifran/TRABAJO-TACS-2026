@@ -9,7 +9,31 @@ from app.core.database import connect_to_mongo, close_mongo_connection, get_db
 # DB separada de prod/dev para que el drop final no destruya datos reales.
 # Sobreescribir con TEST_MONGODB_URL si se corre fuera de Docker.
 _TEST_DB_NAME = "mundial_figuritas_test"
-_TEST_MONGODB_URL = os.getenv("TEST_MONGODB_URL", "mongodb://mongodb:27017")
+
+
+def _default_test_mongodb_url() -> str:
+    """Elige la URL de Mongo para tests según el entorno.
+
+    - TEST_MONGODB_URL explícita: siempre gana.
+    - En Docker Compose, `mongodb` resuelve y se usa ese host.
+    - En el host, `mongodb` no resuelve, así que usamos `localhost`.
+    """
+    url = os.getenv("TEST_MONGODB_URL")
+    if url:
+        return url
+
+    try:
+        import socket
+
+        socket.gethostbyname("mongodb")
+        return "mongodb://mongodb:27017"
+    except OSError:
+        return "mongodb://localhost:27017"
+
+
+_TEST_MONGODB_URL = _default_test_mongodb_url()
+
+
 
 _COLLECTIONS = [
     "album",
