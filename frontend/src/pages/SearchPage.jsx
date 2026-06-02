@@ -154,9 +154,21 @@ export default function SearchPage() {
         <div className="text-center py-12"><Icon name="progress_activity" className="text-primary animate-spin" /></div>
       ) : results.length > 0 ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
-          {results.map(pub => (
-            <FiguritaCard key={pub.id} figurita={pubToCard(pub)} size="collection" />
-          ))}
+          {results.map(pub => {
+            const card = pubToCard(pub)
+            return (
+              <FiguritaCard
+                key={pub.id}
+                figurita={card}
+                size="collection"
+                backActions={card.tipo === 'intercambio' ? (
+                  <Button size="sm" icon="swap_horiz" onClick={() => setTradeModal(card)}>
+                    Proponer
+                  </Button>
+                ) : null}
+              />
+            )
+          })}
         </div>
       ) : (
         <EmptyState
