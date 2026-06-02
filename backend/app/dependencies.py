@@ -1,6 +1,13 @@
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Query
 from app.repositories import usuario_repo
 from app.security import verify_access_token
+
+
+def page_params(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    return {"limit": limit, "offset": offset}
 
 
 def _unauthorized(detail: str) -> HTTPException:

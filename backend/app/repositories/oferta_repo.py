@@ -35,8 +35,8 @@ def get_all() -> list[Oferta]:
     return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
 
 
-def get_by_auction(subasta_id: str) -> list[Oferta]:
-    return [_from_doc(doc) for doc in _get_collection().find({"subasta_id": subasta_id}, {"_id": 0})]
+def get_by_auction(subasta_id: str, limit: int = 50, offset: int = 0) -> list[Oferta]:
+    return [_from_doc(doc) for doc in _get_collection().find({"subasta_id": subasta_id}, {"_id": 0}).skip(offset).limit(limit)]
 
 
 def get_by_user(usuario_id: int) -> list[Oferta]:

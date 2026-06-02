@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     mongodb_url: str = "mongodb://localhost:27017" # Valor por defecto
     mongodb_db_name: str = "mundial_figuritas_db"
 
+    cors_origins: list[str] = ["http://localhost:5173"]
+
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

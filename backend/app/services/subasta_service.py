@@ -87,16 +87,16 @@ def crear_subasta(subasta_data: SubastaCreate, usuario_id: int) -> dict:
     return _subasta_a_dict(creada)
 
 
-def listar_subastas() -> list[dict]:
-    return [_subasta_a_dict(s) for s in subasta_repo.get_all()]
+def listar_subastas(limit: int = 50, offset: int = 0) -> list[dict]:
+    return [_subasta_a_dict(s) for s in subasta_repo.get_all(limit=limit, offset=offset)]
 
 
-def listar_ofertas(subasta_id: str) -> list[dict]:
+def listar_ofertas(subasta_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
     subasta = subasta_repo.get_by_id(subasta_id)
     if not subasta:
         raise DomainNotFoundError("Subasta no encontrada")
     result = []
-    for oferta in oferta_repo.get_by_auction(subasta_id):
+    for oferta in oferta_repo.get_by_auction(subasta_id, limit=limit, offset=offset):
         enriquecida = _oferta_a_dict(oferta)
         enriquecida["ofrecidas_detalle"] = [
             _figurita_detalle(fig)

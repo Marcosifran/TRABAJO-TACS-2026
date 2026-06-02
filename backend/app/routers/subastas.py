@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Response
 from app.schemas.subasta import SubastaCreate
 from app.schemas.oferta import OfertaCreate, OfertaDecision
 from app.services import subasta_service
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, page_params
 
 router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(get_current_user)])
 
@@ -14,8 +14,8 @@ router = APIRouter(prefix="/subastas", tags=["Subastas"], dependencies=[Depends(
         200: {"description": "Lista de todas las subastas registradas"},
     },
 )
-def listar_subastas():
-    return subasta_service.listar_subastas()
+def listar_subastas(page: dict = Depends(page_params)):
+    return subasta_service.listar_subastas(limit=page["limit"], offset=page["offset"])
 
 
 @router.post(
@@ -79,8 +79,8 @@ def responder_oferta(
         404: {"description": "Subasta no encontrada"},
     },
 )
-def listar_ofertas(subasta_id: str):
-    return subasta_service.listar_ofertas(subasta_id)
+def listar_ofertas(subasta_id: str, page: dict = Depends(page_params)):
+    return subasta_service.listar_ofertas(subasta_id, limit=page["limit"], offset=page["offset"])
 
 
 @router.delete(

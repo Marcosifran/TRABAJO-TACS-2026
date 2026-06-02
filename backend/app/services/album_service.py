@@ -20,8 +20,10 @@ def buscar_en_album(
     numero: int | None,
     equipo: str | None,
     jugador: str | None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FiguritaAlbumResponse]:
-    figuritas = album_repo.find(numero, equipo, jugador, usuario_id=usuario_id)
+    figuritas = album_repo.find(numero, equipo, jugador, usuario_id=usuario_id, limit=limit, offset=offset)
     return [_enriquecer(f) for f in figuritas]
 
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, page_params
 from app.services import album_service
 from app.schemas import FiguritaAlbumCreate, FiguritaAlbumResponse
 
@@ -20,12 +20,15 @@ def listar_album(
     equipo: str | None = Query(default=None),
     jugador: str | None = Query(default=None),
     usuario: dict = Depends(get_current_user),
+    page: dict = Depends(page_params),
 ):
     return album_service.buscar_en_album(
         usuario_id=usuario["id"],
         numero=numero,
         equipo=equipo,
         jugador=jugador,
+        limit=page["limit"],
+        offset=page["offset"],
     )
 
 

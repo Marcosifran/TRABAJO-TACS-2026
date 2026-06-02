@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, page_params
 from app.services import publicacion_service
 from app.schemas import PublicacionCreate, PublicacionResponse, SugerenciaResponse
 
@@ -22,6 +22,7 @@ def listar_publicaciones(
     tipo_intercambio: str | None = Query(default=None, description="intercambio directo o subasta"),
     incluir_propias: bool = Query(default=False, description="Incluir las propias publicaciones del usuario autenticado"),
     usuario: dict = Depends(get_current_user),
+    page: dict = Depends(page_params),
 ):
     excluir_usuario_id = None if incluir_propias else usuario["id"]
     return publicacion_service.listar_publicaciones(
@@ -30,6 +31,8 @@ def listar_publicaciones(
         jugador=jugador,
         tipo_intercambio=tipo_intercambio,
         excluir_usuario_id=excluir_usuario_id,
+        limit=page["limit"],
+        offset=page["offset"],
     )
 
 

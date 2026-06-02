@@ -23,7 +23,7 @@ register_exceptions_handlers(app)
 # Seteamos CORS como middleware para permitir solicitudes desde cualquier origen.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
