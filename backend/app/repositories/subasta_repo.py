@@ -11,13 +11,19 @@ def _get_collection():
     return get_db()["subastas"]
 
 
+def _ensure_utc(d: dt.datetime) -> dt.datetime:
+    if d.tzinfo is None:
+        return d.replace(tzinfo=dt.timezone.utc)
+    return d
+
+
 def _from_doc(doc: dict) -> Subasta:
     return Subasta(
         id=doc["id"],
         figurita_id=doc["figurita_id"],
         usuario_id=doc["usuario_id"],
-        inicio=doc["inicio"],
-        fin=doc["fin"],
+        inicio=_ensure_utc(doc["inicio"]),
+        fin=_ensure_utc(doc["fin"]),
         estado=EstadoSubasta(doc["estado"]),
         figurita_jugador=doc.get("figurita_jugador"),
         figurita_equipo=doc.get("figurita_equipo"),
