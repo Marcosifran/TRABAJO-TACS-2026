@@ -161,7 +161,9 @@ export default function AppShell({ children }) {
         <div className="flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            style={{
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))',
+            }}
           >
             <Icon name="swap_horiz" size={16} className="text-white" />
           </div>
@@ -178,10 +180,12 @@ export default function AppShell({ children }) {
       )}
 
       {/* Sidebar */}
-      <nav className={clsx(
-        'fixed md:static top-0 left-0 h-full z-50 w-64 shrink-0 bg-surface-container-low border-r border-outline-variant flex flex-col overflow-y-auto scrollbar-none transition-transform duration-300 md:translate-x-0',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-      )}>
+      <nav
+        className={clsx(
+          'fixed md:static top-0 left-0 h-full z-50 w-64 shrink-0 bg-surface-container-low border-r border-outline-variant flex flex-col overflow-y-auto scrollbar-none transition-transform duration-300 md:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
         {/* Logo + close button (mobile) */}
         <div className="flex items-center gap-2.5 px-5 py-5">
           <button
