@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useNow } from "../hooks/useNow";
 import { isAuctionActive } from "../utils/auctionTime";
 import Button from "../components/ui/Button";
@@ -31,7 +32,9 @@ const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
 
 export default function AuctionsPage() {
   const { user, users } = useUser();
+  const location = useLocation();
   const now = useNow();
+  const pendingSubastaRef = useRef(location.state?.subastaId ?? null);
   const [tab, setTab] = useState("activas");
   const [subastas, setSubastas] = useState([]);
   const [misSubastas, setMisSubastas] = useState([]);
@@ -88,6 +91,16 @@ export default function AuctionsPage() {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    if (!pendingSubastaRef.current || subastas.length === 0) return
+    const target = subastas.find(s => s.id === pendingSubastaRef.current)
+    if (target) {
+      setBidModal(target)
+      setOfferIds([])
+    }
+    pendingSubastaRef.current = null
+  }, [subastas]);
 
   async function handleCreate() {
     if (!newAuction.figurita_id) {

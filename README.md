@@ -124,9 +124,13 @@ MONGODB_DB_NAME=mundial_figuritas_db
 
 ## Ejecución de Tests
 
-Los tests **siempre se conectan a `localhost:27017`**, sin importar lo que diga el `.env`. Esto garantiza que nunca toquen Atlas ni ninguna base remota. Además usan una base de datos dedicada (`mundial_figuritas_test_db`) que se crea y destruye automáticamente durante la sesión.
+Los tests usan una base de datos dedicada (`mundial_figuritas_test`) que se crea y destruye automáticamente durante la sesión. La URL de Mongo se resuelve así:
 
-Requisito: tener MongoDB corriendo localmente en el puerto 27017 (alcanza con `docker compose up mongodb`).
+- Si definís `TEST_MONGODB_URL` en el entorno, pytest usa ese valor.
+- Si corrés dentro de Docker Compose, usa `mongodb://mongodb:27017`.
+- Si corrés en el host y `mongodb` no resuelve, cae a `mongodb://localhost:27017`.
+
+Requisito: tener MongoDB corriendo en el host o en Docker Compose. Si querés ejecutar pytest en la máquina local con el contenedor de Mongo levantado, podés usar el override explícito.
 
 ```bash
 # Levantar solo MongoDB (si no se quiere correr el stack completo)
@@ -134,7 +138,7 @@ docker compose up mongodb -d
 
 cd backend
 pip install -r requeriments.txt
-pytest
+TEST_MONGODB_URL=mongodb://localhost:27017 pytest
 ```
 
 ---

@@ -16,8 +16,10 @@ from app.schemas.intercambio import IntercambioCreate as IntercambioCreate
 from app.schemas.intercambio import IntercambioDecision as IntercambioDecision
 from app.schemas.intercambio import IntercambioResponse as IntercambioResponse
 from app.schemas.maestro import JugadorMaestroResponse as JugadorMaestroResponse
+from app.schemas.oferta import EstadoOferta as EstadoOferta
 from app.schemas.oferta import OfertaCreate as OfertaCreate
 from app.schemas.oferta import OfertaDecision as OfertaDecision
+from app.schemas.oferta import OfertaResponse as OfertaResponse
 from app.schemas.publicacion import PublicacionCreate as PublicacionCreate
 from app.schemas.publicacion import PublicacionResponse as PublicacionResponse
 from app.schemas.publicacion import SugerenciaResponse as SugerenciaResponse
@@ -31,6 +33,7 @@ __all__ = [
     "CalificacionCreate",
     "CalificacionResponse",
     "EstadoIntercambio",
+    "EstadoOferta",
     "EstadoRespuestaIntercambio",
     "EstadoSubasta",
     "FaltanteCreate",
@@ -48,6 +51,7 @@ __all__ = [
     "JugadorMaestroResponse",
     "OfertaCreate",
     "OfertaDecision",
+    "OfertaResponse",
     "PublicacionCreate",
     "PublicacionResponse",
     "ReputacionResponse",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import clsx from 'clsx'
 import Icon from './ui/Icon'
 import Badge from './ui/Badge'
 import Avatar from './ui/Avatar'
@@ -139,14 +140,14 @@ export default function AppShell({ children }) {
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5">
           <div
-            className="w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0"
+            className="w-38 h-38 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
           >
             <Icon name="swap_horiz" size={22} className="text-white" />
           </div>
           <div>
-            <div className="text-[18px] font-bold text-on-surface tracking-tight">FiguSwap</div>
-            <div className="text-[11px] text-on-surface-variant font-medium">Mundial 2026</div>
+            <div className="text-lg-plus font-bold text-on-surface tracking-tight">FiguSwap</div>
+            <div className="text-2xs text-on-surface-variant font-medium">Mundial 2026</div>
           </div>
         </div>
 
@@ -160,14 +161,12 @@ export default function AppShell({ children }) {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={() => `
-                  flex items-center gap-3 w-full px-3.5 py-2.5 rounded-full text-sm mb-0.5
-                  transition-all duration-200 no-underline
-                  ${isActive
-                    ? 'bg-primary-container text-on-primary-container font-semibold'
-                    : 'text-on-surface-variant hover:bg-surface-variant font-normal'
-                  }
-                `}
+                className={() => clsx(
+                'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-full text-sm mb-0.5 transition-all duration-200 no-underline',
+                isActive
+                  ? 'bg-primary-container text-on-primary-container font-semibold'
+                  : 'text-on-surface-variant hover:bg-surface-variant font-normal',
+              )}
               >
                 {item.icon === 'notifications' ? (
                   <Badge count={0}>
@@ -194,7 +193,7 @@ export default function AppShell({ children }) {
         <div className="px-4 py-4 border-t border-outline-variant">
           <button
             onClick={toggleDark}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl bg-surface-container text-on-surface-variant text-[13px] mb-2.5 cursor-pointer border-0 font-sans hover:bg-surface-variant transition-colors"
+            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl bg-surface-container text-on-surface-variant text-xs-plus mb-2.5 cursor-pointer border-0 font-sans hover:bg-surface-variant transition-colors"
           >
             <Icon name={dark ? 'light_mode' : 'dark_mode'} size={18} className="text-on-surface-variant" />
             {dark ? 'Modo claro' : 'Modo oscuro'}
@@ -202,8 +201,8 @@ export default function AppShell({ children }) {
           <div className="flex items-center gap-2.5 px-1">
             <Avatar name={user.nombre} size={32} />
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-on-surface truncate">{user.nombre}</div>
-              <div className="text-[11px] text-on-surface-variant truncate">{user.email}</div>
+              <div className="text-xs-plus font-semibold text-on-surface truncate">{user.nombre}</div>
+              <div className="text-2xs text-on-surface-variant truncate">{user.email}</div>
             </div>
             {/* Selector de usuario para desarrollo */}
             <button
@@ -227,8 +226,7 @@ export default function AppShell({ children }) {
         {notifs.map(n => (
           <div
             key={n.id}
-            className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px]"
-            style={{ animation: 'slideInRight 0.3s ease' }}
+            className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px] animate-slide-in-right"
           >
             <div className="bg-primary-container rounded-full p-2 shrink-0">
               <Icon name={n.icon} size={20} className="text-primary" />
@@ -247,12 +245,6 @@ export default function AppShell({ children }) {
         ))}
       </div>
 
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(110%); opacity: 0; }
-          to   { transform: translateX(0);    opacity: 1; }
-        }
-      `}</style>
     </div>
   )
 }

@@ -10,8 +10,8 @@ export default function Modal({ open, onClose, title, children, width = 520 }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
         onClick={e => e.stopPropagation()}
-        className="relative bg-surface-container-high rounded-3xl p-7 shadow-elev-3 dark:shadow-elev-3-dark animate-modal overflow-y-auto max-h-[85vh] scrollbar-none"
-        style={{ width, maxWidth: '90vw' }}
+        className="relative bg-surface-container-high rounded-3xl p-7 shadow-elev-3 dark:shadow-elev-3-dark animate-modal overflow-y-auto max-h-[85vh] max-w-[90vw] scrollbar-none"
+        style={{ width }}
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-on-surface m-0">{title}</h2>

@@ -69,9 +69,9 @@ def _expirar_vencidas() -> None:
     )
 
 
-def get_all() -> list[Subasta]:
+def get_all(limit: int = 50, offset: int = 0) -> list[Subasta]:
     _expirar_vencidas()
-    return [_from_doc(doc) for doc in _get_collection().find({"estado": EstadoSubasta.ACTIVA.value}, {"_id": 0})]
+    return [_from_doc(doc) for doc in _get_collection().find({"estado": EstadoSubasta.ACTIVA.value}, {"_id": 0}).skip(offset).limit(limit)]
 
 
 def get_by_id(subasta_id: str) -> Subasta | None:

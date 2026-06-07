@@ -36,4 +36,5 @@ class IntercambioResponse(BaseModel):
     solicitado_a: int
     figuritas_ofrecidas: list[int]
     figurita_solicitada: int
-    estado: EstadoRespuestaIntercambio
+    estado: EstadoIntercambio
+    ya_calificado: bool = False

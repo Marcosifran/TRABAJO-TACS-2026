@@ -10,17 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     defaults:
       run:
         working-directory: backend
@@ -28,6 +17,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Start MongoDB
+        run: |
+          docker pull mongo:7
+          docker run -d --name mongodb -p 27017:27017 mongo:7
+
+      - name: Wait for MongoDB to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec mongodb mongosh --eval 'db.runCommand({ ping: 1 })' > /dev/null 2>&1; then
+              echo "MongoDB ready"
+              break
+            fi
+            echo "Waiting for MongoDB... attempt $i"
+            sleep 2
+          done
 
       - name: Set up Python
         uses: actions/setup-python@v5

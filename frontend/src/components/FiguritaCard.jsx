@@ -5,102 +5,15 @@ import Avatar from './ui/Avatar'
 import Button from './ui/Button'
 import FiguritaRow from './FiguritaRow'
 import { getMaestroJugador } from '../api/maestro'
+import { cardGradient } from '../utils/flagColors'
 
-const FLAG_COLORS = {
-  // ── English names (maestro canonical) ──────────────────────────────────────
-  Germany:        ['#000000', '#DD0000', '#FFCE00'],
-  Colombia:       ['#FCD116', '#003893', '#CE1126'],
-  Haiti:          ['#00209F', '#D21034', '#00209F'],
-  Paraguay:       ['#D52B1E', '#FFFFFF', '#0038A8'],
-  "Saudi Arabia": ['#006C35', '#FFFFFF', '#006C35'],
-  "South Korea":  ['#CD2E3A', '#FFFFFF', '#0047A0'],
-  England:        ['#CE1124', '#FFFFFF', '#CE1124'],
-  Portugal:       ['#006600', '#FF0000', '#006600'],
-  Algeria:        ['#006233', '#FFFFFF', '#D21034'],
-  "Ivory Coast":  ['#F77F00', '#FFFFFF', '#009E60'],
-  Iraq:           ['#CE1126', '#FFFFFF', '#000000'],
-  "Czech Republic": ['#11457E', '#FFFFFF', '#D7141A'],
-  Argentina:      ['#3B8CC7', '#74ACDF', '#3B8CC7'],
-  Croatia:        ['#FF0000', '#FFFFFF', '#171796'],
-  Iran:           ['#239F40', '#FFFFFF', '#DA0000'],
-  "DR Congo":     ['#007FFF', '#CE1021', '#F7D618'],
-  Australia:      ['#012169', '#FFFFFF', '#012169'],
-  Curacao:        ['#002B7F', '#F9E814', '#002B7F'],
-  Japan:          ['#BC002D', '#FFFFFF', '#BC002D'],
-  Senegal:        ['#00853F', '#FCD116', '#CE1126'],
-  Austria:        ['#ED2939', '#FFFFFF', '#ED2939'],
-  Ecuador:        ['#FCD116', '#003893', '#CE1126'],
-  Jordan:         ['#007A3D', '#FFFFFF', '#000000'],
-  "South Africa": ['#007749', '#FFB81C', '#000000'],
-  Belgium:        ['#000000', '#FFD100', '#EF3340'],
-  Egypt:          ['#CE1126', '#FFFFFF', '#000000'],
-  Morocco:        ['#C1272D', '#006233', '#C1272D'],
-  Sweden:         ['#006AA7', '#FECC00', '#006AA7'],
-  "Bosnia and Herzegovina": ['#002395', '#FECC00', '#002395'],
-  Scotland:       ['#0065BD', '#FFFFFF', '#0065BD'],
-  Mexico:         ['#006847', '#FFFFFF', '#CE1126'],
-  Norway:         ['#BA0C2F', '#FFFFFF', '#00205B'],
-  Switzerland:    ['#FF0000', '#FFFFFF', '#FF0000'],
-  Brazil:         ['#009C3B', '#FFDF00', '#009C3B'],
-  Spain:          ['#AA151B', '#F1BF00', '#AA151B'],
-  France:         ['#002395', '#FFFFFF', '#ED2939'],
-  Netherlands:    ['#AE1C28', '#FFFFFF', '#21468B'],
-  Tunisia:        ['#E70013', '#FFFFFF', '#E70013'],
-  "Cape Verde":   ['#003893', '#FFFFFF', '#CF2027'],
-  "United States": ['#B22234', '#FFFFFF', '#3C3B6E'],
-  "New Zealand":  ['#012169', '#FFFFFF', '#C8102E'],
-  Turkey:         ['#E30A17', '#FFFFFF', '#E30A17'],
-  Canada:         ['#FF0000', '#FFFFFF', '#FF0000'],
-  Ghana:          ['#006B3F', '#FCD116', '#CE1126'],
-  Panama:         ['#005293', '#FFFFFF', '#D21034'],
-  Uzbekistan:     ['#0099B5', '#FFFFFF', '#1EB53A'],
-  Uruguay:        ['#0038A8', '#74A9E8', '#0038A8'],
-  Qatar:          ['#8D1B3D', '#FFFFFF', '#8D1B3D'],
-  // ── Spanish aliases (seed data / datos viejos en BD) ────────────────────────
-  Brasil:         ['#009C3B', '#FFDF00', '#009C3B'],
-  Francia:        ['#002395', '#FFFFFF', '#ED2939'],
-  Alemania:       ['#000000', '#DD0000', '#FFCE00'],
-  España:         ['#AA151B', '#F1BF00', '#AA151B'],
-  México:         ['#006847', '#FFFFFF', '#CE1126'],
-  Canadá:         ['#FF0000', '#FFFFFF', '#FF0000'],
-  Inglaterra:     ['#CE1124', '#FFFFFF', '#CE1124'],
-  Holanda:        ['#AE1C28', '#FFFFFF', '#21468B'],
-  "Países Bajos": ['#AE1C28', '#FFFFFF', '#21468B'],
-  Bélgica:        ['#000000', '#FFD100', '#EF3340'],
-  Marruecos:      ['#C1272D', '#006233', '#C1272D'],
-  Suiza:          ['#FF0000', '#FFFFFF', '#FF0000'],
-  Noruega:        ['#BA0C2F', '#FFFFFF', '#00205B'],
-  Suecia:         ['#006AA7', '#FECC00', '#006AA7'],
-  Túnez:          ['#E70013', '#FFFFFF', '#E70013'],
-  Senegal:        ['#00853F', '#FCD116', '#CE1126'],
-  USA:            ['#B22234', '#FFFFFF', '#3C3B6E'],
-  Japón:          ['#BC002D', '#FFFFFF', '#BC002D'],
-  Croacia:        ['#FF0000', '#FFFFFF', '#171796'],
-  Irán:           ['#239F40', '#FFFFFF', '#DA0000'],
-  Turquía:        ['#E30A17', '#FFFFFF', '#E30A17'],
-  Panamá:         ['#005293', '#FFFFFF', '#D21034'],
-  Ecuador:        ['#FCD116', '#003893', '#CE1126'],
-  "Arabia Saudita": ['#006C35', '#FFFFFF', '#006C35'],
-  "Corea del Sur": ['#CD2E3A', '#FFFFFF', '#0047A0'],
-  "Costa de Marfil": ['#F77F00', '#FFFFFF', '#009E60'],
-  "República Checa": ['#11457E', '#FFFFFF', '#D7141A'],
-  "Bosnia y Herzegovina": ['#002395', '#FECC00', '#002395'],
-  "Nueva Zelanda": ['#012169', '#FFFFFF', '#C8102E'],
-  "Sudáfrica":    ['#007749', '#FFB81C', '#000000'],
-  "Congo DR":     ['#007FFF', '#CE1021', '#F7D618'],
-  "Cabo Verde":   ['#003893', '#FFFFFF', '#CF2027'],
-}
 const CAT_ICONS = {
   Escudo: 'shield', Jugador: 'person', Estadio: 'stadium',
   Leyenda: 'star', Especial: 'auto_awesome',
 }
 
-function cardGradient(seleccion) {
-  const c = FLAG_COLORS[seleccion] || ['#666', '#999', '#666']
-  return `linear-gradient(135deg, ${c[0]}, ${c[1]}, ${c[2]})`
-}
 
-export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null }) {
+export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null, onAction = null }) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [maestro, setMaestro] = useState(null)
   const isCollection = size === 'collection'
@@ -182,10 +95,18 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
             <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
               {backActions}
               {showTradeType && figurita.tipo === 'intercambio' && (
-                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-trade)' }}>Intercambio</div>
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-trade)' }}
+                  onClick={onAction ?? undefined}
+                >Intercambio</div>
               )}
               {showTradeType && figurita.tipo === 'subasta' && (
-                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-auction)' }}>Subasta</div>
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-auction)' }}
+                  onClick={onAction ?? undefined}
+                >Subasta</div>
               )}
             </div>
           </div>

@@ -1,12 +1,23 @@
+import { parseISO, formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+function parseFin(finIso) {
+  if (!finIso) return null
+  return typeof finIso === 'string' ? parseISO(finIso) : finIso
+}
+
 /**
  * Tiempo hasta el cierre de una subasta (referencia: ahora).
  * @param {string|Date} finIso
- * @returns {string} "2h 15m", "5m", o "Finalizada"
+ * @returns {string} "2h 15m", "5m", "2 días" (para > 24h) o "Finalizada"
  */
 export function formatTiempoRestante(finIso) {
-  if (!finIso) return ''
-  const ms = new Date(finIso).getTime() - Date.now()
+  const fin = parseFin(finIso)
+  if (!fin) return ''
+  const ms = fin.getTime() - Date.now()
   if (ms <= 0) return 'Finalizada'
+  const dias = Math.floor(ms / 86400000)
+  if (dias >= 1) return formatDistanceToNow(fin, { locale: es })
   const horas = Math.floor(ms / 3600000)
   const mins = Math.floor((ms % 3600000) / 60000)
   return horas > 0 ? `${horas}h ${mins}m` : `${mins}m`
@@ -19,8 +30,8 @@ export function formatTiempoRestante(finIso) {
  */
 export function isAuctionActive(sub, now = Date.now()) {
   if (!sub || sub.estado !== 'activa') return false
-  const fin = sub.fin ? new Date(sub.fin).getTime() : 0
-  return fin > now
+  const fin = parseFin(sub.fin)
+  return fin ? fin.getTime() > now : false
 }
 
 /**

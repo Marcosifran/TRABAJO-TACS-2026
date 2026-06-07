@@ -61,7 +61,7 @@ export default function ProfilePage() {
               <span className="text-sm font-semibold text-on-surface">
                 {reputacion?.promedio_puntuacion != null ? reputacion.promedio_puntuacion.toFixed(1) : '—'}
               </span>
-              <span className="text-[13px] text-on-surface-variant">
+              <span className="text-xs-plus text-on-surface-variant">
                 ({reputacion?.cantidad_calificaciones ?? 0} calificaciones)
               </span>
             </div>
@@ -75,7 +75,7 @@ export default function ProfilePage() {
           <Card key={i} className="text-center p-5">
             <Icon name={s.icon} size={28} style={{ color: s.colorVar }} />
             <div className="text-3xl font-bold text-on-surface my-2">{s.value}</div>
-            <div className="text-[13px] text-on-surface-variant">{s.label}</div>
+            <div className="text-xs-plus text-on-surface-variant">{s.label}</div>
           </Card>
         ))}
       </div>

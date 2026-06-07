@@ -40,6 +40,8 @@ def find(
     equipo: str | None,
     jugador: str | None,
     usuario_id: int | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FiguritaAlbum]:
     query: dict[str, Any] = {}
     if usuario_id is not None:
@@ -50,7 +52,7 @@ def find(
         query["equipo"] = {"$regex": equipo, "$options": "i"}
     if jugador is not None:
         query["jugador"] = {"$regex": jugador, "$options": "i"}
-    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0})]
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0}).skip(offset).limit(limit)]
 
 
 def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> FiguritaAlbum:

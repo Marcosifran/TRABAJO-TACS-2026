@@ -41,6 +41,8 @@ def listar_publicaciones(
     jugador: str | None,
     tipo_intercambio: str | None,
     excluir_usuario_id: int | None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[PublicacionResponse]:
     publicaciones = publicacion_repo.find(
         numero=numero,
@@ -48,6 +50,8 @@ def listar_publicaciones(
         jugador=jugador,
         tipo_intercambio=tipo_intercambio,
         usuario_id=excluir_usuario_id,
+        limit=limit,
+        offset=offset,
     )
     return [_to_response(p) for p in publicaciones]
 
