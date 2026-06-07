@@ -328,7 +328,7 @@ export default function CollectionPage() {
         width={480}
       >
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Número" type="number" icon="tag" placeholder="Ej: 10"
               value={pubForm.numero}

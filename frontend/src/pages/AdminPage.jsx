@@ -50,7 +50,7 @@ export default function AdminPage() {
       <h1 className="text-3xl font-bold text-on-surface mb-6">Panel de Administración</h1>
 
       {/* Cards globales */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {CARDS.map(c => (
           <Card key={c.key} elevated>
             <div className="flex items-center gap-3.5">
@@ -71,7 +71,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Intercambios por estado */}
         <div>
           <h2 className="text-lg font-semibold mb-3.5">Estado por intercambios</h2>
