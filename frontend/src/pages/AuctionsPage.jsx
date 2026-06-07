@@ -421,7 +421,7 @@ export default function AuctionsPage() {
                 Colección.
               </div>
             ) : (
-              <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
+              <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}

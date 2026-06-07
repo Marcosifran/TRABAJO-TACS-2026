@@ -88,7 +88,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {STATS.map((s, i) => (
           <Card key={i} className="text-center p-5">
             <Icon name={s.icon} size={28} style={{ color: s.colorVar }} />

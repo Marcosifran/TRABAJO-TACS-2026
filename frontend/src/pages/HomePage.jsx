@@ -163,7 +163,7 @@ export default function HomePage() {
       </div>
 
       {/* Estadisticas Figuritas - Faltan - Intercambios - Reputación */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {STATS.map((s, i) => (
           <Card key={i} elevated>
             <div className="flex items-center gap-3.5">
@@ -195,7 +195,7 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Últimas publicadas */}
         <div>
           <div className="flex justify-between items-center mb-3.5">
@@ -327,7 +327,7 @@ export default function HomePage() {
                 Colección.
               </div>
             ) : (
-              <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
+              <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}

@@ -19,7 +19,7 @@ export default function SubastaCardRow({
   const cierre = lineaCierraEn(sub.fin)
 
   return (
-    <div className="p-5 bg-surface rounded-2xl border border-outline-variant flex justify-between items-center shadow-sm">
+    <div className="p-5 bg-surface rounded-2xl border border-outline-variant flex flex-wrap items-center gap-4 justify-between shadow-sm">
       <div>
         <h3 className="font-bold text-lg text-primary">
           {pubsMap[sub.figurita_id]
