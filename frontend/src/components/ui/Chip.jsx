@@ -4,12 +4,13 @@ import Icon from './Icon'
 const STATES = {
   disabled: 'border-outline/40 bg-transparent text-on-surface/30 cursor-not-allowed',
   selected: 'border-primary bg-primary-container text-on-primary-container cursor-pointer',
-  default:  'border-outline bg-transparent text-on-surface-variant hover:bg-surface-variant cursor-pointer',
+  default:
+    'border-outline bg-transparent text-on-surface-variant hover:bg-surface-variant cursor-pointer',
 }
 const ICON_COLOR = {
   disabled: 'text-on-surface/30',
   selected: 'text-on-primary-container',
-  default:  'text-on-surface-variant',
+  default: 'text-on-surface-variant',
 }
 
 export default function Chip({ children, selected, onClick, icon, disabled }) {

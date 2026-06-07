@@ -8,17 +8,30 @@ import { getMaestroJugador } from '../api/maestro'
 import { cardGradient } from '../utils/flagColors'
 
 const CAT_ICONS = {
-  Escudo: 'shield', Jugador: 'person', Estadio: 'stadium',
-  Leyenda: 'star', Especial: 'auto_awesome',
+  Escudo: 'shield',
+  Jugador: 'person',
+  Estadio: 'stadium',
+  Leyenda: 'star',
+  Especial: 'auto_awesome',
 }
 
-
-export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null, onAction = null }) {
+export default function FiguritaCard({
+  figurita,
+  compact = false,
+  showTradeType = true,
+  size = 'md',
+  backActions = null,
+  onAction = null,
+}) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [maestro, setMaestro] = useState(null)
   const isCollection = size === 'collection'
   const isSmall = size === 'sm'
-  const sizeClass = isCollection ? 'w-[136px] h-[218px]' : isSmall ? 'w-[11rem] h-[17rem]' : 'w-52 h-80'
+  const sizeClass = isCollection
+    ? 'w-[136px] h-[218px]'
+    : isSmall
+      ? 'w-[11rem] h-[17rem]'
+      : 'w-52 h-80'
   const cardPadding = isCollection ? 'p-3' : isSmall ? 'p-3' : 'p-5'
   const frontNumberClass = isCollection ? 'text-2xl' : isSmall ? 'text-2xl' : 'text-5xl'
   const frontNameClass = isCollection ? 'text-xs' : isSmall ? 'text-sm' : 'text-xl'
@@ -26,11 +39,9 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
 
   useEffect(() => {
     if (isFlipped && !maestro) {
-      getMaestroJugador(figurita.numero)
-        .then(setMaestro)
-        .catch(console.error);
+      getMaestroJugador(figurita.numero).then(setMaestro).catch(console.error)
     }
-  }, [isFlipped, maestro, figurita.numero]);
+  }, [isFlipped, maestro, figurita.numero])
 
   if (compact) {
     return (
@@ -54,7 +65,7 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
     )
   }
 
-  const gradient = cardGradient(figurita.seleccion);
+  const gradient = cardGradient(figurita.seleccion)
 
   return (
     <div className={sizeClass}>
@@ -65,8 +76,10 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-               style={{ textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>
+          <div
+            className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}
+          >
             <div className={`${frontNumberClass} font-bold`}>#{figurita.numero}</div>
             <div>
               <div className={`${frontNameClass} font-bold`}>{figurita.jugador}</div>
@@ -75,7 +88,9 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
           </div>
 
           {/* Back of the card (details) */}
-          <div className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div
+            className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          >
             <div>
               <div className="flex items-center gap-1.5">
                 <Avatar name={figurita.owner || '?'} size={22} />
@@ -99,19 +114,23 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
                   className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
                   style={{ backgroundColor: 'var(--color-trade)' }}
                   onClick={onAction ?? undefined}
-                >Intercambio</div>
+                >
+                  Intercambio
+                </div>
               )}
               {showTradeType && figurita.tipo === 'subasta' && (
                 <div
                   className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
                   style={{ backgroundColor: 'var(--color-auction)' }}
                   onClick={onAction ?? undefined}
-                >Subasta</div>
+                >
+                  Subasta
+                </div>
               )}
             </div>
           </div>
         </div>
       </TiltCard>
     </div>
-  );
+  )
 }

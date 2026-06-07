@@ -9,16 +9,37 @@ import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import Icon from '../components/ui/Icon'
 import { useUser } from '../context/UserContext'
-import { agregarAlAlbum, publicarFigurita, listarMisPublicaciones, retirarPublicacion } from '../api/publicaciones'
+import {
+  agregarAlAlbum,
+  publicarFigurita,
+  listarMisPublicaciones,
+  retirarPublicacion,
+} from '../api/publicaciones'
 import { registrarFaltante, listarFaltantes } from '../api/faltantes'
 import { getMaestroJugador } from '../api/maestro'
 import { listarMiAlbum } from '../api/album'
 
 const SELECCIONES = [
-  'Argentina', 'Brasil', 'Francia', 'Alemania', 'España',
-  'Inglaterra', 'Portugal', 'México', 'USA', 'Canadá', 'Uruguay', 'Colombia',
+  'Argentina',
+  'Brasil',
+  'Francia',
+  'Alemania',
+  'España',
+  'Inglaterra',
+  'Portugal',
+  'México',
+  'USA',
+  'Canadá',
+  'Uruguay',
+  'Colombia',
 ]
-const EMPTY_PUB = { numero: '', equipo: SELECCIONES[0], jugador: '', cantidad: '1', tipo: 'intercambio_directo' }
+const EMPTY_PUB = {
+  numero: '',
+  equipo: SELECCIONES[0],
+  jugador: '',
+  cantidad: '1',
+  tipo: 'intercambio_directo',
+}
 const EMPTY_FALT = { numero: '', seleccion: SELECCIONES[0], jugador: '' }
 
 function figToCard(fig, ownerName, pub) {
@@ -55,10 +76,7 @@ export default function CollectionPage() {
   const cargarDatos = useCallback(async () => {
     setLoading(true)
     try {
-      const [albumData, pubsData] = await Promise.all([
-        listarMiAlbum(),
-        listarMisPublicaciones()
-      ])
+      const [albumData, pubsData] = await Promise.all([listarMiAlbum(), listarMisPublicaciones()])
       setAlbum(albumData.figuritas || albumData)
       setPublicaciones(pubsData)
     } catch (e) {
@@ -93,7 +111,7 @@ export default function CollectionPage() {
     setSubmitting(true)
     try {
       let figId = pubForm._figId
-      
+
       // Si no viene de una figurita existente en el álbum, la agregamos primero
       if (!figId) {
         const albumEntry = await agregarAlAlbum({
@@ -110,7 +128,7 @@ export default function CollectionPage() {
         tipo_intercambio: pubForm.tipo,
         cantidad_disponible: pubForm.cantidad,
       })
-      
+
       setShowPub(false)
       setPubForm(EMPTY_PUB)
       setSnack({ open: true, message: 'Figurita publicada con éxito', type: 'success' })
@@ -151,7 +169,12 @@ export default function CollectionPage() {
       setLoadingMaestro(true)
       try {
         const data = await getMaestroJugador(numero)
-        setForm(prev => ({ ...prev, equipo: data.equipo, seleccion: data.equipo, jugador: data.jugador }))
+        setForm((prev) => ({
+          ...prev,
+          equipo: data.equipo,
+          seleccion: data.equipo,
+          jugador: data.jugador,
+        }))
       } catch {
         // número no encontrado en el maestro, se deja editar manualmente
       } finally {
@@ -183,8 +206,8 @@ export default function CollectionPage() {
     }
   }
 
-  const cards = album.map(fig => {
-    const pub = publicaciones.find(p => p.figurita_personal_id === fig.id)
+  const cards = album.map((fig) => {
+    const pub = publicaciones.find((p) => p.figurita_personal_id === fig.id)
     return figToCard(fig, user.nombre, pub)
   })
 
@@ -194,11 +217,18 @@ export default function CollectionPage() {
         <div>
           <h1 className="text-3xl font-bold text-on-surface m-0">Mi Colección</h1>
           <p className="mt-1 text-on-surface-variant text-sm">
-            {album.length} figuritas · {publicaciones.length} en oferta · {faltantes.length} me faltan
+            {album.length} figuritas · {publicaciones.length} en oferta · {faltantes.length} me
+            faltan
           </p>
         </div>
         <div className="flex gap-2.5">
-          <Button icon="add" onClick={() => { setPubForm(EMPTY_PUB); setShowPub(true) }}>
+          <Button
+            icon="add"
+            onClick={() => {
+              setPubForm(EMPTY_PUB)
+              setShowPub(true)
+            }}
+          >
             Publicar figurita
           </Button>
           <Button variant="outlined" icon="playlist_add" onClick={() => setShowFalt(true)}>
@@ -240,40 +270,57 @@ export default function CollectionPage() {
               title="Tu álbum está vacío"
               subtitle="Publicá tu primera figurita para empezar a intercambiar"
               action="Publicar figurita"
-              onAction={() => { setPubForm(EMPTY_PUB); setShowPub(true) }}
+              onAction={() => {
+                setPubForm(EMPTY_PUB)
+                setShowPub(true)
+              }}
             />
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
-              {cards.map(f => (
+              {cards.map((f) => (
                 <div key={f.id} className="flex flex-col items-center">
                   <FiguritaCard
                     figurita={f}
                     showTradeType={false}
                     size="collection"
-                    backActions={(
+                    backActions={
                       <div className="flex flex-col w-full gap-1">
                         <button
                           className="w-full h-6 rounded-lg text-[10px] font-medium leading-none"
                           style={{
-                            backgroundColor: f.tipo === 'intercambio' ? 'var(--color-trade)' : 'rgba(255,255,255,0.25)',
+                            backgroundColor:
+                              f.tipo === 'intercambio'
+                                ? 'var(--color-trade)'
+                                : 'rgba(255,255,255,0.25)',
                             color: 'white',
                           }}
-                          onClick={() => f.tipo === 'intercambio' ? handleRetirar(f._pubId) : openPublishExisting(f, 'intercambio_directo')}
+                          onClick={() =>
+                            f.tipo === 'intercambio'
+                              ? handleRetirar(f._pubId)
+                              : openPublishExisting(f, 'intercambio_directo')
+                          }
                         >
                           {f.tipo === 'intercambio' ? '✕ Intercambio' : '+ Intercambio'}
                         </button>
                         <button
                           className="w-full h-6 rounded-lg text-[10px] font-medium leading-none"
                           style={{
-                            backgroundColor: f.tipo === 'subasta' ? 'var(--color-auction)' : 'rgba(255,255,255,0.25)',
+                            backgroundColor:
+                              f.tipo === 'subasta'
+                                ? 'var(--color-auction)'
+                                : 'rgba(255,255,255,0.25)',
                             color: 'white',
                           }}
-                          onClick={() => f.tipo === 'subasta' ? handleRetirar(f._pubId) : openPublishExisting(f, 'subasta')}
+                          onClick={() =>
+                            f.tipo === 'subasta'
+                              ? handleRetirar(f._pubId)
+                              : openPublishExisting(f, 'subasta')
+                          }
                         >
                           {f.tipo === 'subasta' ? '✕ Subasta' : '+ Subasta'}
                         </button>
                       </div>
-                    )}
+                    }
                   />
                 </div>
               ))}
@@ -294,7 +341,7 @@ export default function CollectionPage() {
           />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
-            {faltantes.map(f => (
+            {faltantes.map((f) => (
               <div key={f.id} className="flex flex-col items-center">
                 <FiguritaCard
                   figurita={{
@@ -316,43 +363,50 @@ export default function CollectionPage() {
       </div>
 
       {/* Boton Publicar Figurita */}
-      <Modal 
-        open={showPub} 
+      <Modal
+        open={showPub}
         onClose={() => {
           if (!submitting) {
             setShowPub(false)
             setPubForm(EMPTY_PUB)
           }
-        }} 
-        title={pubForm._figId ? "Publicar figurita del álbum" : "Nueva figurita y publicación"} 
+        }}
+        title={pubForm._figId ? 'Publicar figurita del álbum' : 'Nueva figurita y publicación'}
         width={480}
       >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Número" type="number" icon="tag" placeholder="Ej: 10"
+              label="Número"
+              type="number"
+              icon="tag"
+              placeholder="Ej: 10"
               value={pubForm.numero}
-              onChange={v => {
+              onChange={(v) => {
                 setPubForm({ ...pubForm, numero: v })
                 if (!pubForm._figId) buscarEnMaestro(v, setPubForm)
               }}
               disabled={!!pubForm._figId}
             />
             <Input
-              label="Cantidad" type="number" icon="inventory_2"
+              label="Cantidad"
+              type="number"
+              icon="inventory_2"
               value={pubForm.cantidad}
-              onChange={v => setPubForm({ ...pubForm, cantidad: v })}
+              onChange={(v) => setPubForm({ ...pubForm, cantidad: v })}
             />
           </div>
           <Input
-            label="Selección / Equipo" icon="shield"
+            label="Selección / Equipo"
+            icon="shield"
             placeholder="Se completa al ingresar el número"
             value={pubForm.equipo}
             onChange={() => {}}
             disabled
           />
           <Input
-            label="Jugador" icon="person"
+            label="Jugador"
+            icon="person"
             placeholder="Se completa al ingresar el número"
             value={pubForm.jugador}
             onChange={() => {}}
@@ -380,10 +434,21 @@ export default function CollectionPage() {
             </div>
           </div>
           <div className="flex gap-2.5 justify-end mt-2">
-            <Button variant="text" onClick={() => { setShowPub(false); setPubForm(EMPTY_PUB) }} disabled={submitting}>
+            <Button
+              variant="text"
+              onClick={() => {
+                setShowPub(false)
+                setPubForm(EMPTY_PUB)
+              }}
+              disabled={submitting}
+            >
               Cancelar
             </Button>
-            <Button icon={submitting ? 'progress_activity' : 'publish'} onClick={handlePublish} disabled={submitting}>
+            <Button
+              icon={submitting ? 'progress_activity' : 'publish'}
+              onClick={handlePublish}
+              disabled={submitting}
+            >
               {submitting ? 'Publicando...' : 'Publicar'}
             </Button>
           </div>
@@ -391,33 +456,44 @@ export default function CollectionPage() {
       </Modal>
 
       {/* Boton Registrar Faltante */}
-      <Modal open={showFalt} onClose={() => !submittingFalt && setShowFalt(false)} title="Registrar faltante" width={420}>
+      <Modal
+        open={showFalt}
+        onClose={() => !submittingFalt && setShowFalt(false)}
+        title="Registrar faltante"
+        width={420}
+      >
         <div className="flex flex-col gap-4">
           <Input
             label={loadingMaestro ? 'Buscando...' : 'Número'}
-            type="number" icon={loadingMaestro ? 'progress_activity' : 'tag'} placeholder="Ej: 321"
+            type="number"
+            icon={loadingMaestro ? 'progress_activity' : 'tag'}
+            placeholder="Ej: 321"
             value={faltForm.numero}
-            onChange={v => {
+            onChange={(v) => {
               setFaltForm({ ...faltForm, numero: v })
               buscarEnMaestro(v, setFaltForm)
             }}
           />
           <Input
-            label="Selección / Equipo" icon="shield"
+            label="Selección / Equipo"
+            icon="shield"
             placeholder="Se completa al ingresar el número"
             value={faltForm.seleccion}
             onChange={() => {}}
             disabled
           />
           <Input
-            label="Jugador" icon="person"
+            label="Jugador"
+            icon="person"
             placeholder="Se completa al ingresar el número"
             value={faltForm.jugador}
             onChange={() => {}}
             disabled
           />
           <div className="flex gap-2.5 justify-end mt-2">
-            <Button variant="text" onClick={() => setShowFalt(false)} disabled={submittingFalt}>Cancelar</Button>
+            <Button variant="text" onClick={() => setShowFalt(false)} disabled={submittingFalt}>
+              Cancelar
+            </Button>
             <Button
               icon={submittingFalt ? 'progress_activity' : 'playlist_add'}
               onClick={handleAddFaltante}

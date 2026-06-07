@@ -10,8 +10,19 @@ import { buscarPublicaciones } from '../api/publicaciones'
 import { listarSubastas } from '../api/subastas'
 import { isAuctionActive } from '../utils/auctionTime'
 
-const SELECCIONES = ['Argentina','Brasil','Francia','Alemania','España','Inglaterra','Portugal','México','USA','Canadá']
-const CATEGORIAS  = ['Escudo','Jugador','Estadio','Leyenda','Especial']
+const SELECCIONES = [
+  'Argentina',
+  'Brasil',
+  'Francia',
+  'Alemania',
+  'España',
+  'Inglaterra',
+  'Portugal',
+  'México',
+  'USA',
+  'Canadá',
+]
+const CATEGORIAS = ['Escudo', 'Jugador', 'Estadio', 'Leyenda', 'Especial']
 
 function pubToCard(pub) {
   return {
@@ -28,13 +39,13 @@ function pubToCard(pub) {
 
 export default function SearchPage() {
   const navigate = useNavigate()
-  const [query,      setQuery]      = useState('')
-  const [selFilter,  setSelFilter]  = useState('Todas')
-  const [catFilter,  setCatFilter]  = useState('Todas')
+  const [query, setQuery] = useState('')
+  const [selFilter, setSelFilter] = useState('Todas')
+  const [catFilter, setCatFilter] = useState('Todas')
   const [tipoFilter, setTipoFilter] = useState('todos')
-  const [results,    setResults]    = useState([])
-  const [loading,    setLoading]    = useState(false)
-  const [snack,      setSnack]      = useState({ open: false, message: '', type: 'info' })
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const debounceRef = useRef(null)
 
   const fetchResults = useCallback(async (q, sel, tipo) => {
@@ -46,15 +57,18 @@ export default function SearchPage() {
         if (!isNaN(num)) {
           params.numero = num
         } else {
-          const matchSeleccion = SELECCIONES.find(s =>
-            s.toLowerCase().includes(q.toLowerCase()) || q.toLowerCase().includes(s.toLowerCase())
+          const matchSeleccion = SELECCIONES.find(
+            (s) =>
+              s.toLowerCase().includes(q.toLowerCase()) ||
+              q.toLowerCase().includes(s.toLowerCase()),
           )
           if (matchSeleccion) params.equipo = matchSeleccion
           else params.jugador = q
         }
       }
       if (sel !== 'Todas') params.equipo = sel
-      if (tipo !== 'todos') params.tipo_intercambio = tipo === 'intercambio' ? 'intercambio_directo' : 'subasta'
+      if (tipo !== 'todos')
+        params.tipo_intercambio = tipo === 'intercambio' ? 'intercambio_directo' : 'subasta'
       const data = await buscarPublicaciones(params)
       setResults(data)
     } catch (e) {
@@ -75,7 +89,12 @@ export default function SearchPage() {
     navigate('/intercambios', {
       state: {
         proponer: {
-          publicacion: { numero: card.numero, jugador: card.jugador, equipo: card.seleccion, usuario_id: card._usuarioId },
+          publicacion: {
+            numero: card.numero,
+            jugador: card.jugador,
+            equipo: card.seleccion,
+            usuario_id: card._usuarioId,
+          },
           ofrecida_por: card.owner,
         },
       },
@@ -85,7 +104,9 @@ export default function SearchPage() {
   async function handleSubasta(pub) {
     try {
       const subastas = await listarSubastas()
-      const activa = subastas.find(s => s.figurita_id === pub.id && isAuctionActive(s, Date.now()))
+      const activa = subastas.find(
+        (s) => s.figurita_id === pub.id && isAuctionActive(s, Date.now()),
+      )
       if (activa) {
         navigate('/subastas', { state: { subastaId: activa.id } })
       } else {
@@ -102,41 +123,70 @@ export default function SearchPage() {
 
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <Input value={query} onChange={setQuery} icon="search" placeholder="Buscar por jugador, número o selección..." />
+          <Input
+            value={query}
+            onChange={setQuery}
+            icon="search"
+            placeholder="Buscar por jugador, número o selección..."
+          />
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Selección:</span>
-          {['Todas', ...SELECCIONES.slice(0, 6)].map(s => (
-            <Chip key={s} selected={selFilter === s} onClick={() => setSelFilter(s)}>{s}</Chip>
+          {['Todas', ...SELECCIONES.slice(0, 6)].map((s) => (
+            <Chip key={s} selected={selFilter === s} onClick={() => setSelFilter(s)}>
+              {s}
+            </Chip>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Categoría:</span>
-          {['Todas', ...CATEGORIAS].map(c => (
-            <Chip key={c} selected={catFilter === c} onClick={() => setCatFilter(c)} disabled>{c}</Chip>
+          {['Todas', ...CATEGORIAS].map((c) => (
+            <Chip key={c} selected={catFilter === c} onClick={() => setCatFilter(c)} disabled>
+              {c}
+            </Chip>
           ))}
           <div className="ml-auto flex gap-1.5">
-            <Chip selected={tipoFilter === 'todos'}       onClick={() => setTipoFilter('todos')}>Todos</Chip>
-            <Chip selected={tipoFilter === 'intercambio'} onClick={() => setTipoFilter('intercambio')} icon="swap_horiz">Intercambio</Chip>
-            <Chip selected={tipoFilter === 'subasta'}     onClick={() => setTipoFilter('subasta')}     icon="gavel">Subasta</Chip>
+            <Chip selected={tipoFilter === 'todos'} onClick={() => setTipoFilter('todos')}>
+              Todos
+            </Chip>
+            <Chip
+              selected={tipoFilter === 'intercambio'}
+              onClick={() => setTipoFilter('intercambio')}
+              icon="swap_horiz"
+            >
+              Intercambio
+            </Chip>
+            <Chip
+              selected={tipoFilter === 'subasta'}
+              onClick={() => setTipoFilter('subasta')}
+              icon="gavel"
+            >
+              Subasta
+            </Chip>
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12"><Icon name="progress_activity" className="text-primary animate-spin" /></div>
+        <div className="text-center py-12">
+          <Icon name="progress_activity" className="text-primary animate-spin" />
+        </div>
       ) : results.length > 0 ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
-          {results.map(pub => {
+          {results.map((pub) => {
             const card = pubToCard(pub)
             return (
               <FiguritaCard
                 key={pub.id}
                 figurita={card}
                 size="collection"
-                onAction={card.tipo === 'intercambio' ? () => handleIntercambio(card) : () => handleSubasta(pub)}
+                onAction={
+                  card.tipo === 'intercambio'
+                    ? () => handleIntercambio(card)
+                    : () => handleSubasta(pub)
+                }
               />
             )
           })}

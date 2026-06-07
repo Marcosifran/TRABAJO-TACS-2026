@@ -41,24 +41,28 @@ export default function HomePage() {
 
   useEffect(() => {
     listarMiAlbum()
-      .then(data => setFiguritasCount((data.figuritas || data).length))
+      .then((data) => setFiguritasCount((data.figuritas || data).length))
       .catch(() => {})
     listarFaltantes()
-      .then(data => setFaltanCount((data || []).length))
+      .then((data) => setFaltanCount((data || []).length))
       .catch(() => {})
     listarIntercambios()
-      .then(data => setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)))
+      .then((data) =>
+        setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)),
+      )
       .catch(() => {})
     // Nota: El ID del usuario debería venir del contexto. Uso 1 como fallback si no hay.
     const userId = users.indexOf(user) + 1
     obtenerReputacion(userId)
-      .then(data => setReputacion(data.promedio_puntuacion != null ? data.promedio_puntuacion.toFixed(1) : '—'))
+      .then((data) =>
+        setReputacion(data.promedio_puntuacion != null ? data.promedio_puntuacion.toFixed(1) : '—'),
+      )
       .catch(() => {})
     buscarPublicaciones({ incluir_propias: true })
-      .then(data => setUltimasPublicadas(data.slice(0, 4)))
+      .then((data) => setUltimasPublicadas(data.slice(0, 4)))
       .catch(() => {})
     obtenerSugerencias()
-      .then(data => setSugerencias(data || []))
+      .then((data) => setSugerencias(data || []))
       .catch(() => {})
   }, [user])
 
@@ -74,12 +78,14 @@ export default function HomePage() {
         ])
         if (cancelled) return
         const map = {}
-        ;[...pubs, ...otrasPubs].forEach(p => { map[p.id] = p })
+        ;[...pubs, ...otrasPubs].forEach((p) => {
+          map[p.id] = p
+        })
         setPubsMap(map)
         setMiAlbum(album.figuritas || album)
         const ahora = Date.now()
         const list = (subs || [])
-          .filter(s => isAuctionActive(s, ahora))
+          .filter((s) => isAuctionActive(s, ahora))
           .sort((a, b) => new Date(a.fin) - new Date(b.fin))
           .slice(0, 4)
         setSubastasPorFinalizar(list)
@@ -88,14 +94,14 @@ export default function HomePage() {
       }
     }
     loadSubastasYAlbum()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function toggleOferta(id) {
     setOfferIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((offerId) => offerId !== id)
-        : [...prev, id],
+      prev.includes(id) ? prev.filter((offerId) => offerId !== id) : [...prev, id],
     )
   }
 
@@ -126,17 +132,34 @@ export default function HomePage() {
   }
 
   const STATS = [
-    { icon: 'collections_bookmark', label: 'Figuritas',   value: figuritasCount, colorVar: 'var(--color-primary)' },
-    { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,    colorVar: 'var(--color-secondary)' },
-    { icon: 'swap_horiz',           label: 'Intercambios', value: intercambiosCount, colorVar: 'var(--color-tertiary)' },
-    { icon: 'star',                 label: 'Reputación',   value: reputacion,     colorVar: 'var(--color-gold)' },
+    {
+      icon: 'collections_bookmark',
+      label: 'Figuritas',
+      value: figuritasCount,
+      colorVar: 'var(--color-primary)',
+    },
+    {
+      icon: 'playlist_add',
+      label: 'Faltan',
+      value: faltanCount,
+      colorVar: 'var(--color-secondary)',
+    },
+    {
+      icon: 'swap_horiz',
+      label: 'Intercambios',
+      value: intercambiosCount,
+      colorVar: 'var(--color-tertiary)',
+    },
+    { icon: 'star', label: 'Reputación', value: reputacion, colorVar: 'var(--color-gold)' },
   ]
 
   return (
     <div className="p-8 max-w-[1100px]">
       <div className="mb-7">
         <h1 className="text-3xl font-bold text-on-surface m-0">Bienvenido de vuelta 👋</h1>
-        <p className="mt-1 text-on-surface-variant text-[15px]">Tu resumen de actividad en FiguSwap</p>
+        <p className="mt-1 text-on-surface-variant text-[15px]">
+          Tu resumen de actividad en FiguSwap
+        </p>
       </div>
 
       {/* Estadisticas Figuritas - Faltan - Intercambios - Reputación */}
@@ -161,9 +184,15 @@ export default function HomePage() {
 
       {/* Acciones Publicar Figurita - Buscar Figuritas - Ver Subastas */}
       <div className="flex gap-2.5 mb-8">
-        <Button icon="add" onClick={() => navigate('/coleccion')}>Publicar figurita</Button>
-        <Button variant="tonal" icon="search" onClick={() => navigate('/buscar')}>Buscar figuritas</Button>
-        <Button variant="outlined" icon="gavel" onClick={() => navigate('/subastas')}>Ver subastas</Button>
+        <Button icon="add" onClick={() => navigate('/coleccion')}>
+          Publicar figurita
+        </Button>
+        <Button variant="tonal" icon="search" onClick={() => navigate('/buscar')}>
+          Buscar figuritas
+        </Button>
+        <Button variant="outlined" icon="gavel" onClick={() => navigate('/subastas')}>
+          Ver subastas
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -171,7 +200,9 @@ export default function HomePage() {
         <div>
           <div className="flex justify-between items-center mb-3.5">
             <h2 className="text-lg font-semibold m-0">Últimas publicadas</h2>
-            <Button variant="text" size="sm" onClick={() => navigate('/buscar')}>Ver todas</Button>
+            <Button variant="text" size="sm" onClick={() => navigate('/buscar')}>
+              Ver todas
+            </Button>
           </div>
           {ultimasPublicadas.length === 0 ? (
             <EmptyState
@@ -181,7 +212,7 @@ export default function HomePage() {
             />
           ) : (
             <div className="flex flex-col gap-2">
-              {ultimasPublicadas.map(pub => (
+              {ultimasPublicadas.map((pub) => (
                 <FiguritaCard
                   key={pub.id}
                   compact
@@ -190,7 +221,8 @@ export default function HomePage() {
                     numero: pub.numero,
                     seleccion: pub.equipo,
                     jugador: pub.jugador,
-                    tipo: pub.tipo_intercambio === 'intercambio_directo' ? 'intercambio' : 'subasta',
+                    tipo:
+                      pub.tipo_intercambio === 'intercambio_directo' ? 'intercambio' : 'subasta',
                     cantidad: pub.cantidad_disponible,
                     owner: `Usuario ${pub.usuario_id}`,
                   }}
@@ -203,7 +235,9 @@ export default function HomePage() {
         <div>
           <div className="flex justify-between items-center mb-3.5">
             <h2 className="text-lg font-semibold m-0">Subastas por finalizar</h2>
-            <Button variant="text" size="sm" onClick={() => navigate('/subastas')}>Ver todas</Button>
+            <Button variant="text" size="sm" onClick={() => navigate('/subastas')}>
+              Ver todas
+            </Button>
           </div>
           {subastasPorFinalizar.length === 0 ? (
             <EmptyState
@@ -213,14 +247,17 @@ export default function HomePage() {
             />
           ) : (
             <div className="flex flex-col gap-3">
-              {subastasPorFinalizar.map(sub => (
+              {subastasPorFinalizar.map((sub) => (
                 <SubastaCardRow
                   key={sub.id}
                   sub={sub}
                   pubsMap={pubsMap}
                   user={user}
                   users={users}
-                  onOfertar={(s) => { setBidModal(s); setOfferIds([]) }}
+                  onOfertar={(s) => {
+                    setBidModal(s)
+                    setOfferIds([])
+                  }}
                   showVerOfertasButton={false}
                 />
               ))}
@@ -230,7 +267,8 @@ export default function HomePage() {
           <h2 className="text-lg font-semibold mt-6 mb-3.5">Sugerencias para vos</h2>
           <Card
             style={{
-              background: 'linear-gradient(135deg, var(--color-primary-container), var(--color-tertiary-container))',
+              background:
+                'linear-gradient(135deg, var(--color-primary-container), var(--color-tertiary-container))',
               border: 'none',
             }}
           >
@@ -239,22 +277,33 @@ export default function HomePage() {
               <div className="flex-1">
                 {sugerencias.length === 0 ? (
                   <>
-                    <div className="font-semibold text-[14px] text-on-primary-container">Sin sugerencias aún</div>
-                    <div className="text-xs-plus text-on-primary-container/80">Registrá tus faltantes para recibir sugerencias automáticas</div>
+                    <div className="font-semibold text-[14px] text-on-primary-container">
+                      Sin sugerencias aún
+                    </div>
+                    <div className="text-xs-plus text-on-primary-container/80">
+                      Registrá tus faltantes para recibir sugerencias automáticas
+                    </div>
                   </>
                 ) : (
                   <>
                     <div className="font-semibold text-[14px] text-on-primary-container">
-                      {sugerencias.length} sugerencia{sugerencias.length > 1 ? 's' : ''} disponible{sugerencias.length > 1 ? 's' : ''}
+                      {sugerencias.length} sugerencia{sugerencias.length > 1 ? 's' : ''} disponible
+                      {sugerencias.length > 1 ? 's' : ''}
                     </div>
                     <div className="text-xs-plus text-on-primary-container/80">
-                      #{sugerencias[0].publicacion.numero} {sugerencias[0].publicacion.jugador} ({sugerencias[0].publicacion.equipo})
+                      #{sugerencias[0].publicacion.numero} {sugerencias[0].publicacion.jugador} (
+                      {sugerencias[0].publicacion.equipo})
                       {sugerencias.length > 1 ? ` y ${sugerencias.length - 1} más` : ''}
                     </div>
                   </>
                 )}
               </div>
-              <Button size="sm" onClick={() => navigate('/intercambios', { state: { tab: 'sugerencias' } })}>Ver</Button>
+              <Button
+                size="sm"
+                onClick={() => navigate('/intercambios', { state: { tab: 'sugerencias' } })}
+              >
+                Ver
+              </Button>
             </div>
           </Card>
         </div>
@@ -274,8 +323,8 @@ export default function HomePage() {
 
             {miAlbum.length === 0 ? (
               <div className="p-4 bg-error-container text-on-error-container rounded-lg text-sm">
-                No tenés figuritas en tu álbum personal para ofrecer. Agregá
-                figuritas desde Mi Colección.
+                No tenés figuritas en tu álbum personal para ofrecer. Agregá figuritas desde Mi
+                Colección.
               </div>
             ) : (
               <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
@@ -302,11 +351,7 @@ export default function HomePage() {
             )}
 
             <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-outline-variant">
-              <Button
-                variant="text"
-                onClick={() => setBidModal(null)}
-                disabled={loadingOferta}
-              >
+              <Button variant="text" onClick={() => setBidModal(null)} disabled={loadingOferta}>
                 Cancelar
               </Button>
               <Button
@@ -321,10 +366,7 @@ export default function HomePage() {
         )}
       </Modal>
 
-      <Snackbar
-        {...snack}
-        onClose={() => setSnack({ ...snack, open: false })}
-      />
+      <Snackbar {...snack} onClose={() => setSnack({ ...snack, open: false })} />
 
       <WorldCupSchedule />
     </div>

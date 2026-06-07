@@ -12,14 +12,14 @@ import { listarIntercambios } from '../api/intercambios'
 import { formatTiempoRestante } from '../utils/auctionTime'
 
 const NAV = [
-  { to: '/',             icon: 'dashboard',            label: 'Inicio' },
-  { to: '/coleccion',    icon: 'collections_bookmark', label: 'Mi Colección' },
-  { to: '/buscar',       icon: 'search',               label: 'Buscar' },
-  { to: '/intercambios', icon: 'swap_horiz',            label: 'Intercambios' },
-  { to: '/subastas',     icon: 'gavel',                label: 'Subastas' },
-  { to: '/alertas',      icon: 'notifications',         label: 'Alertas' },
-  { to: '/perfil',       icon: 'person',               label: 'Perfil' },
-  { to: '/admin',        icon: 'admin_panel_settings',  label: 'Admin', adminOnly: true },
+  { to: '/', icon: 'dashboard', label: 'Inicio' },
+  { to: '/coleccion', icon: 'collections_bookmark', label: 'Mi Colección' },
+  { to: '/buscar', icon: 'search', label: 'Buscar' },
+  { to: '/intercambios', icon: 'swap_horiz', label: 'Intercambios' },
+  { to: '/subastas', icon: 'gavel', label: 'Subastas' },
+  { to: '/alertas', icon: 'notifications', label: 'Alertas' },
+  { to: '/perfil', icon: 'person', label: 'Perfil' },
+  { to: '/admin', icon: 'admin_panel_settings', label: 'Admin', adminOnly: true },
 ]
 
 const POLL_INTERVAL = 20000 // 20 segundos
@@ -30,23 +30,25 @@ export default function AppShell({ children }) {
   const location = useLocation()
 
   const [notifs, setNotifs] = useState([])
-  const seenSugIds   = useRef(null)
-  const seenAuctIds  = useRef(null)
+  const seenSugIds = useRef(null)
+  const seenAuctIds = useRef(null)
   const seenTradeIds = useRef(null)
-  const timerRefs    = useRef({})
+  const timerRefs = useRef({})
 
   function pushNotif(id, icon, title, body) {
-    setNotifs(prev => prev.some(n => n.id === id) ? prev : [...prev, { id, icon, title, body }])
+    setNotifs((prev) =>
+      prev.some((n) => n.id === id) ? prev : [...prev, { id, icon, title, body }],
+    )
     clearTimeout(timerRefs.current[id])
     timerRefs.current[id] = setTimeout(
-      () => setNotifs(prev => prev.filter(n => n.id !== id)),
-      6000
+      () => setNotifs((prev) => prev.filter((n) => n.id !== id)),
+      6000,
     )
   }
 
   function dismissNotif(id) {
     clearTimeout(timerRefs.current[id])
-    setNotifs(prev => prev.filter(n => n.id !== id))
+    setNotifs((prev) => prev.filter((n) => n.id !== id))
   }
 
   // Poll sugerencias
@@ -56,20 +58,25 @@ export default function AppShell({ children }) {
       try {
         const data = await obtenerSugerencias()
         const sugs = data || []
-        const ids  = new Set(sugs.map(s => s.publicacion.id))
-        if (seenSugIds.current === null) { seenSugIds.current = ids; return }
-        const nuevas = sugs.filter(s => !seenSugIds.current.has(s.publicacion.id))
+        const ids = new Set(sugs.map((s) => s.publicacion.id))
+        if (seenSugIds.current === null) {
+          seenSugIds.current = ids
+          return
+        }
+        const nuevas = sugs.filter((s) => !seenSugIds.current.has(s.publicacion.id))
         if (nuevas.length > 0) {
           const p = nuevas[0].publicacion
           pushNotif(
             `sug-${p.id}`,
             'auto_awesome',
             '¡Nueva sugerencia disponible!',
-            `#${p.numero} ${p.jugador} (${p.equipo})${nuevas.length > 1 ? ` y ${nuevas.length - 1} más` : ''}`
+            `#${p.numero} ${p.jugador} (${p.equipo})${nuevas.length > 1 ? ` y ${nuevas.length - 1} más` : ''}`,
           )
           seenSugIds.current = ids
         }
-      } catch { /* ignorar */ }
+      } catch {
+        /* ignorar */
+      }
     }
     pollSugs()
     const t = setInterval(pollSugs, POLL_INTERVAL)
@@ -82,10 +89,13 @@ export default function AppShell({ children }) {
     async function pollTrades() {
       try {
         const data = await listarIntercambios()
-        const pendientes = (data.recibidos || []).filter(i => i.estado === 'pendiente')
-        const ids = new Set(pendientes.map(i => i.id))
-        if (seenTradeIds.current === null) { seenTradeIds.current = ids; return }
-        const nuevas = pendientes.filter(i => !seenTradeIds.current.has(i.id))
+        const pendientes = (data.recibidos || []).filter((i) => i.estado === 'pendiente')
+        const ids = new Set(pendientes.map((i) => i.id))
+        if (seenTradeIds.current === null) {
+          seenTradeIds.current = ids
+          return
+        }
+        const nuevas = pendientes.filter((i) => !seenTradeIds.current.has(i.id))
         if (nuevas.length > 0) {
           const t = nuevas[0]
           const ofertante = users[t.propuesto_por - 1]?.nombre ?? `Usuario ${t.propuesto_por}`
@@ -93,11 +103,13 @@ export default function AppShell({ children }) {
             `trade-${t.id}`,
             'swap_horiz',
             '¡Nueva propuesta de intercambio!',
-            `${ofertante} quiere la figurita #${t.figurita_solicitada}`
+            `${ofertante} quiere la figurita #${t.figurita_solicitada}`,
           )
           seenTradeIds.current = ids
         }
-      } catch { /* ignorar */ }
+      } catch {
+        /* ignorar */
+      }
     }
     pollTrades()
     const t = setInterval(pollTrades, POLL_INTERVAL)
@@ -111,11 +123,11 @@ export default function AppShell({ children }) {
       try {
         const data = await listarSubastas()
         const ahora = Date.now()
-        const porVencer = (data || []).filter(s => {
+        const porVencer = (data || []).filter((s) => {
           const ms = new Date(s.fin) - ahora
           return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
         })
-        porVencer.forEach(s => {
+        porVencer.forEach((s) => {
           if (seenAuctIds.current.has(s.id)) return
           seenAuctIds.current.add(s.id)
           const tiempo = formatTiempoRestante(s.fin)
@@ -123,10 +135,12 @@ export default function AppShell({ children }) {
             `auct-${s.id}`,
             'gavel',
             '⏳ Subasta por finalizar',
-            `Subasta #${s.id} cierra en ${tiempo}`
+            `Subasta #${s.id} cierra en ${tiempo}`,
           )
         })
-      } catch { /* ignorar */ }
+      } catch {
+        /* ignorar */
+      }
     }
     pollSubastas()
     const t = setInterval(pollSubastas, POLL_INTERVAL)
@@ -141,7 +155,9 @@ export default function AppShell({ children }) {
         <div className="flex items-center gap-2.5 px-5 py-5">
           <div
             className="w-38 h-38 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            style={{
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))',
+            }}
           >
             <Icon name="swap_horiz" size={22} className="text-white" />
           </div>
@@ -153,20 +169,21 @@ export default function AppShell({ children }) {
 
         {/* Nav items */}
         <div className="flex-1 px-3">
-          {NAV.filter(item => !item.adminOnly || user.es_admin).map(item => {
-            const isActive = item.to === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(item.to)
+          {NAV.filter((item) => !item.adminOnly || user.es_admin).map((item) => {
+            const isActive =
+              item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={() => clsx(
-                'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-full text-sm mb-0.5 transition-all duration-200 no-underline',
-                isActive
-                  ? 'bg-primary-container text-on-primary-container font-semibold'
-                  : 'text-on-surface-variant hover:bg-surface-variant font-normal',
-              )}
+                className={() =>
+                  clsx(
+                    'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-full text-sm mb-0.5 transition-all duration-200 no-underline',
+                    isActive
+                      ? 'bg-primary-container text-on-primary-container font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-variant font-normal',
+                  )
+                }
               >
                 {item.icon === 'notifications' ? (
                   <Badge count={0}>
@@ -195,13 +212,19 @@ export default function AppShell({ children }) {
             onClick={toggleDark}
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl bg-surface-container text-on-surface-variant text-xs-plus mb-2.5 cursor-pointer border-0 font-sans hover:bg-surface-variant transition-colors"
           >
-            <Icon name={dark ? 'light_mode' : 'dark_mode'} size={18} className="text-on-surface-variant" />
+            <Icon
+              name={dark ? 'light_mode' : 'dark_mode'}
+              size={18}
+              className="text-on-surface-variant"
+            />
             {dark ? 'Modo claro' : 'Modo oscuro'}
           </button>
           <div className="flex items-center gap-2.5 px-1">
             <Avatar name={user.nombre} size={32} />
             <div className="flex-1 min-w-0">
-              <div className="text-xs-plus font-semibold text-on-surface truncate">{user.nombre}</div>
+              <div className="text-xs-plus font-semibold text-on-surface truncate">
+                {user.nombre}
+              </div>
               <div className="text-2xs text-on-surface-variant truncate">{user.email}</div>
             </div>
             {/* Selector de usuario para desarrollo */}
@@ -223,7 +246,7 @@ export default function AppShell({ children }) {
 
       {/* Stack de notificaciones pop-up */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
-        {notifs.map(n => (
+        {notifs.map((n) => (
           <div
             key={n.id}
             className="flex items-start gap-3 bg-surface-container-high border border-outline rounded-2xl shadow-xl p-4 w-[320px] animate-slide-in-right"
@@ -244,7 +267,6 @@ export default function AppShell({ children }) {
           </div>
         ))}
       </div>
-
     </div>
   )
 }
