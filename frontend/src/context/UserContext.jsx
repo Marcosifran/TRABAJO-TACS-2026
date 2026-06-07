@@ -4,15 +4,15 @@ const UserContext = createContext()
 
 const USERS = [
   {
-    nombre:   'Usuario 1',
-    email:    'user1@figuswap',
-    token:    import.meta.env.VITE_USER_1_TOKEN || '',
+    nombre: 'Usuario 1',
+    email: 'user1@figuswap',
+    token: import.meta.env.VITE_USER_1_TOKEN || '',
     es_admin: true,
   },
   {
-    nombre:   'Usuario 2',
-    email:    'user2@figuswap',
-    token:    import.meta.env.VITE_USER_2_TOKEN || '',
+    nombre: 'Usuario 2',
+    email: 'user2@figuswap',
+    token: import.meta.env.VITE_USER_2_TOKEN || '',
     es_admin: false,
   },
 ]

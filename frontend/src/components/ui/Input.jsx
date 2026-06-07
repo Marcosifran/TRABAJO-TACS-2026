@@ -2,24 +2,35 @@ import { useState } from 'react'
 import Icon from './Icon'
 
 export default function Input({
-  label, value, onChange, type = 'text',
-  icon, placeholder, multiline = false, options, disabled = false,
+  label,
+  value,
+  onChange,
+  type = 'text',
+  icon,
+  placeholder,
+  multiline = false,
+  options,
+  disabled = false,
 }) {
   const [focused, setFocused] = useState(false)
 
   const baseClass = `
     w-full px-3.5 py-3 text-sm rounded-xl border-[1.5px] transition-colors duration-200
     font-sans outline-none
-    ${disabled
-      ? 'bg-surface-variant text-on-surface-variant border-outline-variant cursor-not-allowed opacity-60'
-      : `bg-surface-container-low text-on-surface ${focused ? 'border-primary' : 'border-outline'}`}
+    ${
+      disabled
+        ? 'bg-surface-variant text-on-surface-variant border-outline-variant cursor-not-allowed opacity-60'
+        : `bg-surface-container-low text-on-surface ${focused ? 'border-primary' : 'border-outline'}`
+    }
     ${icon ? 'pl-10' : ''}
   `
 
   return (
     <div className="relative">
       {label && (
-        <label className={`block text-xs font-medium mb-1 transition-colors duration-200 ${focused ? 'text-primary' : 'text-on-surface-variant'}`}>
+        <label
+          className={`block text-xs font-medium mb-1 transition-colors duration-200 ${focused ? 'text-primary' : 'text-on-surface-variant'}`}
+        >
           {label}
         </label>
       )}
@@ -31,20 +42,22 @@ export default function Input({
       {options ? (
         <select
           value={value}
-          onChange={e => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           disabled={disabled}
           className={`${baseClass} cursor-pointer appearance-none`}
         >
-          {options.map(o => (
-            <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
+          {options.map((o) => (
+            <option key={o.value ?? o} value={o.value ?? o}>
+              {o.label ?? o}
+            </option>
           ))}
         </select>
       ) : multiline ? (
         <textarea
           value={value}
-          onChange={e => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={3}
           onFocus={() => setFocused(true)}
@@ -56,7 +69,7 @@ export default function Input({
         <input
           type={type}
           value={value}
-          onChange={e => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

@@ -34,13 +34,11 @@ function describeDetail(detail) {
   if (!detail) return null
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail)) {
-    return detail
-      .map(e => `${(e.loc || []).slice(1).join('.')}: ${e.msg}`)
-      .join('; ')
+    return detail.map((e) => `${(e.loc || []).slice(1).join('.')}: ${e.msg}`).join('; ')
   }
   try {
     return JSON.stringify(detail)
-  } catch (e) {
+  } catch {
     return String(detail)
   }
 }
@@ -85,7 +83,10 @@ export async function apiFetch(path, { signal, timeoutMs = DEFAULT_TIMEOUT_MS, .
   const body = isJson ? await res.json().catch(() => ({})) : await res.text().catch(() => '')
 
   if (!res.ok) {
-    const message = describeDetail(body?.detail) || (typeof body === 'string' ? body : null) || `Error ${res.status}`
+    const message =
+      describeDetail(body?.detail) ||
+      (typeof body === 'string' ? body : null) ||
+      `Error ${res.status}`
     throw new ApiError(res.status, message, body)
   }
 

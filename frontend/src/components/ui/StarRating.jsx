@@ -3,7 +3,7 @@ import Icon from './Icon'
 export default function StarRating({ value = 0, onChange, size = 24 }) {
   return (
     <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(i => (
+      {[1, 2, 3, 4, 5].map((i) => (
         <button
           key={i}
           onClick={() => onChange?.(i)}

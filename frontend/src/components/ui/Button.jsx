@@ -1,11 +1,12 @@
 import Icon from './Icon'
 
 const VARIANTS = {
-  filled:   'bg-primary text-on-primary hover:shadow-elev-1 dark:hover:shadow-elev-1-dark',
-  tonal:    'bg-secondary-container text-on-secondary-container hover:shadow-elev-1 dark:hover:shadow-elev-1-dark',
+  filled: 'bg-primary text-on-primary hover:shadow-elev-1 dark:hover:shadow-elev-1-dark',
+  tonal:
+    'bg-secondary-container text-on-secondary-container hover:shadow-elev-1 dark:hover:shadow-elev-1-dark',
   outlined: 'bg-transparent text-primary border border-outline',
-  text:     'bg-transparent text-primary hover:bg-surface-variant',
-  error:    'bg-error text-white hover:shadow-elev-1',
+  text: 'bg-transparent text-primary hover:bg-surface-variant',
+  error: 'bg-error text-white hover:shadow-elev-1',
 }
 const SIZES = {
   sm: 'px-3 py-1.5 text-xs-plus gap-1.5',
@@ -15,9 +16,15 @@ const SIZES = {
 const ICON_SIZE = { sm: 14, md: 16, lg: 18 }
 
 export default function Button({
-  children, variant = 'filled', icon, onClick,
-  disabled = false, size = 'md', type = 'button', className = '',
-  style = {}
+  children,
+  variant = 'filled',
+  icon,
+  onClick,
+  disabled = false,
+  size = 'md',
+  type = 'button',
+  className = '',
+  style = {},
 }) {
   return (
     <button

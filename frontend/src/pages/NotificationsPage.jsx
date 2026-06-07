@@ -10,11 +10,14 @@ import { listarSubastas } from '../api/subastas'
 import { formatTiempoRestante, isAuctionActive } from '../utils/auctionTime'
 
 const STORAGE_KEY = 'figuswap-alertas-leidas'
-const FADE_MS     = 400
+const FADE_MS = 400
 
 function loadLeidas() {
-  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')) }
-  catch { return new Set() }
+  try {
+    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+  } catch {
+    return new Set()
+  }
 }
 function saveLeidas(set) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]))
@@ -23,12 +26,12 @@ function saveLeidas(set) {
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const { users } = useUser()
-  const [propuestas,  setPropuestas]  = useState([])
+  const [propuestas, setPropuestas] = useState([])
   const [sugerencias, setSugerencias] = useState([])
-  const [subastas,    setSubastas]    = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [leidas,      setLeidas]      = useState(loadLeidas)
-  const [fading,      setFading]      = useState(new Set())
+  const [subastas, setSubastas] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [leidas, setLeidas] = useState(loadLeidas)
+  const [fading, setFading] = useState(new Set())
 
   useEffect(() => {
     async function cargar() {
@@ -39,41 +42,50 @@ export default function NotificationsPage() {
           obtenerSugerencias(),
           listarSubastas(),
         ])
-        setPropuestas(intercambiosData.recibidos?.filter(i => i.estado === 'pendiente') || [])
+        setPropuestas(intercambiosData.recibidos?.filter((i) => i.estado === 'pendiente') || [])
         setSugerencias(sugsData || [])
         const ahora = Date.now()
-        setSubastas((subsData || []).filter(s => {
-          if (!isAuctionActive(s, ahora)) return false
-          const ms = new Date(s.fin).getTime() - ahora
-          return ms < 24 * 3600 * 1000
-        }))
-      } catch { /* ignorar */ }
-      finally { setLoading(false) }
+        setSubastas(
+          (subsData || []).filter((s) => {
+            if (!isAuctionActive(s, ahora)) return false
+            const ms = new Date(s.fin).getTime() - ahora
+            return ms < 24 * 3600 * 1000
+          }),
+        )
+      } catch {
+        /* ignorar */
+      } finally {
+        setLoading(false)
+      }
     }
     cargar()
   }, [])
 
   const dismiss = useCallback((id) => {
-    setFading(prev => new Set([...prev, id]))
+    setFading((prev) => new Set([...prev, id]))
     setTimeout(() => {
-      setLeidas(prev => {
+      setLeidas((prev) => {
         const next = new Set([...prev, id])
         saveLeidas(next)
         return next
       })
-      setFading(prev => { const s = new Set(prev); s.delete(id); return s })
+      setFading((prev) => {
+        const s = new Set(prev)
+        s.delete(id)
+        return s
+      })
     }, FADE_MS)
   }, [])
 
   function dismissAll() {
     const ids = [
-      ...propuestas.map(p => `trade-${p.id}`),
-      ...sugerencias.map(s => `sug-${s.publicacion.id}`),
-      ...subastas.map(s => `auct-${s.id}`),
+      ...propuestas.map((p) => `trade-${p.id}`),
+      ...sugerencias.map((s) => `sug-${s.publicacion.id}`),
+      ...subastas.map((s) => `auct-${s.id}`),
     ]
     setFading(new Set(ids))
     setTimeout(() => {
-      setLeidas(prev => {
+      setLeidas((prev) => {
         const next = new Set([...prev, ...ids])
         saveLeidas(next)
         return next
@@ -82,9 +94,9 @@ export default function NotificationsPage() {
     }, FADE_MS)
   }
 
-  const propuestasVis  = propuestas.filter(p  => !leidas.has(`trade-${p.id}`))
-  const sugerenciasVis = sugerencias.filter(s  => !leidas.has(`sug-${s.publicacion.id}`))
-  const subastasVis    = subastas.filter(s     => !leidas.has(`auct-${s.id}`))
+  const propuestasVis = propuestas.filter((p) => !leidas.has(`trade-${p.id}`))
+  const sugerenciasVis = sugerencias.filter((s) => !leidas.has(`sug-${s.publicacion.id}`))
+  const subastasVis = subastas.filter((s) => !leidas.has(`auct-${s.id}`))
   const total = propuestasVis.length + sugerenciasVis.length + subastasVis.length
 
   function alertClass(id) {
@@ -122,7 +134,6 @@ export default function NotificationsPage() {
         />
       ) : (
         <div className="flex flex-col gap-7">
-
           {propuestasVis.length > 0 && (
             <section>
               <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -130,21 +141,36 @@ export default function NotificationsPage() {
                 Propuestas recibidas ({propuestasVis.length})
               </h2>
               <div className="flex flex-col gap-2">
-                {propuestasVis.map(p => (
-                  <div key={p.id} className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`trade-${p.id}`)}`}>
+                {propuestasVis.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`trade-${p.id}`)}`}
+                  >
                     <div className="bg-tertiary-container rounded-full p-2 shrink-0">
                       <Icon name="swap_horiz" size={18} className="text-tertiary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-on-surface">
-                        {users[p.propuesto_por - 1]?.nombre ?? `Usuario ${p.propuesto_por}`} quiere intercambiar
+                        {users[p.propuesto_por - 1]?.nombre ?? `Usuario ${p.propuesto_por}`} quiere
+                        intercambiar
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
-                        Ofrece: {p.figuritas_ofrecidas.map(n => `#${n}`).join(', ')} · Solicita: #{p.figurita_solicitada}
+                        Ofrece: {p.figuritas_ofrecidas.map((n) => `#${n}`).join(', ')} · Solicita: #
+                        {p.figurita_solicitada}
                       </div>
                     </div>
-                    <Button size="sm" variant="tonal" onClick={() => navigate('/intercambios', { state: { tab: 'recibidas' } })}>Ver</Button>
-                    <button onClick={() => dismiss(`trade-${p.id}`)} className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0" title="Marcar como leída">
+                    <Button
+                      size="sm"
+                      variant="tonal"
+                      onClick={() => navigate('/intercambios', { state: { tab: 'recibidas' } })}
+                    >
+                      Ver
+                    </Button>
+                    <button
+                      onClick={() => dismiss(`trade-${p.id}`)}
+                      className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0"
+                      title="Marcar como leída"
+                    >
                       <Icon name="close" size={16} />
                     </button>
                   </div>
@@ -160,8 +186,11 @@ export default function NotificationsPage() {
                 Sugerencias de intercambio ({sugerenciasVis.length})
               </h2>
               <div className="flex flex-col gap-2">
-                {sugerenciasVis.map(s => (
-                  <div key={s.publicacion.id} className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`sug-${s.publicacion.id}`)}`}>
+                {sugerenciasVis.map((s) => (
+                  <div
+                    key={s.publicacion.id}
+                    className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`sug-${s.publicacion.id}`)}`}
+                  >
                     <div className="bg-primary-container rounded-full p-2 shrink-0">
                       <Icon name="auto_awesome" size={18} className="text-primary" />
                     </div>
@@ -173,8 +202,18 @@ export default function NotificationsPage() {
                         Ofrecida por {s.ofrecida_por} · Cubre tu faltante #{s.cubre_tu_faltante}
                       </div>
                     </div>
-                    <Button size="sm" variant="tonal" onClick={() => navigate('/intercambios', { state: { tab: 'sugerencias' } })}>Ver</Button>
-                    <button onClick={() => dismiss(`sug-${s.publicacion.id}`)} className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0" title="Marcar como leída">
+                    <Button
+                      size="sm"
+                      variant="tonal"
+                      onClick={() => navigate('/intercambios', { state: { tab: 'sugerencias' } })}
+                    >
+                      Ver
+                    </Button>
+                    <button
+                      onClick={() => dismiss(`sug-${s.publicacion.id}`)}
+                      className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0"
+                      title="Marcar como leída"
+                    >
                       <Icon name="close" size={16} />
                     </button>
                   </div>
@@ -190,8 +229,11 @@ export default function NotificationsPage() {
                 Subastas por finalizar ({subastasVis.length})
               </h2>
               <div className="flex flex-col gap-2">
-                {subastasVis.map(s => (
-                  <div key={s.id} className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`auct-${s.id}`)}`}>
+                {subastasVis.map((s) => (
+                  <div
+                    key={s.id}
+                    className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`auct-${s.id}`)}`}
+                  >
                     <div className="bg-secondary-container rounded-full p-2 shrink-0">
                       <Icon name="gavel" size={18} className="text-secondary" />
                     </div>
@@ -203,8 +245,14 @@ export default function NotificationsPage() {
                         Cierra en {formatTiempoRestante(s.fin)}
                       </div>
                     </div>
-                    <Button size="sm" variant="tonal" onClick={() => navigate('/subastas')}>Ver</Button>
-                    <button onClick={() => dismiss(`auct-${s.id}`)} className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0" title="Marcar como leída">
+                    <Button size="sm" variant="tonal" onClick={() => navigate('/subastas')}>
+                      Ver
+                    </Button>
+                    <button
+                      onClick={() => dismiss(`auct-${s.id}`)}
+                      className="p-1 rounded-full hover:bg-surface-variant transition-colors border-0 bg-transparent cursor-pointer text-on-surface-variant shrink-0"
+                      title="Marcar como leída"
+                    >
                       <Icon name="close" size={16} />
                     </button>
                   </div>
@@ -212,7 +260,6 @@ export default function NotificationsPage() {
               </div>
             </section>
           )}
-
         </div>
       )}
     </div>

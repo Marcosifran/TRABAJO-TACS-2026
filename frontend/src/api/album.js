@@ -1,5 +1,5 @@
-import { apiFetch } from "./client"
+import { apiFetch } from './client'
 
-export function listarMiAlbum(){
-    return apiFetch('/album')
+export function listarMiAlbum() {
+  return apiFetch('/album')
 }

@@ -4,7 +4,12 @@ import { apiFetch } from './client'
 export function agregarAlAlbum({ numero, equipo, jugador, cantidad }) {
   return apiFetch('/album', {
     method: 'POST',
-    body: JSON.stringify({ numero: parseInt(numero), equipo, jugador, cantidad: parseInt(cantidad) }),
+    body: JSON.stringify({
+      numero: parseInt(numero),
+      equipo,
+      jugador,
+      cantidad: parseInt(cantidad),
+    }),
   })
 }
 
@@ -12,7 +17,11 @@ export function agregarAlAlbum({ numero, equipo, jugador, cantidad }) {
 export function publicarFigurita({ figurita_personal_id, tipo_intercambio, cantidad_disponible }) {
   return apiFetch('/publicaciones', {
     method: 'POST',
-    body: JSON.stringify({ figurita_personal_id, tipo_intercambio, cantidad_disponible: parseInt(cantidad_disponible) }),
+    body: JSON.stringify({
+      figurita_personal_id,
+      tipo_intercambio,
+      cantidad_disponible: parseInt(cantidad_disponible),
+    }),
   })
 }
 
@@ -27,7 +36,13 @@ export function retirarPublicacion(id) {
 }
 
 /** Busca publicaciones de otros usuarios con filtros opcionales. */
-export function buscarPublicaciones({ numero, equipo, jugador, tipo_intercambio, incluir_propias } = {}) {
+export function buscarPublicaciones({
+  numero,
+  equipo,
+  jugador,
+  tipo_intercambio,
+  incluir_propias,
+} = {}) {
   const params = new URLSearchParams()
   if (numero != null) params.set('numero', numero)
   if (equipo) params.set('equipo', equipo)
