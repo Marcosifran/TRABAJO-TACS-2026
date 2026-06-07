@@ -152,7 +152,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-on-surface">{s.value}</div>
-                <div className="text-[13px] text-on-surface-variant">{s.label}</div>
+                <div className="text-xs-plus text-on-surface-variant">{s.label}</div>
               </div>
             </div>
           </Card>
@@ -240,14 +240,14 @@ export default function HomePage() {
                 {sugerencias.length === 0 ? (
                   <>
                     <div className="font-semibold text-[14px] text-on-primary-container">Sin sugerencias aún</div>
-                    <div className="text-[13px] text-on-primary-container/80">Registrá tus faltantes para recibir sugerencias automáticas</div>
+                    <div className="text-xs-plus text-on-primary-container/80">Registrá tus faltantes para recibir sugerencias automáticas</div>
                   </>
                 ) : (
                   <>
                     <div className="font-semibold text-[14px] text-on-primary-container">
                       {sugerencias.length} sugerencia{sugerencias.length > 1 ? 's' : ''} disponible{sugerencias.length > 1 ? 's' : ''}
                     </div>
-                    <div className="text-[13px] text-on-primary-container/80">
+                    <div className="text-xs-plus text-on-primary-container/80">
                       #{sugerencias[0].publicacion.numero} {sugerencias[0].publicacion.jugador} ({sugerencias[0].publicacion.equipo})
                       {sugerencias.length > 1 ? ` y ${sugerencias.length - 1} más` : ''}
                     </div>

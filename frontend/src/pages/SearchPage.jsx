@@ -106,14 +106,14 @@ export default function SearchPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-on-surface-variant font-medium mr-1">Selección:</span>
+          <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Selección:</span>
           {['Todas', ...SELECCIONES.slice(0, 6)].map(s => (
             <Chip key={s} selected={selFilter === s} onClick={() => setSelFilter(s)}>{s}</Chip>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-on-surface-variant font-medium mr-1">Categoría:</span>
+          <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Categoría:</span>
           {['Todas', ...CATEGORIAS].map(c => (
             <Chip key={c} selected={catFilter === c} onClick={() => setCatFilter(c)} disabled>{c}</Chip>
           ))}

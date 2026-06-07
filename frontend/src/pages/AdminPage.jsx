@@ -64,7 +64,7 @@ export default function AdminPage() {
                 <div className="text-2xl font-bold text-on-surface">
                   {loading ? '…' : (stats?.[c.key] ?? 0)}
                 </div>
-                <div className="text-[13px] text-on-surface-variant">{c.label}</div>
+                <div className="text-xs-plus text-on-surface-variant">{c.label}</div>
               </div>
             </div>
           </Card>

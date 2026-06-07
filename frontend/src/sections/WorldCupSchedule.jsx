@@ -1,4 +1,6 @@
 import { useRef } from 'react'
+import { parseISO, format, isPast } from 'date-fns'
+import { es } from 'date-fns/locale'
 import Icon from '../components/ui/Icon'
 
 const PARTIDOS = [
@@ -81,13 +83,11 @@ function faseBadge(fase) {
 }
 
 function formatFecha(fechaStr) {
-  const [y, m, d] = fechaStr.split('-')
-  const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-  return `${parseInt(d)} ${meses[parseInt(m)]}`
+  return format(parseISO(fechaStr), "d 'de' MMM", { locale: es })
 }
 
 function esPasado(fechaStr) {
-  return new Date(fechaStr) < new Date()
+  return isPast(parseISO(fechaStr))
 }
 
 export default function WorldCupSchedule() {
@@ -157,7 +157,7 @@ export default function WorldCupSchedule() {
               <div className="flex items-start gap-1 mt-auto pt-1 border-t border-outline-variant/50">
                 <Icon name="stadium" size={13} className="text-on-surface-variant shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-[11px] text-on-surface-variant leading-tight">{p.estadio}</div>
+                  <div className="text-2xs text-on-surface-variant leading-tight">{p.estadio}</div>
                   <div className="text-[10px] text-on-surface-variant/70 leading-tight">{p.ciudad}</div>
                 </div>
               </div>

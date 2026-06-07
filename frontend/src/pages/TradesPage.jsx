@@ -200,7 +200,7 @@ export default function TradesPage() {
                 <Icon name="auto_awesome" size={28} className="text-primary" />
                 <div>
                   <div className="font-semibold text-[15px] text-on-primary-container">Sugerencias inteligentes</div>
-                  <div className="text-[13px] text-on-primary-container/80">Basadas en tus faltantes y las repetidas de otros usuarios</div>
+                  <div className="text-xs-plus text-on-primary-container/80">Basadas en tus faltantes y las repetidas de otros usuarios</div>
                 </div>
               </div>
             </Card>
