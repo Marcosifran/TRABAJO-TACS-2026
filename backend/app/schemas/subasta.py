@@ -17,4 +17,10 @@ class SubastaResponse(BaseModel):
     id: str
     figurita_id: str
     usuario_id: int
-    estado: str = Field(..., description="Estado de la subasta")
+    inicio: dt.datetime
+    fin: dt.datetime
+    estado: EstadoSubasta
+    figurita_jugador: str | None = None
+    figurita_equipo: str | None = None
+    figurita_numero: int | None = None
+    oferta_ganadora_id: str | None = None
