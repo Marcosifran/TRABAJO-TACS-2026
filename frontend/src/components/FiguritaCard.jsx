@@ -12,12 +12,8 @@ const CAT_ICONS = {
   Leyenda: 'star', Especial: 'auto_awesome',
 }
 
-function cardGradient(seleccion) {
-  const c = FLAG_COLORS[seleccion] || ['#666', '#999', '#666']
-  return `linear-gradient(135deg, ${c[0]}, ${c[1]}, ${c[2]})`
-}
 
-export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null }) {
+export default function FiguritaCard({ figurita, compact = false, showTradeType = true, size = 'md', backActions = null, onAction = null }) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [maestro, setMaestro] = useState(null)
   const isCollection = size === 'collection'
@@ -99,10 +95,18 @@ export default function FiguritaCard({ figurita, compact = false, showTradeType 
             <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
               {backActions}
               {showTradeType && figurita.tipo === 'intercambio' && (
-                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-trade)' }}>Intercambio</div>
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-trade)' }}
+                  onClick={onAction ?? undefined}
+                >Intercambio</div>
               )}
               {showTradeType && figurita.tipo === 'subasta' && (
-                <div className="text-white text-center text-[10px] font-medium py-1 rounded-lg" style={{ backgroundColor: 'var(--color-auction)' }}>Subasta</div>
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-auction)' }}
+                  onClick={onAction ?? undefined}
+                >Subasta</div>
               )}
             </div>
           </div>

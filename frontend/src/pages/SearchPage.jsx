@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Input from '../components/ui/Input'
 import Chip from '../components/ui/Chip'
-import Modal from '../components/ui/Modal'
-import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
-import { buscarPublicaciones, listarMisPublicaciones } from '../api/publicaciones'
-import { listarMiAlbum } from '../api/album'
-import { proponerIntercambio } from '../api/intercambios'
+import { buscarPublicaciones } from '../api/publicaciones'
+import { listarSubastas } from '../api/subastas'
+import { isAuctionActive } from '../utils/auctionTime'
 
 const SELECCIONES = ['Argentina','Brasil','Francia','Alemania','España','Inglaterra','Portugal','México','USA','Canadá']
 const CATEGORIAS  = ['Escudo','Jugador','Estadio','Leyenda','Especial']
@@ -28,18 +27,14 @@ function pubToCard(pub) {
 }
 
 export default function SearchPage() {
-  const [query,       setQuery]       = useState('')
-  const [selFilter,   setSelFilter]   = useState('Todas')
-  const [catFilter,   setCatFilter]   = useState('Todas')
-  const [tipoFilter,  setTipoFilter]  = useState('todos')
-  const [results,     setResults]     = useState([])
-  const [loading,     setLoading]     = useState(false)
-  const [tradeModal,  setTradeModal]  = useState(null)
-  const [myAlbum,     setMyAlbum]     = useState([])
-  const [myPubs,      setMyPubs]      = useState([])
-  const [selectedOffer, setSelectedOffer] = useState([])
-  const [submitting,  setSubmitting]  = useState(false)
-  const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
+  const navigate = useNavigate()
+  const [query,      setQuery]      = useState('')
+  const [selFilter,  setSelFilter]  = useState('Todas')
+  const [catFilter,  setCatFilter]  = useState('Todas')
+  const [tipoFilter, setTipoFilter] = useState('todos')
+  const [results,    setResults]    = useState([])
+  const [loading,    setLoading]    = useState(false)
+  const [snack,      setSnack]      = useState({ open: false, message: '', type: 'info' })
   const debounceRef = useRef(null)
 
   const fetchResults = useCallback(async (q, sel, tipo) => {
@@ -76,54 +71,35 @@ export default function SearchPage() {
     return () => clearTimeout(debounceRef.current)
   }, [query, selFilter, tipoFilter, fetchResults])
 
-  useEffect(() => {
-    if (tradeModal) {
-      Promise.all([listarMiAlbum(), listarMisPublicaciones()])
-        .then(([album, pubs]) => {
-          setMyAlbum(album.figuritas || album)
-          setMyPubs(pubs)
-        })
-        .catch(e => setSnack({ open: true, message: 'Error cargando datos: ' + e.message, type: 'error' }))
-    }
-  }, [tradeModal])
+  function handleIntercambio(card) {
+    navigate('/intercambios', {
+      state: {
+        proponer: {
+          publicacion: { numero: card.numero, jugador: card.jugador, equipo: card.seleccion, usuario_id: card._usuarioId },
+          ofrecida_por: card.owner,
+        },
+      },
+    })
+  }
 
-  async function handleSendTrade() {
-    if (selectedOffer.length === 0) {
-      setSnack({ open: true, message: 'Seleccioná al menos una figurita para ofrecer', type: 'error' })
-      return
-    }
-    setSubmitting(true)
+  async function handleSubasta(pub) {
     try {
-      await proponerIntercambio({
-        figuritas_ofrecidas_numero: selectedOffer,
-        figurita_solicitada_numero: tradeModal.numero,
-        solicitado_a_id: tradeModal._usuarioId
-      })
-      setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
-      setTradeModal(null)
-      setSelectedOffer([])
-    } catch (e) {
-      setSnack({ open: true, message: 'Error al enviar propuesta: ' + e.message, type: 'error' })
-    } finally {
-      setSubmitting(false)
+      const subastas = await listarSubastas()
+      const activa = subastas.find(s => s.figurita_id === pub.id && isAuctionActive(s, Date.now()))
+      if (activa) {
+        navigate('/subastas', { state: { subastaId: activa.id } })
+      } else {
+        setSnack({ open: true, message: 'No hay subasta activa para esta figurita', type: 'info' })
+      }
+    } catch {
+      setSnack({ open: true, message: 'Error al buscar la subasta', type: 'error' })
     }
   }
-
-  function toggleOffer(numero) {
-    if (selectedOffer.includes(numero)) {
-      setSelectedOffer(prev => prev.filter(n => n !== numero))
-    } else {
-      setSelectedOffer(prev => [...prev, numero])
-    }
-  }
-
-  const cards = results.map(pubToCard)
 
   return (
     <div className="p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-on-surface mb-4">Buscar Figuritas</h1>
 
-      {/* Search & Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Input value={query} onChange={setQuery} icon="search" placeholder="Buscar por jugador, número o selección..." />
@@ -149,7 +125,6 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Results */}
       {loading ? (
         <div className="text-center py-12"><Icon name="progress_activity" className="text-primary animate-spin" /></div>
       ) : results.length > 0 ? (
@@ -161,11 +136,7 @@ export default function SearchPage() {
                 key={pub.id}
                 figurita={card}
                 size="collection"
-                backActions={card.tipo === 'intercambio' ? (
-                  <Button size="sm" icon="swap_horiz" onClick={() => setTradeModal(card)}>
-                    Proponer
-                  </Button>
-                ) : null}
+                onAction={card.tipo === 'intercambio' ? () => handleIntercambio(card) : () => handleSubasta(pub)}
               />
             )
           })}
@@ -176,64 +147,6 @@ export default function SearchPage() {
           title="Sin resultados"
           subtitle="No hay figuritas publicadas por otros usuarios en este momento"
         />
-      )}
-
-      {/* Trade Modal */}
-      {tradeModal && (
-        <Modal
-          open={!!tradeModal}
-          onClose={() => { setTradeModal(null); setSelectedOffer([]) }}
-          title="Proponer intercambio"
-          width={560}
-        >
-          {tradeModal && (
-            <div>
-              <div className="bg-surface-container rounded-xl p-3.5 mb-5 flex items-center gap-3.5">
-                <Icon name="arrow_forward" size={20} className="text-primary" />
-                <div>
-                  <div className="text-xs text-on-surface-variant">Querés obtener</div>
-                  <div className="font-semibold text-on-surface">#{tradeModal.numero} {tradeModal.jugador} ({tradeModal.seleccion})</div>
-                  <div className="text-xs text-on-surface-variant">de {tradeModal.owner}</div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="text-sm font-semibold text-on-surface mb-2.5">Tus figuritas (seleccioná para ofrecer):</div>
-                {myAlbum.length === 0 ? (
-                  <div className="text-sm text-on-surface-variant italic py-2">No tenés figuritas en tu álbum para ofrecer.</div>
-                ) : (
-                  <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-1">
-                    {myAlbum.map(fig => {
-                      const isSubasta = myPubs.find(p => p.figurita_personal_id === fig.id && p.tipo_intercambio === 'subasta')
-                      return (
-                        <Chip
-                          key={fig.id}
-                          selected={selectedOffer.includes(fig.numero)}
-                          onClick={() => toggleOffer(fig.numero)}
-                          disabled={!!isSubasta}
-                          title={isSubasta ? "Esta figurita está en subasta" : ""}
-                        >
-                          #{fig.numero} {fig.jugador || fig.equipo}
-                        </Chip>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2.5 justify-end mt-5">
-                <Button variant="text" onClick={() => { setTradeModal(null); setSelectedOffer([]) }}>Cancelar</Button>
-                <Button
-                  icon={submitting ? "progress_activity" : "send"}
-                  onClick={handleSendTrade}
-                  disabled={selectedOffer.length === 0 || submitting}
-                >
-                  {submitting ? "Enviando..." : "Enviar propuesta"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </Modal>
       )}
 
       <Snackbar {...snack} onClose={() => setSnack({ ...snack, open: false })} />

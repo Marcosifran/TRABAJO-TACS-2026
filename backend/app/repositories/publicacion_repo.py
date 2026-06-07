@@ -62,7 +62,7 @@ def find(
         query["tipo_intercambio"] = {"$regex": f"^{tipo_intercambio}$", "$options": "i"}
     if usuario_id is not None:
         query["usuario_id"] = {"$ne": usuario_id}
-    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0}).skip(offset).limit(limit)]
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0}).sort("_id", -1).skip(offset).limit(limit)]
 
 
 def create(

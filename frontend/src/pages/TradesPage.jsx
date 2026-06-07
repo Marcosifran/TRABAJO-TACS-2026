@@ -50,6 +50,9 @@ export default function TradesPage() {
   }, [])
 
   useEffect(() => {
+    if (location.state?.proponer) {
+      setSugTradeModal(location.state.proponer)
+    }
     fetchIntercambios()
   }, [fetchIntercambios])
 
