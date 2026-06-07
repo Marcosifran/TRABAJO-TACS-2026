@@ -13,37 +13,51 @@ import { listarIntercambios } from '../api/intercambios'
 
 export default function ProfilePage() {
   const { user, users } = useUser()
-  const [publicaciones,      setPublicaciones]      = useState([])
-  const [faltanCount,        setFaltanCount]        = useState(0)
-  const [intercambiosCount,  setIntercambiosCount]  = useState(0)
-  const [reputacion,         setReputacion]         = useState(null)
+  const [publicaciones, setPublicaciones] = useState([])
+  const [faltanCount, setFaltanCount] = useState(0)
+  const [intercambiosCount, setIntercambiosCount] = useState(0)
+  const [reputacion, setReputacion] = useState(null)
 
   useEffect(() => {
     listarMisPublicaciones()
-      .then(data => setPublicaciones(data))
+      .then((data) => setPublicaciones(data))
       .catch(() => {})
     listarFaltantes()
-      .then(data => setFaltanCount((data || []).length))
+      .then((data) => setFaltanCount((data || []).length))
       .catch(() => {})
     listarIntercambios()
-      .then(data => {
-        const aceptados = [
-          ...(data.enviados  || []),
-          ...(data.recibidos || []),
-        ].filter(i => i.estado === 'aceptado').length
+      .then((data) => {
+        const aceptados = [...(data.enviados || []), ...(data.recibidos || [])].filter(
+          (i) => i.estado === 'aceptado',
+        ).length
         setIntercambiosCount(aceptados)
       })
       .catch(() => {})
     const userId = users.indexOf(user) + 1
     obtenerReputacion(userId)
-      .then(data => setReputacion(data))
+      .then((data) => setReputacion(data))
       .catch(() => {})
   }, [user])
 
   const STATS = [
-    { icon: 'collections_bookmark', label: 'Figuritas',   value: publicaciones.length, colorVar: 'var(--color-primary)' },
-    { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,          colorVar: 'var(--color-secondary)' },
-    { icon: 'swap_horiz',           label: 'Intercambios', value: intercambiosCount,    colorVar: 'var(--color-tertiary)' },
+    {
+      icon: 'collections_bookmark',
+      label: 'Figuritas',
+      value: publicaciones.length,
+      colorVar: 'var(--color-primary)',
+    },
+    {
+      icon: 'playlist_add',
+      label: 'Faltan',
+      value: faltanCount,
+      colorVar: 'var(--color-secondary)',
+    },
+    {
+      icon: 'swap_horiz',
+      label: 'Intercambios',
+      value: intercambiosCount,
+      colorVar: 'var(--color-tertiary)',
+    },
   ]
 
   const ultimas = publicaciones.slice(-5).reverse()
@@ -59,14 +73,18 @@ export default function ProfilePage() {
             <div className="flex items-center gap-1.5">
               <StarRating value={reputacion?.promedio_puntuacion ?? 0} size={20} />
               <span className="text-sm font-semibold text-on-surface">
-                {reputacion?.promedio_puntuacion != null ? reputacion.promedio_puntuacion.toFixed(1) : '—'}
+                {reputacion?.promedio_puntuacion != null
+                  ? reputacion.promedio_puntuacion.toFixed(1)
+                  : '—'}
               </span>
               <span className="text-xs-plus text-on-surface-variant">
                 ({reputacion?.cantidad_calificaciones ?? 0} calificaciones)
               </span>
             </div>
           </div>
-          <Button variant="outlined" icon="edit">Editar perfil</Button>
+          <Button variant="outlined" icon="edit">
+            Editar perfil
+          </Button>
         </div>
       </Card>
 
@@ -89,7 +107,7 @@ export default function ProfilePage() {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {ultimas.map(pub => (
+          {ultimas.map((pub) => (
             <FiguritaCard
               key={pub.id}
               compact

@@ -21,22 +21,36 @@ export default function App() {
   return (
     <ThemeProvider>
       <UserProvider>
-      <BrowserRouter>
-        <AppShell>
-          <Routes>
-            <Route path="/"              element={<HomePage />} />
-            <Route path="/coleccion"     element={<CollectionPage />} />
-            <Route path="/buscar"        element={<SearchPage />} />
-            <Route path="/intercambios"  element={<TradesPage />} />
-            <Route path="/subastas"      element={<AuctionsPage />} />
-            <Route path="/alertas"       element={<NotificationsPage />} />
-            <Route path="/perfil"        element={<ProfilePage />} />
-            <Route path="/admin"                element={<RequireAdmin><AdminPage /></RequireAdmin>} />
-            <Route path="/admin/calificaciones" element={<RequireAdmin><AdminCalificacionesPage /></RequireAdmin>} />
-            <Route path="*"              element={<Navigate to="/" replace />} />
-          </Routes>
-        </AppShell>
-      </BrowserRouter>
+        <BrowserRouter>
+          <AppShell>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/coleccion" element={<CollectionPage />} />
+              <Route path="/buscar" element={<SearchPage />} />
+              <Route path="/intercambios" element={<TradesPage />} />
+              <Route path="/subastas" element={<AuctionsPage />} />
+              <Route path="/alertas" element={<NotificationsPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <AdminPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin/calificaciones"
+                element={
+                  <RequireAdmin>
+                    <AdminCalificacionesPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AppShell>
+        </BrowserRouter>
       </UserProvider>
     </ThemeProvider>
   )

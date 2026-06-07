@@ -4,66 +4,68 @@
 
 /* ── Verde Cancha – Light ── */
 :root {
-  --color-primary:                #006847;
-  --color-on-primary:             #FFFFFF;
-  --color-primary-container:      #A0F2C6;
-  --color-on-primary-container:   #00210E;
-  --color-secondary:              #C8102E;
-  --color-on-secondary:           #FFFFFF;
-  --color-secondary-container:    #FFDAD6;
+  --color-primary: #006847;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #a0f2c6;
+  --color-on-primary-container: #00210e;
+  --color-secondary: #c8102e;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #ffdad6;
   --color-on-secondary-container: #410002;
-  --color-tertiary:               #1B4D8E;
-  --color-on-tertiary:            #FFFFFF;
-  --color-tertiary-container:     #D4E3FF;
-  --color-on-tertiary-container:  #001C3A;
-  --color-surface:                #F5FFF6;
-  --color-on-surface:             #191C19;
-  --color-surface-variant:        #DCE5DB;
-  --color-on-surface-variant:     #414941;
-  --color-surface-container:      #E8F0E8;
-  --color-surface-container-high: #E2EAE2;
-  --color-surface-container-low:  #EEF6EE;
-  --color-surface-dim:            #D5DDD5;
-  --color-outline:                #717971;
-  --color-outline-variant:        #C1C9C0;
-  --color-gold:                   #D4A843;
-  --color-error:                  #BA1A1A;
-  --color-trade:                  #6750A4; /* Violeta */
-  --color-auction:                #BF4F00; /* Naranja */
+  --color-tertiary: #1b4d8e;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #d4e3ff;
+  --color-on-tertiary-container: #001c3a;
+  --color-surface: #f5fff6;
+  --color-on-surface: #191c19;
+  --color-surface-variant: #dce5db;
+  --color-on-surface-variant: #414941;
+  --color-surface-container: #e8f0e8;
+  --color-surface-container-high: #e2eae2;
+  --color-surface-container-low: #eef6ee;
+  --color-surface-dim: #d5ddd5;
+  --color-outline: #717971;
+  --color-outline-variant: #c1c9c0;
+  --color-gold: #d4a843;
+  --color-error: #ba1a1a;
+  --color-trade: #6750a4; /* Violeta */
+  --color-auction: #bf4f00; /* Naranja */
 }
 
 /* ── Verde Cancha – Dark ── */
 .dark {
-  --color-primary:                #84D5AB;
-  --color-on-primary:             #00391C;
-  --color-primary-container:      #006847;
-  --color-on-primary-container:   #A0F2C6;
-  --color-secondary:              #FFB4AB;
-  --color-on-secondary:           #690005;
-  --color-secondary-container:    #93000A;
-  --color-on-secondary-container: #FFDAD6;
-  --color-tertiary:               #A5C8FF;
-  --color-on-tertiary:            #00315E;
-  --color-tertiary-container:     #1B4D8E;
-  --color-on-tertiary-container:  #D4E3FF;
-  --color-surface:                #111411;
-  --color-on-surface:             #E1E3DE;
-  --color-surface-variant:        #414941;
-  --color-on-surface-variant:     #C1C9C0;
-  --color-surface-container:      #1D201D;
-  --color-surface-container-high: #272A27;
-  --color-surface-container-low:  #191C19;
-  --color-surface-dim:            #111411;
-  --color-outline:                #8B938A;
-  --color-outline-variant:        #414941;
-  --color-gold:                   #D4A843;
-  --color-error:                  #FFB4AB;
-  --color-trade:                  #D0BCFF; /* Violeta claro */
-  --color-auction:                #FFB488; /* Naranja claro */
+  --color-primary: #84d5ab;
+  --color-on-primary: #00391c;
+  --color-primary-container: #006847;
+  --color-on-primary-container: #a0f2c6;
+  --color-secondary: #ffb4ab;
+  --color-on-secondary: #690005;
+  --color-secondary-container: #93000a;
+  --color-on-secondary-container: #ffdad6;
+  --color-tertiary: #a5c8ff;
+  --color-on-tertiary: #00315e;
+  --color-tertiary-container: #1b4d8e;
+  --color-on-tertiary-container: #d4e3ff;
+  --color-surface: #111411;
+  --color-on-surface: #e1e3de;
+  --color-surface-variant: #414941;
+  --color-on-surface-variant: #c1c9c0;
+  --color-surface-container: #1d201d;
+  --color-surface-container-high: #272a27;
+  --color-surface-container-low: #191c19;
+  --color-surface-dim: #111411;
+  --color-outline: #8b938a;
+  --color-outline-variant: #414941;
+  --color-gold: #d4a843;
+  --color-error: #ffb4ab;
+  --color-trade: #d0bcff; /* Violeta claro */
+  --color-auction: #ffb488; /* Naranja claro */
 }
 
 @layer base {
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
   body {
     background: var(--color-surface);
     color: var(--color-on-surface);
@@ -73,20 +75,40 @@
 }
 
 @layer utilities {
-  .scrollbar-none { scrollbar-width: none; }
-  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(0.95) translateY(8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 @keyframes snackIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0);    }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
-.animate-modal { animation: modalIn 0.22s ease; }
-.animate-snack  { animation: snackIn  0.25s ease; }
+.animate-modal {
+  animation: modalIn 0.22s ease;
+}
+.animate-snack {
+  animation: snackIn 0.25s ease;
+}
 
 .perspective {
   perspective: 1200px;
@@ -98,11 +120,7 @@
   border-radius: 24px;
   overflow: hidden;
 
-  background: linear-gradient(
-    135deg,
-    #18181b,
-    #27272a
-  );
+  background: linear-gradient(135deg, #18181b, #27272a);
 
   transform-style: preserve-3d;
   transition: transform 0.2s ease-out;
@@ -110,17 +128,15 @@
 }
 
 .tilt-card::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
 
-  background:
-    radial-gradient(
-      circle at var(--mouse-x, 50%)
-      var(--mouse-y, 50%),
-      rgba(255,255,255,.25),
-      transparent 35%
-    );
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.25),
+    transparent 35%
+  );
 
   pointer-events: none;
 }
@@ -130,7 +146,15 @@
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(110%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  from {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
-.animate-slide-in-right { animation: slideInRight 0.3s ease; }
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease;
+}

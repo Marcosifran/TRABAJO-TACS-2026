@@ -1,6 +1,6 @@
-import Button from "./ui/Button";
-import { lineaCierraEn, isAuctionActive } from "../utils/auctionTime";
-import { useNow } from "../hooks/useNow";
+import Button from './ui/Button'
+import { lineaCierraEn, isAuctionActive } from '../utils/auctionTime'
+import { useNow } from '../hooks/useNow'
 
 export default function SubastaCardRow({
   sub,
@@ -12,11 +12,11 @@ export default function SubastaCardRow({
   onCancelar,
   showVerOfertasButton = true,
 }) {
-  const currentUserId = users.indexOf(user) + 1;
-  const isOwner = sub.usuario_id === currentUserId;
-  const now = useNow();
-  const activa = isAuctionActive(sub, now);
-  const cierre = lineaCierraEn(sub.fin);
+  const currentUserId = users.indexOf(user) + 1
+  const isOwner = sub.usuario_id === currentUserId
+  const now = useNow()
+  const activa = isAuctionActive(sub, now)
+  const cierre = lineaCierraEn(sub.fin)
 
   return (
     <div className="p-5 bg-surface rounded-2xl border border-outline-variant flex flex-wrap items-center gap-4 justify-between shadow-sm">
@@ -28,7 +28,10 @@ export default function SubastaCardRow({
         </h3>
         <p className="text-on-surface-variant text-sm mt-1">
           {pubsMap[sub.figurita_id] && (
-            <>{pubsMap[sub.figurita_id].equipo}<br /></>
+            <>
+              {pubsMap[sub.figurita_id].equipo}
+              <br />
+            </>
           )}
           {activa && cierre && (
             <>
@@ -36,11 +39,9 @@ export default function SubastaCardRow({
               <br />
             </>
           )}
-          Estado:{" "}
-          <span
-            className={`capitalize font-medium ${activa ? "text-green-600" : "text-error"}`}
-          >
-            {activa ? "activa" : "finalizada"}
+          Estado:{' '}
+          <span className={`capitalize font-medium ${activa ? 'text-green-600' : 'text-error'}`}>
+            {activa ? 'activa' : 'finalizada'}
           </span>
         </p>
       </div>
@@ -50,11 +51,7 @@ export default function SubastaCardRow({
             Ofertar
           </Button>
         ) : showVerOfertasButton && onVerOfertas ? (
-          <Button
-            variant="outlined"
-            icon="format_list_bulleted"
-            onClick={() => onVerOfertas(sub)}
-          >
+          <Button variant="outlined" icon="format_list_bulleted" onClick={() => onVerOfertas(sub)}>
             Ver ofertas
           </Button>
         ) : null}
@@ -65,5 +62,5 @@ export default function SubastaCardRow({
         )}
       </div>
     </div>
-  );
+  )
 }

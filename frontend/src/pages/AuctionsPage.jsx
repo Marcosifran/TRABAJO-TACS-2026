@@ -1,14 +1,14 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import { useNow } from "../hooks/useNow";
-import { isAuctionActive } from "../utils/auctionTime";
-import Button from "../components/ui/Button";
-import Icon from "../components/ui/Icon";
-import Tabs from "../components/ui/Tabs";
-import Modal from "../components/ui/Modal";
-import Input from "../components/ui/Input";
-import EmptyState from "../components/ui/EmptyState";
-import Snackbar from "../components/ui/Snackbar";
+import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useNow } from '../hooks/useNow'
+import { isAuctionActive } from '../utils/auctionTime'
+import Button from '../components/ui/Button'
+import Icon from '../components/ui/Icon'
+import Tabs from '../components/ui/Tabs'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import EmptyState from '../components/ui/EmptyState'
+import Snackbar from '../components/ui/Snackbar'
 import {
   listarSubastas,
   listarMisSubastas,
@@ -19,47 +19,44 @@ import {
   listarMisOfertas,
   cancelarOferta,
   aceptarOferta,
-} from "../api/subastas";
-import {
-  listarMisPublicaciones,
-  buscarPublicaciones,
-} from "../api/publicaciones";
-import { listarMiAlbum } from "../api/album";
-import { useUser } from "../context/UserContext";
-import SubastaCardRow from "../components/SubastaCardRow";
+} from '../api/subastas'
+import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
+import { listarMiAlbum } from '../api/album'
+import { useUser } from '../context/UserContext'
+import SubastaCardRow from '../components/SubastaCardRow'
 
-const EMPTY_AUCTION = { figurita_id: "", duracion: "24" };
+const EMPTY_AUCTION = { figurita_id: '', duracion: '24' }
 
 export default function AuctionsPage() {
-  const { user, users } = useUser();
-  const location = useLocation();
-  const now = useNow();
-  const pendingSubastaRef = useRef(location.state?.subastaId ?? null);
-  const [tab, setTab] = useState("activas");
-  const [subastas, setSubastas] = useState([]);
-  const [misSubastas, setMisSubastas] = useState([]);
-  const [misPublicaciones, setMisPublicaciones] = useState([]);
-  const [miAlbum, setMiAlbum] = useState([]);
-  const [pubsMap, setPubsMap] = useState({});
+  const { user, users } = useUser()
+  const location = useLocation()
+  const now = useNow()
+  const pendingSubastaRef = useRef(location.state?.subastaId ?? null)
+  const [tab, setTab] = useState('activas')
+  const [subastas, setSubastas] = useState([])
+  const [misSubastas, setMisSubastas] = useState([])
+  const [misPublicaciones, setMisPublicaciones] = useState([])
+  const [miAlbum, setMiAlbum] = useState([])
+  const [pubsMap, setPubsMap] = useState({})
 
-  const [bidModal, setBidModal] = useState(null);
-  const [offerIds, setOfferIds] = useState([]);
-  const [offersModal, setOffersModal] = useState(null);
-  const [ofertas, setOfertas] = useState([]);
-  const [loadingOfertas, setLoadingOfertas] = useState(false);
-  const [misOfertas, setMisOfertas] = useState([]);
-  const [loadingMisOfertas, setLoadingMisOfertas] = useState(false);
+  const [bidModal, setBidModal] = useState(null)
+  const [offerIds, setOfferIds] = useState([])
+  const [offersModal, setOffersModal] = useState(null)
+  const [ofertas, setOfertas] = useState([])
+  const [loadingOfertas, setLoadingOfertas] = useState(false)
+  const [misOfertas, setMisOfertas] = useState([])
+  const [loadingMisOfertas, setLoadingMisOfertas] = useState(false)
 
-  const [createModal, setCreate] = useState(false);
-  const [newAuction, setNewAuction] = useState(EMPTY_AUCTION);
-  const [confirmCancelModal, setConfirmCancelModal] = useState(null);
+  const [createModal, setCreate] = useState(false)
+  const [newAuction, setNewAuction] = useState(EMPTY_AUCTION)
+  const [confirmCancelModal, setConfirmCancelModal] = useState(null)
 
   const [snack, setSnack] = useState({
     open: false,
-    message: "",
-    type: "info",
-  });
-  const [loading, setLoading] = useState(false);
+    message: '',
+    type: 'info',
+  })
+  const [loading, setLoading] = useState(false)
 
   const cargarDatos = async () => {
     try {
@@ -69,208 +66,204 @@ export default function AuctionsPage() {
         listarMisPublicaciones(),
         buscarPublicaciones(),
         listarMiAlbum(),
-      ]);
-      setSubastas(subs || []);
-      setMisSubastas(misSubs || []);
-      setMisPublicaciones(pubs.filter((p) => p.tipo_intercambio === "subasta"));
-      setMiAlbum(album);
-      const map = {};
-      [...pubs, ...otrasPubs].forEach((p) => {
-        map[p.id] = p;
-      });
-      setPubsMap(map);
+      ])
+      setSubastas(subs || [])
+      setMisSubastas(misSubs || [])
+      setMisPublicaciones(pubs.filter((p) => p.tipo_intercambio === 'subasta'))
+      setMiAlbum(album)
+      const map = {}
+      ;[...pubs, ...otrasPubs].forEach((p) => {
+        map[p.id] = p
+      })
+      setPubsMap(map)
     } catch (error) {
       setSnack({
         open: true,
-        message: "Error al cargar datos: " + error.message,
-        type: "error",
-      });
+        message: 'Error al cargar datos: ' + error.message,
+        type: 'error',
+      })
     }
-  };
+  }
 
   useEffect(() => {
-    cargarDatos();
-  }, []);
+    cargarDatos()
+  }, [])
 
   useEffect(() => {
     if (!pendingSubastaRef.current || subastas.length === 0) return
-    const target = subastas.find(s => s.id === pendingSubastaRef.current)
+    const target = subastas.find((s) => s.id === pendingSubastaRef.current)
     if (target) {
       setBidModal(target)
       setOfferIds([])
     }
     pendingSubastaRef.current = null
-  }, [subastas]);
+  }, [subastas])
 
   async function handleCreate() {
     if (!newAuction.figurita_id) {
       setSnack({
         open: true,
-        message: "Seleccioná una publicación",
-        type: "error",
-      });
-      return;
+        message: 'Seleccioná una publicación',
+        type: 'error',
+      })
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const inicio = new Date();
-      const fin = new Date();
-      fin.setHours(fin.getHours() + Number(newAuction.duracion));
+      const inicio = new Date()
+      const fin = new Date()
+      fin.setHours(fin.getHours() + Number(newAuction.duracion))
 
       await crearSubasta({
         figurita_id: newAuction.figurita_id,
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
-      });
+      })
 
       setSnack({
         open: true,
-        message: "Subasta iniciada con éxito",
-        type: "success",
-      });
-      setCreate(false);
-      setNewAuction(EMPTY_AUCTION);
-      cargarDatos();
+        message: 'Subasta iniciada con éxito',
+        type: 'success',
+      })
+      setCreate(false)
+      setNewAuction(EMPTY_AUCTION)
+      cargarDatos()
     } catch (error) {
-      setSnack({ open: true, message: error.message, type: "error" });
+      setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   async function cargarMisOfertas() {
-    setLoadingMisOfertas(true);
+    setLoadingMisOfertas(true)
     try {
-      const data = await listarMisOfertas();
-      setMisOfertas(data || []);
+      const data = await listarMisOfertas()
+      setMisOfertas(data || [])
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: "error" });
+      setSnack({ open: true, message: e.message, type: 'error' })
     } finally {
-      setLoadingMisOfertas(false);
+      setLoadingMisOfertas(false)
     }
   }
 
   async function handleCancelarOferta(oferta) {
     try {
-      await cancelarOferta(oferta.subasta_id, oferta.id);
-      setMisOfertas((prev) => prev.filter((o) => o.id !== oferta.id));
-      setSnack({ open: true, message: "Oferta cancelada", type: "info" });
+      await cancelarOferta(oferta.subasta_id, oferta.id)
+      setMisOfertas((prev) => prev.filter((o) => o.id !== oferta.id))
+      setSnack({ open: true, message: 'Oferta cancelada', type: 'info' })
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: "error" });
+      setSnack({ open: true, message: e.message, type: 'error' })
     }
   }
 
   function handleCancelarSubasta(sub) {
-    setConfirmCancelModal(sub);
+    setConfirmCancelModal(sub)
   }
 
   async function handleConfirmarCancelacion() {
-    const sub = confirmCancelModal;
-    setConfirmCancelModal(null);
+    const sub = confirmCancelModal
+    setConfirmCancelModal(null)
     try {
-      await cancelarSubasta(sub.id);
-      setSnack({ open: true, message: "Subasta cancelada", type: "info" });
-      cargarDatos();
+      await cancelarSubasta(sub.id)
+      setSnack({ open: true, message: 'Subasta cancelada', type: 'info' })
+      cargarDatos()
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: "error" });
+      setSnack({ open: true, message: e.message, type: 'error' })
     }
   }
 
   async function abrirOfertas(sub) {
-    setOffersModal(sub);
-    setOfertas([]);
-    setLoadingOfertas(true);
+    setOffersModal(sub)
+    setOfertas([])
+    setLoadingOfertas(true)
     try {
-      const data = await listarOfertas(sub.id);
-      setOfertas(data || []);
+      const data = await listarOfertas(sub.id)
+      setOfertas(data || [])
     } catch (e) {
-      setSnack({ open: true, message: e.message, type: "error" });
+      setSnack({ open: true, message: e.message, type: 'error' })
     } finally {
-      setLoadingOfertas(false);
+      setLoadingOfertas(false)
     }
   }
 
   function toggleOferta(id) {
     setOfferIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((offerId) => offerId !== id)
-        : [...prev, id],
-    );
+      prev.includes(id) ? prev.filter((offerId) => offerId !== id) : [...prev, id],
+    )
   }
 
   async function handleOfertar() {
     if (offerIds.length === 0) {
       setSnack({
         open: true,
-        message: "Seleccioná al menos una figurita",
-        type: "error",
-      });
-      return;
+        message: 'Seleccioná al menos una figurita',
+        type: 'error',
+      })
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      await ofertarSubasta(bidModal.id, offerIds);
+      await ofertarSubasta(bidModal.id, offerIds)
       setSnack({
         open: true,
-        message: "Oferta enviada con éxito",
-        type: "success",
-      });
-      setBidModal(null);
-      setOfferIds([]);
+        message: 'Oferta enviada con éxito',
+        type: 'success',
+      })
+      setBidModal(null)
+      setOfferIds([])
     } catch (error) {
-      setSnack({ open: true, message: error.message, type: "error" });
+      setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   async function handleAceptarOferta(ofertaId) {
-    setLoading(true);
+    setLoading(true)
     try {
-      await aceptarOferta(offersModal.id, ofertaId);
+      await aceptarOferta(offersModal.id, ofertaId)
 
       setSnack({
         open: true,
-        message: "Oferta aceptada",
-        type: "success",
-      });
-      setOffersModal(null);
-      cargarDatos();
+        message: 'Oferta aceptada',
+        type: 'success',
+      })
+      setOffersModal(null)
+      cargarDatos()
     } catch (error) {
-      setSnack({ open: true, message: error.message, type: "error" });
+      setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   // Preparamos las opciones para el select (solo publicaciones tipo subasta)
   const figuritasEnSubastaActiva = new Set(
-    misSubastas.filter((s) => isAuctionActive(s, now)).map((s) => s.figurita_id)
-  );
+    misSubastas.filter((s) => isAuctionActive(s, now)).map((s) => s.figurita_id),
+  )
   const opcionesSubasta = misPublicaciones
     .filter((p) => !figuritasEnSubastaActiva.has(p.id))
     .map((p) => ({
       value: p.id,
       label: `${p.jugador} (${p.equipo})`,
-    }));
-  opcionesSubasta.unshift({ value: "", label: "Seleccioná una figurita..." });
+    }))
+  opcionesSubasta.unshift({ value: '', label: 'Seleccioná una figurita...' })
 
   // Filtramos las activas para que no muestre las finalizadas
-  const activasFiltradas = subastas.filter((sub) => isAuctionActive(sub, now));
+  const activasFiltradas = subastas.filter((sub) => isAuctionActive(sub, now))
 
   // Decidimos qué lista usar según la pestaña
-  const listaSubastas = tab === "activas" ? activasFiltradas : misSubastas;
+  const listaSubastas = tab === 'activas' ? activasFiltradas : misSubastas
 
   return (
     <div className="p-8 max-w-[1000px]">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-on-surface m-0">Subastas</h1>
-          <p className="mt-1 text-on-surface-variant text-sm">
-            {subastas.length} subastas activas
-          </p>
+          <p className="mt-1 text-on-surface-variant text-sm">{subastas.length} subastas activas</p>
         </div>
         <Button icon="add" onClick={() => setCreate(true)}>
           Iniciar subasta
@@ -279,19 +272,19 @@ export default function AuctionsPage() {
 
       <Tabs
         tabs={[
-          { id: "activas", label: "Activas" },
-          { id: "mis", label: "Mis subastas" },
-          { id: "ofertas", label: "Mis ofertas" },
+          { id: 'activas', label: 'Activas' },
+          { id: 'mis', label: 'Mis subastas' },
+          { id: 'ofertas', label: 'Mis ofertas' },
         ]}
         active={tab}
         onChange={(t) => {
-          setTab(t);
-          if (t === "ofertas") cargarMisOfertas();
+          setTab(t)
+          if (t === 'ofertas') cargarMisOfertas()
         }}
       />
 
       <div className="mt-5">
-        {tab === "ofertas" ? (
+        {tab === 'ofertas' ? (
           loadingMisOfertas ? (
             <div className="flex items-center justify-center gap-3 py-16 text-on-surface-variant">
               <span className="material-symbols-outlined animate-spin text-2xl">
@@ -315,26 +308,24 @@ export default function AuctionsPage() {
                   <div className="flex flex-col gap-1">
                     <span className="font-bold text-primary text-base">
                       {oferta.figurita_subastada
-                        ? `${oferta.figurita_subastada.jugador} — ${oferta.subasta ? (users[oferta.subasta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.subasta.usuario_id}`) : ""}`
+                        ? `${oferta.figurita_subastada.jugador} — ${oferta.subasta ? (users[oferta.subasta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.subasta.usuario_id}`) : ''}`
                         : `Subasta #${oferta.subasta_id}`}
                     </span>
                     <span className="text-sm text-on-surface-variant">
-                      Figurita subastada:{" "}
+                      Figurita subastada:{' '}
                       {oferta.figurita_subastada
                         ? `${oferta.figurita_subastada.jugador} (${oferta.figurita_subastada.equipo})`
                         : `#${oferta.subasta_id}`}
                     </span>
                     <span className="text-sm text-on-surface-variant">
-                      Ofreciste:{" "}
+                      Ofreciste:{' '}
                       {(oferta.ofrecidas_detalle?.length
-                        ? oferta.ofrecidas_detalle.map(
-                            (f) => `${f.jugador} (${f.equipo})`,
-                          )
+                        ? oferta.ofrecidas_detalle.map((f) => `${f.jugador} (${f.equipo})`)
                         : oferta.ofrecidas.map((id) => `#${id}`)
-                      ).join(", ")}
+                      ).join(', ')}
                     </span>
                     {(() => {
-                      const activa = isAuctionActive(oferta.subasta, now);
+                      const activa = isAuctionActive(oferta.subasta, now)
 
                       // Si sigue activa, mostramos el texto normal
                       if (activa) {
@@ -342,35 +333,34 @@ export default function AuctionsPage() {
                           <span className="text-xs font-medium mt-0.5 text-green-600">
                             Subasta activa
                           </span>
-                        );
+                        )
                       }
 
                       // Si ya finalizó, nos fijamos si esta oferta es la ganadora
-                      const esGanadora =
-                        oferta.subasta?.oferta_ganadora_id === oferta.id;
+                      const esGanadora = oferta.subasta?.oferta_ganadora_id === oferta.id
 
                       return (
                         <span
                           className={`text-sm font-bold mt-1 ${
-                            esGanadora ? "text-green-600" : "text-error"
+                            esGanadora ? 'text-green-600' : 'text-error'
                           }`}
                         >
                           {esGanadora
-                            ? "¡Oferta aceptada! 🎉"
-                            : "Subasta finalizada - No fuiste elegido"}
+                            ? '¡Oferta aceptada! 🎉'
+                            : 'Subasta finalizada - No fuiste elegido'}
                         </span>
-                      );
+                      )
                     })()}
                   </div>
                   {isAuctionActive(oferta.subasta, now) && (
-                      <Button
-                        variant="outlined"
-                        icon="cancel"
-                        onClick={() => handleCancelarOferta(oferta)}
-                      >
-                        Cancelar
-                      </Button>
-                    )}
+                    <Button
+                      variant="outlined"
+                      icon="cancel"
+                      onClick={() => handleCancelarOferta(oferta)}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -380,9 +370,9 @@ export default function AuctionsPage() {
             icon="gavel"
             title="Sin subastas"
             subtitle={
-              tab === "activas"
-                ? "No hay subastas en este momento."
-                : "No creaste ninguna subasta aún."
+              tab === 'activas'
+                ? 'No hay subastas en este momento.'
+                : 'No creaste ninguna subasta aún.'
             }
             action="Iniciar subasta"
             onAction={() => setCreate(true)}
@@ -397,8 +387,8 @@ export default function AuctionsPage() {
                 user={user}
                 users={users}
                 onOfertar={(s) => {
-                  setBidModal(s);
-                  setOfferIds([]);
+                  setBidModal(s)
+                  setOfferIds([])
                 }}
                 onVerOfertas={abrirOfertas}
                 onCancelar={handleCancelarSubasta}
@@ -412,7 +402,11 @@ export default function AuctionsPage() {
       <Modal
         open={!!bidModal}
         onClose={() => setBidModal(null)}
-        title={bidModal && pubsMap[bidModal.figurita_id] ? `Ofertar — ${pubsMap[bidModal.figurita_id].jugador}` : "Ofertar"}
+        title={
+          bidModal && pubsMap[bidModal.figurita_id]
+            ? `Ofertar — ${pubsMap[bidModal.figurita_id].jugador}`
+            : 'Ofertar'
+        }
         width={520}
       >
         {bidModal && (
@@ -423,15 +417,15 @@ export default function AuctionsPage() {
 
             {miAlbum.length === 0 ? (
               <div className="p-4 bg-error-container text-on-error-container rounded-lg text-sm">
-                No tenés figuritas en tu álbum personal para ofrecer. Agregá
-                figuritas desde Mi Colección.
+                No tenés figuritas en tu álbum personal para ofrecer. Agregá figuritas desde Mi
+                Colección.
               </div>
             ) : (
               <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}
-                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${offerIds.includes(fig.id) ? "border-primary bg-primary-container/20" : "border-outline-variant hover:bg-surface-container-low"}`}
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
                   >
                     <input
                       type="checkbox"
@@ -451,11 +445,7 @@ export default function AuctionsPage() {
             )}
 
             <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-outline-variant">
-              <Button
-                variant="text"
-                onClick={() => setBidModal(null)}
-                disabled={loading}
-              >
+              <Button variant="text" onClick={() => setBidModal(null)} disabled={loading}>
                 Cancelar
               </Button>
               <Button
@@ -463,7 +453,7 @@ export default function AuctionsPage() {
                 onClick={handleOfertar}
                 disabled={loading || offerIds.length === 0}
               >
-                {loading ? "Enviando..." : `Enviar oferta (${offerIds.length})`}
+                {loading ? 'Enviando...' : `Enviar oferta (${offerIds.length})`}
               </Button>
             </div>
           </div>
@@ -479,23 +469,20 @@ export default function AuctionsPage() {
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-on-surface-variant">
-            Seleccioná una de tus publicaciones marcadas como "Subasta" para
-            activarla.
+            Seleccioná una de tus publicaciones marcadas como "Subasta" para activarla.
           </p>
 
           {misPublicaciones.length === 0 ? (
             <div className="p-4 bg-error-container text-on-error-container rounded-lg text-sm">
-              No tenés figuritas publicadas con tipo "Subasta". Ve a "Mi
-              Colección", publicá una figurita y elegí la opción "Subasta".
+              No tenés figuritas publicadas con tipo "Subasta". Ve a "Mi Colección", publicá una
+              figurita y elegí la opción "Subasta".
             </div>
           ) : (
             <>
               <Input
                 label="Figurita a Subastar"
                 value={newAuction.figurita_id}
-                onChange={(v) =>
-                  setNewAuction({ ...newAuction, figurita_id: v })
-                }
+                onChange={(v) => setNewAuction({ ...newAuction, figurita_id: v })}
                 options={opcionesSubasta}
               />
               <Input
@@ -509,11 +496,7 @@ export default function AuctionsPage() {
           )}
 
           <div className="flex gap-2.5 justify-end mt-2 pt-4 border-t border-outline-variant">
-            <Button
-              variant="text"
-              onClick={() => setCreate(false)}
-              disabled={loading}
-            >
+            <Button variant="text" onClick={() => setCreate(false)} disabled={loading}>
               Cancelar
             </Button>
             <Button
@@ -521,7 +504,7 @@ export default function AuctionsPage() {
               onClick={handleCreate}
               disabled={loading || misPublicaciones.length === 0}
             >
-              {loading ? "Iniciando..." : "Iniciar subasta"}
+              {loading ? 'Iniciando...' : 'Iniciar subasta'}
             </Button>
           </div>
         </div>
@@ -531,7 +514,11 @@ export default function AuctionsPage() {
       <Modal
         open={!!offersModal}
         onClose={() => setOffersModal(null)}
-        title={offersModal && pubsMap[offersModal.figurita_id] ? `Ofertas — ${pubsMap[offersModal.figurita_id].jugador}` : "Ofertas recibidas"}
+        title={
+          offersModal && pubsMap[offersModal.figurita_id]
+            ? `Ofertas — ${pubsMap[offersModal.figurita_id].jugador}`
+            : 'Ofertas recibidas'
+        }
         width={500}
       >
         {offersModal && (
@@ -555,21 +542,16 @@ export default function AuctionsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm text-on-surface">
-                      {users[oferta.usuario_id - 1]?.nombre ??
-                        `Usuario ${oferta.usuario_id}`}
+                      {users[oferta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.usuario_id}`}
                     </span>
-                    <span className="text-xs text-on-surface-variant">
-                      Oferta #{oferta.id}
-                    </span>
+                    <span className="text-xs text-on-surface-variant">Oferta #{oferta.id}</span>
                   </div>
                   <div className="text-xs text-on-surface-variant">
-                    Figuritas ofrecidas:{" "}
+                    Figuritas ofrecidas:{' '}
                     {(oferta.ofrecidas_detalle?.length
-                      ? oferta.ofrecidas_detalle.map(
-                          (f) => `${f.jugador} (${f.equipo})`,
-                        )
+                      ? oferta.ofrecidas_detalle.map((f) => `${f.jugador} (${f.equipo})`)
                       : oferta.ofrecidas.map((id) => `#${id}`)
-                    ).join(", ")}
+                    ).join(', ')}
                   </div>
 
                   {offersModal.oferta_ganadora_id === oferta.id ? (
@@ -577,16 +559,18 @@ export default function AuctionsPage() {
                       <Icon name="military_tech" size={18} className="text-green-600" />
                       <span className="text-sm font-bold text-green-600">Oferta ganadora</span>
                     </div>
-                  ) : !offersModal.oferta_ganadora_id && (
-                    <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
-                      <Button
-                        icon="check_circle"
-                        onClick={() => handleAceptarOferta(oferta.id)}
-                        disabled={loading}
-                      >
-                        {loading ? "Aceptando..." : "Aceptar oferta"}
-                      </Button>
-                    </div>
+                  ) : (
+                    !offersModal.oferta_ganadora_id && (
+                      <div className="flex justify-end mt-2 pt-3 border-t border-outline-variant/50">
+                        <Button
+                          icon="check_circle"
+                          onClick={() => handleAceptarOferta(oferta.id)}
+                          disabled={loading}
+                        >
+                          {loading ? 'Aceptando...' : 'Aceptar oferta'}
+                        </Button>
+                      </div>
+                    )
                   )}
                 </div>
               ))
@@ -611,14 +595,15 @@ export default function AuctionsPage() {
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <p className="text-on-surface text-sm">
-                ¿Estás seguro que querés cancelar la subasta de{" "}
+                ¿Estás seguro que querés cancelar la subasta de{' '}
                 <span className="font-semibold">
-                  {pubsMap[confirmCancelModal.figurita_id]?.jugador ?? "esta figurita"}
+                  {pubsMap[confirmCancelModal.figurita_id]?.jugador ?? 'esta figurita'}
                 </span>
                 ?
               </p>
               <p className="text-on-surface-variant text-xs">
-                Se eliminarán todas las ofertas recibidas y la figurita quedará disponible para subastar nuevamente.
+                Se eliminarán todas las ofertas recibidas y la figurita quedará disponible para
+                subastar nuevamente.
               </p>
             </div>
             <div className="flex gap-2.5 justify-end pt-4 border-t border-outline-variant">
@@ -633,10 +618,7 @@ export default function AuctionsPage() {
         )}
       </Modal>
 
-      <Snackbar
-        {...snack}
-        onClose={() => setSnack({ ...snack, open: false })}
-      />
+      <Snackbar {...snack} onClose={() => setSnack({ ...snack, open: false })} />
     </div>
-  );
+  )
 }
