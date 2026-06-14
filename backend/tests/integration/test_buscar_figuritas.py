@@ -26,7 +26,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad, tipo):
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     figurita_id = resp_album.json()["id"]
@@ -38,7 +38,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad, tipo):
             "tipo_intercambio": tipo,
             "cantidad_disponible": 1,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
 
 
@@ -71,7 +71,7 @@ class TestBusquedaSinFiltros:
 
     def test_sin_figuritas_devuelve_lista_vacia(self, client, token_user1):
         """Sin publicaciones activas la respuesta es una lista vacía."""
-        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -82,14 +82,14 @@ class TestBusquedaSinFiltros:
         user1 tiene 3 publicaciones, user2 tiene 2.
         Cuando user1 consulta, ve solo las 2 de user2.
         """
-        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert len(resp.json()) == 2
 
     def test_user2_ve_publicaciones_de_user1(self, client, token_user2, figuritas_cargadas):
         """user2 ve las 3 publicaciones de user1."""
-        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"X-User-Token": token_user2})
+        resp = client.get(ENDPOINT_PUBLICACIONES, headers={"Authorization": token_user2})
 
         assert resp.status_code == 200
         assert len(resp.json()) == 3
@@ -106,7 +106,7 @@ class TestFiltroPorNumero:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"numero": 10},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -120,7 +120,7 @@ class TestFiltroPorNumero:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"numero": 999},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 200
@@ -141,7 +141,7 @@ class TestFiltroPorEquipo:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"equipo": "Argentina"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -154,7 +154,7 @@ class TestFiltroPorEquipo:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"equipo": "rgen"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -167,7 +167,7 @@ class TestFiltroPorEquipo:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"equipo": "Uruguay"},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 200
@@ -185,7 +185,7 @@ class TestFiltroPorJugador:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"jugador": "Lionel Messi"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -198,7 +198,7 @@ class TestFiltroPorJugador:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"jugador": "Messi"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -211,7 +211,7 @@ class TestFiltroPorJugador:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"jugador": "Ronaldo"},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 200
@@ -233,7 +233,7 @@ class TestFiltroPorTipoIntercambio:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"tipo_intercambio": "intercambio_directo"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -250,7 +250,7 @@ class TestFiltroPorTipoIntercambio:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"tipo_intercambio": "subasta"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -270,7 +270,7 @@ class TestCombinacionFiltros:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"numero": 10, "equipo": "Argentina"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -283,7 +283,7 @@ class TestCombinacionFiltros:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"equipo": "Argentina", "jugador": "Messi"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200
@@ -296,7 +296,7 @@ class TestCombinacionFiltros:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"equipo": "Brasil", "jugador": "Messi"},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 200
@@ -307,7 +307,7 @@ class TestCombinacionFiltros:
         resp = client.get(
             ENDPOINT_PUBLICACIONES,
             params={"numero": 10, "equipo": "Argentina", "jugador": "Messi"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 200

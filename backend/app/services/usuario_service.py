@@ -3,6 +3,12 @@ from app.repositories import usuario_repo, faltante_repo
 from app.domain.errors import DomainNotFoundError, DomainConflictError
 
 
+def listar_usuarios() -> list[dict]:
+    """Lista todos los usuarios (sembrados + creados). El response_model del router
+    se encarga de exponer solo id/nombre/email, sin datos sensibles."""
+    return usuario_repo.get_all()
+
+
 def registrar_faltante(usuario_id: int, faltante: FaltanteCreate) -> dict:
     if not usuario_repo.get_by_id(usuario_id):
         raise DomainNotFoundError("Usuario no encontrado")

@@ -13,13 +13,13 @@ import SubastaCardRow from '../components/SubastaCardRow'
 import { useState } from 'react'
 import { ofertarSubasta } from '../api/subastas'
 import WorldCupSchedule from '../sections/WorldCupSchedule'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 import { isAuctionActive } from '../utils/auctionTime'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { user, users } = useUser()
-  const userId = users.indexOf(user) + 1
+  const { user, users } = useAuth()
+  const userId = user.id
 
   const bid = useModalForm({ offerIds: [] })
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })

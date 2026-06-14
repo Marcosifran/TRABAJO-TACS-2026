@@ -25,7 +25,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad, tipo):
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     figurita_id = resp_album.json()["id"]
@@ -37,7 +37,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad, tipo):
             "tipo_intercambio": tipo,
             "cantidad_disponible": 1,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_pub.status_code == 201
     return resp_pub.json()["id"]
@@ -54,7 +54,7 @@ def user1_con_faltantes(client, token_user1):
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": n},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
     return numeros
 
@@ -84,7 +84,7 @@ class TestSugerenciasBasicas:
 
     def test_sin_faltantes_devuelve_lista_vacia(self, client, token_user1):
         """Si el usuario no registró faltantes, no hay sugerencias posibles."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -94,17 +94,17 @@ class TestSugerenciasBasicas:
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 99},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_devuelve_sugerencias_cuando_hay_coincidencias(self, client, token_user1, escenario_base):
         """Con faltantes que coinciden con publicaciones de otro usuario, devuelve sugerencias."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         sugerencias = resp.json()
@@ -124,10 +124,10 @@ class TestSugerenciasAislamiento:
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 10},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -137,16 +137,16 @@ class TestSugerenciasAislamiento:
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 10},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
         agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", 1, "intercambio_directo")
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 55},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -160,7 +160,7 @@ class TestEstructuraSugerencia:
 
     def test_sugerencia_contiene_campos_requeridos(self, client, token_user1, escenario_base):
         """Cada sugerencia debe tener los campos 'publicacion', 'ofrecida_por' y 'cubre_tu_faltante'."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         sugerencias = resp.json()
         assert len(sugerencias) > 0
@@ -171,21 +171,21 @@ class TestEstructuraSugerencia:
 
     def test_ofrecida_por_es_nombre_del_usuario_oferente(self, client, token_user1, escenario_base):
         """El campo 'ofrecida_por' debe coincidir con el nombre del usuario que publicó."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         for s in resp.json():
             assert s["ofrecida_por"] == "jeronimo"
 
     def test_cubre_tu_faltante_coincide_con_numero_de_la_publicacion(self, client, token_user1, escenario_base):
         """El campo 'cubre_tu_faltante' debe ser el mismo número que la publicación sugerida."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         for s in resp.json():
             assert s["cubre_tu_faltante"] == s["publicacion"]["numero"]
 
     def test_publicacion_en_sugerencia_contiene_datos_completos(self, client, token_user1, escenario_base):
         """El objeto 'publicacion' dentro de la sugerencia debe incluir numero, equipo y jugador."""
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         for s in resp.json():
             pub = s["publicacion"]
@@ -207,11 +207,11 @@ class TestSugerenciasMultiples:
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 7},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         agregar_y_publicar(client, token_user2, 7, "Brasil", "Vinicius", 5, "intercambio_directo")
 
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         sugerencias_7 = [s for s in resp.json() if s["cubre_tu_faltante"] == 7]
         assert len(sugerencias_7) == 1
@@ -224,24 +224,25 @@ class TestSugerenciasMultiples:
         se generan dos sugerencias separadas, una por cada oferente.
         """
         from app.repositories import usuario_repo
+        from app.security import create_access_token
 
         usuario_repo._db_usuarios.append({
             "id": 3,
             "nombre": "tercerusuario",
             "email": "tercero@utn",
-            "token": "token_tercero",
         })
+        token_tercero = f"Bearer {create_access_token(subject=3, email='tercero@utn')}"
 
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 10},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         agregar_y_publicar(client, token_user2, 10, "Argentina", "Messi", 1, "intercambio_directo")
-        agregar_y_publicar(client, "token_tercero", 10, "Argentina", "Messi", 1, "intercambio_directo")
+        agregar_y_publicar(client, token_tercero, 10, "Argentina", "Messi", 1, "intercambio_directo")
 
-        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUGERENCIAS, headers={"Authorization": token_user1})
 
         sugerencias_10 = [s for s in resp.json() if s["cubre_tu_faltante"] == 10]
         assert len(sugerencias_10) == 2

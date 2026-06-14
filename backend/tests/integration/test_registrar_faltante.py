@@ -26,7 +26,7 @@ class TestRegistrarFaltanteExitoso:
         resp = client.post(
             ENDPOINT,
             json={"numero_figurita": 42},
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         assert resp.status_code == 201
@@ -43,7 +43,7 @@ class TestRegistrarFaltanteExitoso:
             "jugador": "Muller"
         }
 
-        resp = client.post(ENDPOINT, json=payload, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT, json=payload, headers={"Authorization": token_user1})
 
         assert resp.status_code == 201
         data = resp.json()
@@ -61,7 +61,7 @@ class TestRegistrarFaltanteExitoso:
         resp = client.post(
             ENDPOINT,
             json=payload,
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         assert resp.status_code == 201
@@ -75,7 +75,7 @@ class TestRegistrarFaltanteExitoso:
         resp = client.post(
             ENDPOINT,
             json={"numero_figurita": 99},
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         usuario_id_esperado = 1  # user1 tiene id=1
@@ -89,11 +89,11 @@ class TestRegistrarFaltanteExitoso:
             resp = client.post(
                 ENDPOINT,
                 json={"numero_figurita": numero},
-                headers={"X-User-Token": token_user1}
+                headers={"Authorization": token_user1}
             )
             assert resp.status_code == 201
 
-        resp_lista = client.get(ENDPOINT, headers={"X-User-Token": token_user1})
+        resp_lista = client.get(ENDPOINT, headers={"Authorization": token_user1})
         assert len(resp_lista.json()) == len(numerosFaltantes)
 
 
@@ -105,17 +105,17 @@ class TestListarFaltantes:
 
     def test_listar_faltantes_vacio(self, client, token_user1):
         """Sin faltantes registrados, la lista es vacía."""
-        resp = client.get(ENDPOINT, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_listar_faltantes_del_usuario_autenticado(self, client, token_user1):
         """Listar devuelve solo los faltantes del usuario que hace el request."""
-        client.post(ENDPOINT, json={"numero_figurita": 10}, headers={"X-User-Token": token_user1})
-        client.post(ENDPOINT, json={"numero_figurita": 20}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT, json={"numero_figurita": 10}, headers={"Authorization": token_user1})
+        client.post(ENDPOINT, json={"numero_figurita": 20}, headers={"Authorization": token_user1})
 
-        resp = client.get(ENDPOINT, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         faltantes = resp.json()
@@ -126,11 +126,11 @@ class TestListarFaltantes:
 
     def test_faltantes_de_un_usuario_no_se_mezclan_con_los_de_otro(self, client, token_user1, token_user2):
         """Los faltantes de user1 no aparecen en la lista de user2 y viceversa."""
-        client.post(ENDPOINT, json={"numero_figurita": 11}, headers={"X-User-Token": token_user1})
-        client.post(ENDPOINT, json={"numero_figurita": 22}, headers={"X-User-Token": token_user2})
+        client.post(ENDPOINT, json={"numero_figurita": 11}, headers={"Authorization": token_user1})
+        client.post(ENDPOINT, json={"numero_figurita": 22}, headers={"Authorization": token_user2})
 
-        faltantes_user1 = client.get(ENDPOINT, headers={"X-User-Token": token_user1}).json()
-        faltantes_user2 = client.get(ENDPOINT, headers={"X-User-Token": token_user2}).json()
+        faltantes_user1 = client.get(ENDPOINT, headers={"Authorization": token_user1}).json()
+        faltantes_user2 = client.get(ENDPOINT, headers={"Authorization": token_user2}).json()
 
         assert len(faltantes_user1) == 1
         assert faltantes_user1[0]["numero_figurita"] == 11
@@ -141,9 +141,9 @@ class TestListarFaltantes:
     '''
     def test_listar_devuelve_usuario_id_correcto(self, client, token_user1):
         """El campo usuario_id en la respuesta coincide con el usuario autenticado."""
-        client.post(ENDPOINT, json={"numero_figurita": 5}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT, json={"numero_figurita": 5}, headers={"Authorization": token_user1})
 
-        resp = client.get(ENDPOINT, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT, headers={"Authorization": token_user1})
 
         assert resp.json()["usuario_id"] == 1  # user1 tiene id=1
     Comentado ya que se elimino el wrappper de respuesta y ahora se devuelve la lista directamente sin el campo usuario_id    
@@ -158,16 +158,16 @@ class TestFaltanteDuplicado:
 
     def test_registrar_mismo_numero_dos_veces_devuelve_409(self, client, token_user1):
         """No se puede registrar el mismo número de figurita como faltante dos veces."""
-        client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"X-User-Token": token_user1})
+        client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"Authorization": token_user1})
 
-        resp = client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT, json={"numero_figurita": 42}, headers={"Authorization": token_user1})
 
         assert resp.status_code == 409 # Datos duplicados
 
     def test_mismo_numero_puede_ser_faltante_de_dos_usuarios_distintos(self, client, token_user1, token_user2):
         """El mismo número de figurita puede ser faltante de diferentes usuarios sin conflicto."""
-        resp1 = client.post(ENDPOINT, json={"numero_figurita": 7}, headers={"X-User-Token": token_user1})
-        resp2 = client.post(ENDPOINT, json={"numero_figurita": 7}, headers={"X-User-Token": token_user2})
+        resp1 = client.post(ENDPOINT, json={"numero_figurita": 7}, headers={"Authorization": token_user1})
+        resp2 = client.post(ENDPOINT, json={"numero_figurita": 7}, headers={"Authorization": token_user2})
 
         assert resp1.status_code == 201
         assert resp2.status_code == 201
@@ -184,7 +184,7 @@ class TestValidacionCampos:
         resp = client.post(
             ENDPOINT,
             json={"equipo": "Argentina"},
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         assert resp.status_code == 422
@@ -194,7 +194,7 @@ class TestValidacionCampos:
         resp = client.post(
             ENDPOINT,
             json={"numero_figurita": 0},
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         assert resp.status_code == 422
@@ -204,13 +204,13 @@ class TestValidacionCampos:
         resp = client.post(
             ENDPOINT,
             json={"numero_figurita": -1},
-            headers={"X-User-Token": token_user1}
+            headers={"Authorization": token_user1}
         )
 
         assert resp.status_code == 422
 
     def test_body_vacio_devuelve_422(self, client, token_user1):
         """Enviar un body vacío devuelve 422."""
-        resp = client.post(ENDPOINT, json={}, headers={"X-User-Token": token_user1})
+        resp = client.post(ENDPOINT, json={}, headers={"Authorization": token_user1})
 
         assert resp.status_code == 422

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exceptions import register_exceptions_handlers
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.routers import album, publicaciones, usuarios, intercambios, subastas, admin, maestro
+from app.routers import auth, album, publicaciones, usuarios, intercambios, subastas, admin, maestro
 from app.services import maestro_service
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 # Registramos los routers con el prefijo /api/v1.
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(album.router, prefix="/api/v1")
 app.include_router(publicaciones.router, prefix="/api/v1")
 app.include_router(usuarios.router, prefix="/api/v1")

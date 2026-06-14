@@ -16,3 +16,7 @@ class DomainPermissionError(DomainError):
 
 class DomainConflictError(DomainError):
     status_code = 409
+
+
+class DomainAuthError(DomainError):
+    status_code = 401

@@ -7,8 +7,8 @@ import pytest
 from app.core.database import connect_to_mongo, close_mongo_connection, get_db
 
 # DB separada de prod/dev para que el drop final no destruya datos reales.
-# Sobreescribir con TEST_MONGODB_URL si se corre fuera de Docker.
-_TEST_DB_NAME = "mundial_figuritas_test"
+# Sobreescribir con TEST_MONGODB_URL / TEST_MONGODB_DB_NAME si se corre fuera de Docker.
+_TEST_DB_NAME = os.getenv("TEST_MONGODB_DB_NAME", "mundial_figuritas_test")
 
 
 def _default_test_mongodb_url() -> str:
@@ -33,7 +33,6 @@ def _default_test_mongodb_url() -> str:
 
 _TEST_MONGODB_URL = _default_test_mongodb_url()
 
-
 _COLLECTIONS = [
     "album",
     "publicaciones",
@@ -45,6 +44,7 @@ _COLLECTIONS = [
     "faltantes",
     "maestro_figuritas",
     "mensajes",  # Colección para el chat de intercambios
+    "usuarios",
 ]
 
 

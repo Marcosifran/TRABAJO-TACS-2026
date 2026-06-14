@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
-import { UserProvider, useUser } from './context/UserContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import AppShell from './components/AppShell'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
 import CollectionPage from './pages/CollectionPage'
 import SearchPage from './pages/SearchPage'
@@ -12,18 +14,34 @@ import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 import AdminCalificacionesPage from './pages/AdminCalificacionesPage'
 
+// Layout protegido: si no hay sesión redirige a /login recordando el destino.
+// Mantiene una única instancia de AppShell mientras se navega entre rutas internas.
+function ProtectedLayout() {
+  const { token } = useAuth()
+  const location = useLocation()
+  if (!token) return <Navigate to="/login" replace state={{ from: location }} />
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  )
+}
+
 function RequireAdmin({ children }) {
-  const { user } = useUser()
-  return user.es_admin ? children : <Navigate to="/" replace />
+  const { user } = useAuth()
+  return user?.es_admin ? children : <Navigate to="/" replace />
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      <UserProvider>
+      <AuthProvider>
         <BrowserRouter>
-          <AppShell>
-            <Routes>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/registro" element={<RegisterPage />} />
+
+            <Route element={<ProtectedLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/coleccion" element={<CollectionPage />} />
               <Route path="/buscar" element={<SearchPage />} />
@@ -47,11 +65,12 @@ export default function App() {
                   </RequireAdmin>
                 }
               />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AppShell>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </BrowserRouter>
-      </UserProvider>
+      </AuthProvider>
     </ThemeProvider>
   )
 }

@@ -27,6 +27,3 @@ jobs:
         run: npm run format:check
       - name: Build
         run: npm run build
-        env:
-          VITE_USER_1_TOKEN: dummy-ci-token-1
-          VITE_USER_2_TOKEN: dummy-ci-token-2

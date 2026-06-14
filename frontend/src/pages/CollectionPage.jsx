@@ -10,7 +10,7 @@ import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import Icon from '../components/ui/Icon'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 import { agregarAlAlbum, publicarFigurita, retirarPublicacion } from '../api/publicaciones'
 import { registrarFaltante } from '../api/faltantes'
 import { getMaestroJugador } from '../api/maestro'
@@ -52,8 +52,8 @@ function figToCard(fig, ownerName, pub) {
 }
 
 export default function CollectionPage() {
-  const { user, users } = useUser()
-  const userId = users.indexOf(user) + 1
+  const { user } = useAuth()
+  const userId = user.id
   const pubModal = useModalForm(EMPTY_PUB)
   const faltModal = useModalForm(EMPTY_FALT)
   const [tab, setTab] = useState('tengo')

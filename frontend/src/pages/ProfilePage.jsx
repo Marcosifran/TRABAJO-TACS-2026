@@ -6,11 +6,11 @@ import Icon from '../components/ui/Icon'
 import StarRating from '../components/ui/StarRating'
 import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function ProfilePage() {
-  const { user, users } = useUser()
-  const userId = users.indexOf(user) + 1
+  const { user } = useAuth()
+  const userId = user.id
 
   const { data: publicaciones = [] } = useSWR(['/usuarios/publicaciones', userId])
   const { data: faltantesData = [] } = useSWR(['/usuarios/faltantes', userId])

@@ -18,7 +18,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     figurita_id = resp_album.json()["id"]
@@ -30,7 +30,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
             "tipo_intercambio": tipo,
             "cantidad_disponible": 1,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_pub.status_code == 201
     return resp_pub.json()["id"]
@@ -51,7 +51,7 @@ def _intercambio_aceptado(client, token_user1, token_user2) -> int:
             "figurita_solicitada_numero": 2,
             "solicitado_a_id": 2,
         },
-        headers={"X-User-Token": token_user1},
+        headers={"Authorization": token_user1},
     )
     assert resp.status_code == 201
     intercambio_id = resp.json()["id"]
@@ -59,7 +59,7 @@ def _intercambio_aceptado(client, token_user1, token_user2) -> int:
     resp_patch = client.patch(
         f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
         json={"estado": "aceptado"},
-        headers={"X-User-Token": token_user2},
+        headers={"Authorization": token_user2},
     )
     assert resp_patch.status_code == 200
     return intercambio_id
@@ -73,7 +73,7 @@ class TestCalificarTrasIntercambio:
         resp = client.post(
             url,
             json={"puntuacion": 5, "comentario": "Todo bien"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
         assert resp.status_code == 201
         data = resp.json()
@@ -86,7 +86,7 @@ class TestCalificarTrasIntercambio:
     def test_proponente_tambien_puede_calificar(self, client, token_user1, token_user2):
         intercambio_id = _intercambio_aceptado(client, token_user1, token_user2)
         url = f"/api/v1/intercambios/{intercambio_id}/calificaciones"
-        resp = client.post(url, json={"puntuacion": 4}, headers={"X-User-Token": token_user1})
+        resp = client.post(url, json={"puntuacion": 4}, headers={"Authorization": token_user1})
 
         assert resp.status_code == 201
         assert resp.json()["calificador_id"] == 1
@@ -100,7 +100,7 @@ class TestCalificarTrasIntercambio:
         resp = client.post(
             ENDPOINT_INTERCAMBIOS,
             json={"figuritas_ofrecidas_numero": [1], "figurita_solicitada_numero": 2, "solicitado_a_id": 2},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         assert resp.status_code == 201
         intercambio_id = resp.json()["id"]
@@ -109,13 +109,13 @@ class TestCalificarTrasIntercambio:
             client.patch(
                 f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
                 json={"estado": "rechazado"},
-                headers={"X-User-Token": token_user2},
+                headers={"Authorization": token_user2},
             )
 
         resp_cal = client.post(
             f"/api/v1/intercambios/{intercambio_id}/calificaciones",
             json={"puntuacion": 3},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
         assert resp_cal.status_code == 400
 
@@ -129,7 +129,7 @@ class TestCalificarTrasIntercambio:
         app.dependency_overrides[get_current_user] = fake_user
         try:
             c = TestClient(app)
-            resp = c.post(url, json={"puntuacion": 5}, headers={"X-User-Token": "cualquiera"})
+            resp = c.post(url, json={"puntuacion": 5}, headers={"Authorization": "cualquiera"})
         finally:
             app.dependency_overrides.clear()
 
@@ -138,7 +138,7 @@ class TestCalificarTrasIntercambio:
     def test_duplicado_misma_calificacion_409(self, client, token_user1, token_user2):
         intercambio_id = _intercambio_aceptado(client, token_user1, token_user2)
         url = f"/api/v1/intercambios/{intercambio_id}/calificaciones"
-        headers = {"X-User-Token": token_user2}
+        headers = {"Authorization": token_user2}
         assert client.post(url, json={"puntuacion": 5}, headers=headers).status_code == 201
         resp2 = client.post(url, json={"puntuacion": 4}, headers=headers)
         assert resp2.status_code == 409
@@ -147,7 +147,7 @@ class TestCalificarTrasIntercambio:
         resp = client.post(
             "/api/v1/intercambios/99999/calificaciones",
             json={"puntuacion": 5},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         assert resp.status_code == 404
 
@@ -155,7 +155,7 @@ class TestCalificarTrasIntercambio:
 class TestReputacion:
 
     def test_sin_calificaciones_promedio_null(self, client, token_user1):
-        resp = client.get("/api/v1/usuarios/1/reputacion", headers={"X-User-Token": token_user1})
+        resp = client.get("/api/v1/usuarios/1/reputacion", headers={"Authorization": token_user1})
         assert resp.status_code == 200
         data = resp.json()
         assert data["usuario_id"] == 1
@@ -163,7 +163,7 @@ class TestReputacion:
         assert data["promedio_puntuacion"] is None
 
     def test_usuario_inexistente_404(self, client, token_user1):
-        resp = client.get("/api/v1/usuarios/99999/reputacion", headers={"X-User-Token": token_user1})
+        resp = client.get("/api/v1/usuarios/99999/reputacion", headers={"Authorization": token_user1})
         assert resp.status_code == 404
 
     def test_promedio_con_varias_calificaciones(self, client, token_user1, token_user2):
@@ -171,7 +171,7 @@ class TestReputacion:
         client.post(
             f"/api/v1/intercambios/{i1}/calificaciones",
             json={"puntuacion": 4},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         agregar_y_publicar(client, token_user1, 3, "Argentina", "J3")
@@ -180,7 +180,7 @@ class TestReputacion:
         resp_prop = client.post(
             ENDPOINT_INTERCAMBIOS,
             json={"figuritas_ofrecidas_numero": [3], "figurita_solicitada_numero": 4, "solicitado_a_id": 2},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         assert resp_prop.status_code == 201
         i2 = resp_prop.json()["id"]
@@ -188,14 +188,14 @@ class TestReputacion:
         client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{i2}/estado",
             json={"estado": "aceptado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
         client.post(
             f"/api/v1/intercambios/{i2}/calificaciones",
             json={"puntuacion": 5},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
-        rep = client.get("/api/v1/usuarios/1/reputacion", headers={"X-User-Token": token_user1}).json()
+        rep = client.get("/api/v1/usuarios/1/reputacion", headers={"Authorization": token_user1}).json()
         assert rep["cantidad_calificaciones"] == 2
         assert rep["promedio_puntuacion"] == 4.5

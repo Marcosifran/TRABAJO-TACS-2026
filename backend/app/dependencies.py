@@ -25,46 +25,35 @@ def _extract_bearer_token(authorization: str) -> str | None:
     return token.strip()
 
 
-# Extrae el usuario del header Authorization: Bearer <token>.
-# Mantiene compatibilidad temporal con X-User-Token.
+# Extrae el usuario autenticado del header Authorization: Bearer <jwt>.
 def get_current_user(
     authorization: str | None = Header(default=None, alias="Authorization"),
-    x_user_token: str | None = Header(default=None, description="Token de identificación del usuario"),
 ) -> dict:
-    if authorization:
-        token = _extract_bearer_token(authorization)
-        if token is None:
-            raise _unauthorized("Formato de Authorization inválido")
+    if not authorization:
+        raise HTTPException(
+            status_code=422,
+            detail="Debe enviarse Authorization: Bearer <token>",
+        )
 
-        try:
-            payload = verify_access_token(token)
-        except Exception:
-            raise _unauthorized("Token inválido o inexistente")
+    token = _extract_bearer_token(authorization)
+    if token is None:
+        raise _unauthorized("Formato de Authorization inválido")
 
-        subject = payload.get("sub")
-        if subject is None:
-            raise _unauthorized("Token inválido o inexistente")
+    try:
+        payload = verify_access_token(token)
+    except Exception:
+        raise _unauthorized("Token inválido o inexistente")
 
-        try:
-            usuario_id = int(subject)
-        except (TypeError, ValueError):
-            raise _unauthorized("Token inválido o inexistente")
+    subject = payload.get("sub")
+    if subject is None:
+        raise _unauthorized("Token inválido o inexistente")
 
-        usuario = usuario_repo.get_by_id(usuario_id)
-        if not usuario:
-            raise _unauthorized("Token inválido o inexistente")
-        return usuario
+    try:
+        usuario_id = int(subject)
+    except (TypeError, ValueError):
+        raise _unauthorized("Token inválido o inexistente")
 
-    if x_user_token is not None:
-        if not x_user_token:
-            raise _unauthorized("Token inválido o inexistente")
-
-        usuario = usuario_repo.get_by_token(x_user_token)
-        if not usuario:
-            raise _unauthorized("Token inválido o inexistente")
-        return usuario
-
-    raise HTTPException(
-        status_code=422,
-        detail="Debe enviarse Authorization: Bearer <token> o X-User-Token",
-    )
+    usuario = usuario_repo.get_by_id(usuario_id)
+    if not usuario:
+        raise _unauthorized("Token inválido o inexistente")
+    return usuario

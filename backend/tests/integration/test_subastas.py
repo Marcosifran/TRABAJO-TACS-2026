@@ -25,7 +25,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=2, tipo=
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     album_id = resp_album.json()["id"]
@@ -37,7 +37,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=2, tipo=
             "tipo_intercambio": tipo,
             "cantidad_disponible": 1,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_pub.status_code == 201
     return resp_pub.json()["id"], album_id
@@ -56,7 +56,7 @@ def _crear_subasta(client, token, publicacion_id):
     return client.post(
         ENDPOINT_SUBASTAS,
         json=_payload_subasta(publicacion_id),
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
 
 
@@ -110,7 +110,7 @@ class TestCrearSubasta:
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         _crear_subasta(client, token_user1, pub_id)
 
-        resp = client.get(ENDPOINT_SUBASTAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_SUBASTAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         subastas = resp.json()
@@ -142,7 +142,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 201
@@ -160,7 +160,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_extra]},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 403
@@ -174,7 +174,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}000000000000000000000000/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 404
@@ -186,7 +186,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": []},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 400
@@ -198,7 +198,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": ["000000000000000000000000"]},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 404
@@ -214,7 +214,7 @@ class TestOfertarEnSubasta:
         resp = client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user1_extra]},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 403
@@ -232,7 +232,7 @@ class TestHistorialOfertas:
         pub_id, _ = agregar_y_publicar(client, token_user1, 10, "Argentina", "Messi", tipo="subasta")
         subasta_id = _crear_subasta(client, token_user1, pub_id).json()["id"]
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
@@ -248,10 +248,10 @@ class TestHistorialOfertas:
         client.post(
             f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas",
             json={"figuritas_ofrecidas": [album_user2]},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
-        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"X-User-Token": token_user1})
+        resp = client.get(f"{ENDPOINT_SUBASTAS}{subasta_id}/ofertas", headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         ofertas = resp.json()
@@ -262,6 +262,6 @@ class TestHistorialOfertas:
 
     def test_subasta_inexistente_devuelve_404(self, client, token_user1):
         """Consultar historial de una subasta inexistente devuelve 404."""
-        resp = client.get(f"{ENDPOINT_SUBASTAS}000000000000000000000000/ofertas", headers={"X-User-Token": token_user1})
+        resp = client.get(f"{ENDPOINT_SUBASTAS}000000000000000000000000/ofertas", headers={"Authorization": token_user1})
 
         assert resp.status_code == 404

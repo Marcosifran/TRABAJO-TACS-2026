@@ -25,7 +25,7 @@ def figurita_user1(client, token_user1):
     resp = client.post(
         ENDPOINT_ALBUM,
         json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2},
-        headers={"X-User-Token": token_user1},
+        headers={"Authorization": token_user1},
     )
     assert resp.status_code == 201
     return resp.json()
@@ -37,7 +37,7 @@ def figurita_user2(client, token_user2):
     resp = client.post(
         ENDPOINT_ALBUM,
         json={"numero": 7, "equipo": "Brasil", "jugador": "Vinicius", "cantidad": 1},
-        headers={"X-User-Token": token_user2},
+        headers={"Authorization": token_user2},
     )
     assert resp.status_code == 201
     return resp.json()
@@ -51,7 +51,7 @@ class TestListarAlbumPersonal:
 
     def test_devuelve_200_con_lista_vacia_si_no_tiene_figuritas(self, client, token_user1):
         """Un usuario sin figuritas en el álbum recibe 200 y lista vacía."""
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         data = resp.json()
@@ -59,7 +59,7 @@ class TestListarAlbumPersonal:
 
     def test_devuelve_sus_propias_figuritas(self, client, token_user1, figurita_user1):
         """El usuario ve exactamente las figuritas que tiene en su álbum."""
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         figuritas = resp.json()
@@ -75,24 +75,24 @@ class TestListarAlbumPersonal:
             {"numero": 3, "equipo": "Francia",   "jugador": "Mbappé",   "cantidad": 1},
         ]
         for p in payloads:
-            client.post(ENDPOINT_ALBUM, json=p, headers={"X-User-Token": token_user1})
+            client.post(ENDPOINT_ALBUM, json=p, headers={"Authorization": token_user1})
 
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert len(resp.json()) == 3
 
     def test_no_incluye_figuritas_de_otros_usuarios(self, client, token_user1, figurita_user2):
         """Las figuritas de user2 no aparecen en el álbum de user1."""
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_cada_usuario_ve_solo_las_suyas(self, client, token_user1, token_user2, figurita_user1, figurita_user2):
         """user1 y user2 ven únicamente sus propias figuritas."""
-        resp1 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
-        resp2 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user2})
+        resp1 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
+        resp2 = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user2})
 
         figuritas_user1 = resp1.json()
         figuritas_user2 = resp2.json()
@@ -112,7 +112,7 @@ class TestCampoEnIntercambio:
 
     def test_figurita_recien_agregada_no_esta_en_intercambio(self, client, token_user1, figurita_user1):
         """Una figurita recién agregada al álbum tiene en_intercambio = False."""
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         figurita = resp.json()[0]
         assert figurita["en_intercambio"] is False
@@ -126,10 +126,10 @@ class TestCampoEnIntercambio:
                 "tipo_intercambio": "intercambio_directo",
                 "cantidad_disponible": 1,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
 
         figurita = resp.json()[0]
         assert figurita["en_intercambio"] is True
@@ -143,16 +143,16 @@ class TestCampoEnIntercambio:
                 "tipo_intercambio": "intercambio_directo",
                 "cantidad_disponible": 1,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         publicacion_id = resp_pub.json()["id"]
 
         client.delete(
             f"{ENDPOINT_PUBLICACIONES}{publicacion_id}",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
-        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"X-User-Token": token_user1})
+        resp = client.get(ENDPOINT_MIS_FIGURITAS, headers={"Authorization": token_user1})
         figurita = resp.json()[0]
         assert figurita["en_intercambio"] is False
 
@@ -167,7 +167,7 @@ class TestEliminarDelAlbum:
         """El usuario que agregó la figurita puede eliminarla del álbum."""
         resp = client.delete(
             f"{ENDPOINT_ALBUM}{figurita_user1['id']}",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 204
@@ -176,7 +176,7 @@ class TestEliminarDelAlbum:
         """Un usuario distinto al dueño recibe 403 al intentar eliminar."""
         resp = client.delete(
             f"{ENDPOINT_ALBUM}{figurita_user1['id']}",
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 403
@@ -185,7 +185,7 @@ class TestEliminarDelAlbum:
         """Intentar eliminar un ID que no existe devuelve 404."""
         resp = client.delete(
             f"{ENDPOINT_ALBUM}9999",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -202,12 +202,12 @@ class TestEliminarDelAlbum:
                 "tipo_intercambio": "intercambio_directo",
                 "cantidad_disponible": 1,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         resp = client.delete(
             f"{ENDPOINT_ALBUM}{figurita_user1['id']}",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 409

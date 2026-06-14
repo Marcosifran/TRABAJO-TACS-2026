@@ -20,12 +20,12 @@ import {
   enviarMensajeChat,
 } from '../api/intercambios'
 import { listarMiAlbum } from '../api/album'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function TradesPage() {
   const location = useLocation()
-  const { user, users } = useUser()
-  const userId = users.indexOf(user) + 1
+  const { user } = useAuth()
+  const userId = user.id
 
   const [tab, setTab] = useState(location.state?.tab || 'recibidas')
   const [calificados, setCalificados] = useState(new Set())
