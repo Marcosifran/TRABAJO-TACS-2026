@@ -29,10 +29,16 @@ export default function AppShell({ children }) {
   const location = useLocation()
 
   const [notifs, setNotifs] = useState([])
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const seenSugIds   = useRef(null)
   const seenAuctIds  = useRef(null)
   const seenTradeIds = useRef(null)
   const timerRefs    = useRef({})
+
+  // Cerrar menú móvil al navegar
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   function pushNotif(id, icon, title, body) {
     setNotifs(prev => prev.some(n => n.id === id) ? prev : [...prev, { id, icon, title, body }])
@@ -133,25 +139,87 @@ export default function AppShell({ children }) {
   }, [user])
 
   return (
-    <div className="flex h-screen bg-surface text-on-surface font-sans overflow-hidden">
-      {/* Sidebar */}
-      <nav className="w-64 shrink-0 bg-surface-container-low border-r border-outline-variant flex flex-col overflow-y-auto scrollbar-none">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <div
-            className="w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+    <div className="flex flex-col md:flex-row h-screen bg-surface text-on-surface font-sans overflow-hidden">
+      {/* Mobile Top Bar */}
+      <header className="flex md:hidden items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant shrink-0">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-1.5 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent text-on-surface"
+            title="Abrir menú"
           >
-            <Icon name="swap_horiz" size={22} className="text-white" />
+            <Icon name="menu" size={24} />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            >
+              <Icon name="swap_horiz" size={16} className="text-white" />
+            </div>
+            <span className="font-bold text-base text-on-surface tracking-tight">FiguSwap</span>
           </div>
-          <div>
-            <div className="text-[18px] font-bold text-on-surface tracking-tight">FiguSwap</div>
-            <div className="text-[11px] text-on-surface-variant font-medium">Mundial 2026</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => switchUser(users.indexOf(user) === 0 ? 1 : 0)}
+            className="p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent text-on-surface-variant"
+            title="Cambiar usuario (dev)"
+          >
+            <Icon name="switch_account" size={18} className="text-on-surface-variant" />
+          </button>
+          <button
+            onClick={toggleDark}
+            className="p-1.5 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent text-on-surface-variant"
+            title="Alternar tema"
+          >
+            <Icon name={dark ? 'light_mode' : 'dark_mode'} size={18} />
+          </button>
+          <Avatar name={user.nombre} size={28} />
+        </div>
+      </header>
+
+      {/* Backdrop for Mobile Sidebar */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-[1.5px] z-40 md:hidden transition-opacity duration-300"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Drawer */}
+      <nav className={`
+        fixed md:relative top-0 bottom-0 left-0 z-50 md:z-auto
+        w-64 shrink-0 bg-surface-container-low border-r border-outline-variant
+        flex flex-col overflow-y-auto scrollbar-none
+        transition-transform duration-300 md:transition-none
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Logo and Close button */}
+        <div className="flex items-center justify-between px-5 py-5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            >
+              <Icon name="swap_horiz" size={22} className="text-white" />
+            </div>
+            <div>
+              <div className="text-[18px] font-bold text-on-surface tracking-tight">FiguSwap</div>
+              <div className="text-[11px] text-on-surface-variant font-medium">Mundial 2026</div>
+            </div>
           </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent text-on-surface md:hidden"
+            title="Cerrar menú"
+          >
+            <Icon name="close" size={20} />
+          </button>
         </div>
 
         {/* Nav items */}
-        <div className="flex-1 px-3">
+        <div className="flex-1 px-3 py-2">
           {NAV.map(item => {
             const isActive = item.to === '/'
               ? location.pathname === '/'
@@ -191,7 +259,7 @@ export default function AppShell({ children }) {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-4 border-t border-outline-variant">
+        <div className="px-4 py-4 border-t border-outline-variant shrink-0 bg-surface-container-low">
           <button
             onClick={toggleDark}
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl bg-surface-container text-on-surface-variant text-[13px] mb-2.5 cursor-pointer border-0 font-sans hover:bg-surface-variant transition-colors"

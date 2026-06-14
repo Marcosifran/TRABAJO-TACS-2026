@@ -11,6 +11,7 @@ from app.repositories import (
     subasta_repo,
     oferta_repo,
     calificacion_repo,
+    mensaje_repo,
 )
 
 
@@ -29,4 +30,6 @@ def limpiar_db():
     calificacion_repo._db.clear()
     subasta_repo._db_subastas.clear()
     oferta_repo._db_ofertas.clear()
+    mensaje_repo._db.clear()
+    mensaje_repo._next_id = 1
     yield

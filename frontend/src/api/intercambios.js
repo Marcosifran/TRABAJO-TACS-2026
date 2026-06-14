@@ -32,3 +32,16 @@ export function calificarIntercambio(id, { puntuacion, comentario }) {
     body: JSON.stringify({ puntuacion, comentario }),
   })
 }
+
+/** Obtiene los mensajes del chat de un intercambio. */
+export function obtenerMensajesChat(id) {
+  return apiFetch(`/intercambios/${id}/mensajes`)
+}
+
+/** Envía un mensaje al chat de un intercambio. */
+export function enviarMensajeChat(id, contenido) {
+  return apiFetch(`/intercambios/${id}/mensajes`, {
+    method: 'POST',
+    body: JSON.stringify({ contenido }),
+  })
+}

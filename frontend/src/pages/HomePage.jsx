@@ -132,14 +132,14 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="p-8 max-w-[1100px]">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1100px]">
       <div className="mb-7">
-        <h1 className="text-3xl font-bold text-on-surface m-0">Bienvenido de vuelta 👋</h1>
-        <p className="mt-1 text-on-surface-variant text-[15px]">Tu resumen de actividad en FiguSwap</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface m-0">Bienvenido de vuelta 👋</h1>
+        <p className="mt-1 text-on-surface-variant text-[14px] sm:text-[15px]">Tu resumen de actividad en FiguSwap</p>
       </div>
 
       {/* Estadisticas Figuritas - Faltan - Intercambios - Reputación */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {STATS.map((s, i) => (
           <Card key={i} elevated>
             <div className="flex items-center gap-3.5">
@@ -150,7 +150,7 @@ export default function HomePage() {
                 <Icon name={s.icon} size={24} style={{ color: s.colorVar }} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-on-surface">{s.value}</div>
+                <div className="text-xl sm:text-2xl font-bold text-on-surface">{s.value}</div>
                 <div className="text-[13px] text-on-surface-variant">{s.label}</div>
               </div>
             </div>
@@ -159,13 +159,13 @@ export default function HomePage() {
       </div>
 
       {/* Acciones Publicar Figurita - Buscar Figuritas - Ver Subastas */}
-      <div className="flex gap-2.5 mb-8">
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-8">
         <Button icon="add" onClick={() => navigate('/coleccion')}>Publicar figurita</Button>
         <Button variant="tonal" icon="search" onClick={() => navigate('/buscar')}>Buscar figuritas</Button>
         <Button variant="outlined" icon="gavel" onClick={() => navigate('/subastas')}>Ver subastas</Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Últimas publicadas */}
         <div>
           <div className="flex justify-between items-center mb-3.5">
@@ -277,7 +277,7 @@ export default function HomePage() {
                 figuritas desde Mi Colección.
               </div>
             ) : (
-              <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
+              <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}

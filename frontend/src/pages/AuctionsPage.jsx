@@ -229,8 +229,8 @@ export default function AuctionsPage() {
   const listaSubastas = tab === "activas" ? activasFiltradas : misSubastas;
 
   return (
-    <div className="p-8 max-w-[1000px]">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1000px]">
+      <div className="flex flex-col sm:flex-row gap-4 justify-beteewn sm:items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-on-surface m-0">Subastas</h1>
           <p className="mt-1 text-on-surface-variant text-sm">
@@ -394,7 +394,7 @@ export default function AuctionsPage() {
                 figuritas desde Mi Colección.
               </div>
             ) : (
-              <div className="max-h-[300px] overflow-y-auto grid grid-cols-2 gap-2 p-1">
+              <div className="max-h-[300px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}

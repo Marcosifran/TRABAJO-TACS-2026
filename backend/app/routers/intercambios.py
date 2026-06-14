@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, IntercambioDecision
 from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
+from app.schemas.mensaje_sch import MensajeCreate, MensajeResponse
 from app.dependencies import get_current_user
-from app.services import intercambio_service, calificacion_service
+from app.services import intercambio_service, calificacion_service, chat_service
 from app.domain.errors import DomainError
     
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
@@ -73,4 +74,46 @@ def calificar_tras_intercambio(
         intercambio_id=intercambio_id,
         calificador_id=usuario["id"],
         data=body,
+    )
+
+@router.post(
+    "/{intercambio_id}/mensajes",
+    response_model = MensajeResponse,
+    status_code=201,
+    responses={
+        201: {"description": "Mensaje enviado exitosamente"},
+        401: {"description": "Token ausente o inválido"},
+        403: {"description": "No participás en este intercambio"},
+        404: {"description": "Intercambio no encontrado"},
+    },
+)
+def enviar_mensaje_chat(
+    intercambio_id: int,
+    body: MensajeCreate,
+    usuario: dict = Depends(get_current_user),
+):
+    return chat_service.enviar_mensaje(
+        intercambio_id=intercambio_id,
+        remitente_id=usuario["id"],
+        contenido = body.contenido,
+    )
+
+@router.get(
+    "/{intercambio_id}/mensajes",
+    response_model=list[MensajeResponse],
+    responses={
+        200:{"description": "Lista de mensajes del chat de ese intercambio"},
+        401:{"description": "Token ausente o inválido"},
+        403:{"description": "No participás en este intercambio"},
+        404:{"description": "Intercambio no encontrado"},
+    }
+)
+
+def obtener_mensajes_chat(
+    intercambio_id: int,
+    usuario: dict = Depends(get_current_user),
+):
+    return chat_service.obtener_mensaje(
+        intercambio_id=intercambio_id,
+        usuario_id=usuario["id"]
     )

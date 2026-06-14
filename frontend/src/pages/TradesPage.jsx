@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import Tabs from '../components/ui/Tabs'
 import Modal from '../components/ui/Modal'
@@ -10,7 +10,14 @@ import Snackbar from '../components/ui/Snackbar'
 import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
 import Chip from '../components/ui/Chip'
-import { listarIntercambios, responderIntercambio, calificarIntercambio, proponerIntercambio } from '../api/intercambios'
+import {
+  listarIntercambios,
+  responderIntercambio,
+  calificarIntercambio,
+  proponerIntercambio,
+  obtenerMensajesChat,
+  enviarMensajeChat
+} from '../api/intercambios'
 import { obtenerSugerencias } from '../api/faltantes'
 import { listarMiAlbum } from '../api/album'
 
@@ -26,6 +33,14 @@ export default function TradesPage() {
   const [comment, setComment]     = useState('')
   const [calificados, setCalificados] = useState(new Set())
   const [snack, setSnack]         = useState({ open: false, message: '', type: 'info' })
+
+  // Estados para el Chat
+  const [chatModal, setChatModal]       = useState(null)
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput]       = useState('')
+  const [chatLoading, setChatLoading]   = useState(false)
+  const [chatSending, setChatSending]   = useState(false)
+  const messagesEndRef                  = useRef(null)
 
   // Estados para el modal de propuesta desde sugerencias
   const [sugTradeModal, setSugTradeModal]     = useState(null)
@@ -110,6 +125,56 @@ export default function TradesPage() {
     }
   }
 
+  const fetchMessages = useCallback(async (id) => {
+    try {
+      const data = await obtenerMensajesChat(id)
+      setChatMessages(data || [])
+    } catch (e) {
+      console.error('Error cargando mensajes:', e)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!chatModal) {
+      setChatMessages([])
+      return
+    }
+
+    setChatLoading(true)
+    fetchMessages(chatModal.id).finally(() => setChatLoading(false))
+
+    const interval = setInterval(() => {
+      fetchMessages(chatModal.id)
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [chatModal, fetchMessages])
+
+  useEffect(() => {
+    if (chatModal) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatMessages, chatModal])
+
+  async function handleSendMessage(e) {
+    if (e) e.preventDefault()
+    if (!chatInput.trim() || chatSending || !chatModal) return
+
+    setChatSending(true)
+    const content = chatInput.trim()
+    setChatInput('')
+
+    try {
+      await enviarMensajeChat(chatModal.id, content)
+      await fetchMessages(chatModal.id)
+    } catch (e) {
+      setSnack({ open: true, message: 'Error al enviar mensaje: ' + e.message, type: 'error' })
+      setChatInput(content)
+    } finally {
+      setChatSending(false)
+    }
+  }
+
   function toggleSugOffer(numero) {
     setSugSelectedOffer(prev =>
       prev.includes(numero) ? prev.filter(n => n !== numero) : [...prev, numero]
@@ -119,7 +184,7 @@ export default function TradesPage() {
   const currentList = tab === 'recibidas' ? recibidas : enviadas
 
   return (
-    <div className="p-8 max-w-[900px]">
+    <div className="p4 sm:p-6 md:p-8 max-w-[900px]">
       <h1 className="text-3xl font-bold text-on-surface mb-5">Intercambios</h1>
 
       <Tabs
@@ -163,7 +228,7 @@ export default function TradesPage() {
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {sugerencias.map((sug, idx) => (
-                  <Card key={idx} className="flex items-center justify-between p-4">
+                  <Card key={idx} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4">
                     <div className="flex items-center gap-4">
                       <div className="bg-primary-container text-on-primary-container w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl">
                         #{sug.publicacion.numero}
@@ -203,12 +268,24 @@ export default function TradesPage() {
                         {tab === 'recibidas' ? `Usuario ${item.propuesto_por}` : `Usuario ${item.solicitado_a}`}
                       </span>
                     </div>
-                    <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${
-                      item.estado === 'pendiente' ? 'bg-surface-variant text-on-surface-variant' :
-                      item.estado === 'aceptado' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
-                    }`}>
-                      {item.estado}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${
+                        item.estado === 'pendiente' ? 'bg-surface-variant text-on-surface-variant' :
+                        item.estado === 'aceptado' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
+                      }`}>
+                        {item.estado}
+                      </span>
+                      {(item.estado === 'pendiente' || item.estado === 'aceptado') && (
+                        <Button
+                          variant="tonal"
+                          size="sm"
+                          icon="chat"
+                          onClick={() => setChatModal({ ...item, isReceived: tab === 'recibidas' })}
+                          className="!p-1 !h-7 !w-7 !min-w-0 !rounded-full"
+                          title="Chatear sobre este intercambio"
+                        />
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-4 bg-surface-container/50 p-3 rounded-lg mb-4">
@@ -335,6 +412,85 @@ export default function TradesPage() {
                 Enviar calificación
               </Button>
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Chat Modal */}
+      <Modal
+        open={!!chatModal}
+        onClose={() => setChatModal(null)}
+        title={chatModal ? `Chat - Intercambio #${chatModal.id}` : 'Chat'}
+        width={500}
+      >
+        {chatModal && (
+          <div className="flex flex-col h-[450px]">
+            {/* Cabecera del chat con info del intercambio */}
+            <div className="bg-surface-container/60 p-3 rounded-lg flex items-center justify-between text-xs mb-3 border border-outline/35">
+              <div>
+                <span className="font-semibold text-primary">Te ofrece:</span> #{chatModal.figuritas_ofrecidas.join(', #')}
+              </div>
+              <Icon name="swap_horiz" className="text-on-surface-variant mx-1" size={16} />
+              <div>
+                <span className="font-semibold text-secondary">Ofreces:</span> #{chatModal.figurita_solicitada}
+              </div>
+            </div>
+
+            {/* Area de mensajes */}
+            <div className="flex-1 overflow-y-auto mb-4 p-2 bg-surface-container/30 rounded-lg border border-outline/20 space-y-3 flex flex-col min-h-0">
+              {chatLoading && chatMessages.length === 0 ? (
+                <div className="flex items-center justify-center flex-1 py-8">
+                  <Icon name="progress_activity" size={24} className="animate-spin text-primary" />
+                </div>
+              ) : chatMessages.length === 0 ? (
+                <div className="text-center text-on-surface-variant/60 text-xs my-auto italic py-8">
+                  No hay mensajes aún. ¡Escribe el primero!
+                </div>
+              ) : (
+                chatMessages.map((msg) => {
+                  const isMe = msg.remitente_id !== (chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`max-w-[75%] p-3 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
+                        isMe
+                          ? 'bg-primary text-on-primary rounded-tr-none self-end'
+                          : 'bg-surface-container text-on-surface rounded-tl-none self-start border border-outline/10'
+                      }`}
+                    >
+                      <div className="font-semibold text-[10px] opacity-75 mb-0.5">
+                        {isMe ? 'Tú' : `Usuario ${msg.remitente_id}`}
+                      </div>
+                      <div>{msg.contenido}</div>
+                      <div className="text-[9px] opacity-60 text-right mt-1">
+                        {new Date(msg.fecha_envio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input del chat */}
+            <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-outline/25 pt-3">
+              <input
+                type="text"
+                className="flex-1 bg-surface-container border border-outline/35 rounded-full px-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/50"
+                placeholder="Escribe un mensaje..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                disabled={chatSending}
+              />
+              <Button
+                type="submit"
+                variant="filled"
+                className="!rounded-full p-2 h-10 w-10 flex items-center justify-center min-w-0"
+                disabled={!chatInput.trim() || chatSending}
+              >
+                <Icon name={chatSending ? 'progress_activity' : 'send'} size={18} className={chatSending ? 'animate-spin' : ''} />
+              </Button>
+            </form>
           </div>
         )}
       </Modal>

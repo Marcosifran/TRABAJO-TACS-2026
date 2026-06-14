@@ -9,14 +9,6 @@ from app.schemas.intercambio_sch import IntercambioCreate, IntercambioDecision
 from app.schemas.intercambio_sch import EstadoIntercambio
 from app.schemas.album_sch import FiguritaAlbumCreate
 
-def validar_numeros_distintos(intercambio: IntercambioCreate) -> None:
-    """Valida que la figurita solicitada no esté incluida entre las ofrecidas."""
-    if intercambio.figurita_solicitada_numero in intercambio.figuritas_ofrecidas_numero:
-        raise DomainValidationError(
-            "La figurita solicitada no puede estar incluida entre las ofrecidas"
-        )
-
-
 def validar_usuario_destino(intercambio: IntercambioCreate, usuario_id: int) -> None:
     """Valida que el usuario no se proponga un intercambio a sí mismo y que exista."""
     if intercambio.solicitado_a_id == usuario_id:
@@ -104,7 +96,7 @@ def validar_intercambio(
 
     Reglas:
     - La lista de figuritas ofrecidas no puede estar vacía ni tener repetidos.
-    - La figurita solicitada no puede estar entre las ofrecidas.
+    - La figurita solicitada no puede ser la misma (mismo número, equipo y jugador) que alguna de las ofrecidas.
     - No se puede proponer a uno mismo ni a un usuario inexistente.
     - Todas las figuritas deben estar publicadas para intercambio directo.
     - Todas deben tener cantidad disponible.
@@ -112,11 +104,25 @@ def validar_intercambio(
     Returns:
         Tupla (publicaciones_ofrecidas, publicacion_solicitada)
     """
-    validar_numeros_distintos(intercambio)
     validar_usuario_destino(intercambio, usuario_id)
     publicaciones_ofrecidas, publicacion_solicitada = obtener_publicaciones_para_intercambio(
         intercambio, usuario_id
     )
+
+    # Validar que la figurita solicitada no sea la misma que alguna ofrecida (por número, equipo y jugador)
+    album_proponente = album_repo.get_by_usuario(usuario_id)
+    for num_ofrecido in intercambio.figuritas_ofrecidas_numero:
+        fig_ofrecida = next((f for f in album_proponente if f["numero"] == num_ofrecido and f["cantidad"] > 0), None)
+        if fig_ofrecida:
+            if (
+                fig_ofrecida["numero"] == publicacion_solicitada["numero"]
+                and fig_ofrecida["equipo"].lower() == publicacion_solicitada["equipo"].lower()
+                and fig_ofrecida["jugador"].lower() == publicacion_solicitada["jugador"].lower()
+            ):
+                raise DomainValidationError(
+                    "La figurita solicitada no puede estar incluida entre las ofrecidas"
+                )
+
     validar_cantidad_disponible(publicaciones_ofrecidas, publicacion_solicitada)
     return publicaciones_ofrecidas, publicacion_solicitada
 

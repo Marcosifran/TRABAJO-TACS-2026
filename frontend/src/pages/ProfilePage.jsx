@@ -49,14 +49,14 @@ export default function ProfilePage() {
   const ultimas = publicaciones.slice(-5).reverse()
 
   return (
-    <div className="p-8 max-w-[800px]">
-      <Card elevated className="mb-6 p-7">
-        <div className="flex items-center gap-5">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[800px]">
+      <Card elevated className="mb-6 p-5 sm:p-7">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start md:items-center gap-5 text-center sm:text-left">
           <Avatar name={user.nombre} size={72} />
           <div className="flex-1">
             <h1 className="text-2xl font-bold m-0 text-on-surface">{user.nombre}</h1>
             <p className="text-on-surface-variant text-sm mt-1 mb-2">{user.email}</p>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap justify-center sm:justify-start items-center gap-1.5">
               <StarRating value={reputacion?.promedio_puntuacion ?? 0} size={20} />
               <span className="text-sm font-semibold text-on-surface">
                 {reputacion?.promedio_puntuacion != null ? reputacion.promedio_puntuacion.toFixed(1) : '—'}
@@ -66,15 +66,15 @@ export default function ProfilePage() {
               </span>
             </div>
           </div>
-          <Button variant="outlined" icon="edit">Editar perfil</Button>
+          <Button variant="outlined" icon="edit" className="w-full sm:w-auto">Editar perfil</Button>
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {STATS.map((s, i) => (
           <Card key={i} className="text-center p-5">
             <Icon name={s.icon} size={28} style={{ color: s.colorVar }} />
-            <div className="text-3xl font-bold text-on-surface my-2">{s.value}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-on-surface my-2">{s.value}</div>
             <div className="text-[13px] text-on-surface-variant">{s.label}</div>
           </Card>
         ))}

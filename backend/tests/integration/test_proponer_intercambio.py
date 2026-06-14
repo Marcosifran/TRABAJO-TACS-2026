@@ -115,10 +115,27 @@ class TestProponerIntercambio:
 
         assert resp.status_code == 400
 
-    def test_no_permite_intercambiar_mismo_numero(self, client, token_user1, token_user2):
-        """No se puede ofrecer y solicitar el mismo número de figurita."""
+    def test_permite_intercambiar_mismo_numero_diferente_figurita(self, client, token_user1, token_user2):
+        """Se permite ofrecer y solicitar el mismo número de figurita si son de diferente equipo/jugador."""
         agregar_y_publicar(client, token_user1, 1, "Argentina", "Jugador 1")
         agregar_y_publicar(client, token_user2, 1, "Brasil",    "Jugador 2")
+
+        resp = client.post(
+            ENDPOINT_INTERCAMBIOS,
+            json={
+                "figuritas_ofrecidas_numero": [1],
+                "figurita_solicitada_numero": 1,
+                "solicitado_a_id": 2,
+            },
+            headers={"X-User-Token": token_user1},
+        )
+
+        assert resp.status_code == 201
+
+    def test_no_permite_intercambiar_misma_figurita(self, client, token_user1, token_user2):
+        """No se puede ofrecer y solicitar la misma figurita (mismo número, equipo y jugador)."""
+        agregar_y_publicar(client, token_user1, 1, "Argentina", "Jugador 1")
+        agregar_y_publicar(client, token_user2, 1, "Argentina", "Jugador 1")
 
         resp = client.post(
             ENDPOINT_INTERCAMBIOS,

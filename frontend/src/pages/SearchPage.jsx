@@ -120,7 +120,7 @@ export default function SearchPage() {
   const cards = results.map(pubToCard)
 
   return (
-    <div className="p-8 max-w-[1100px]">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1100px]">
       <h1 className="text-3xl font-bold text-on-surface mb-5">Buscar Figuritas</h1>
 
       <div className="mb-5">

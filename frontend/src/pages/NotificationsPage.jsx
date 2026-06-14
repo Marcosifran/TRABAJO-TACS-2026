@@ -91,10 +91,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[700px]">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[700px]">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-on-surface m-0">Alertas</h1>
+          <h1 className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center mb-6">Alertas</h1>
           {!loading && (
             <p className="mt-1 text-on-surface-variant text-sm">
               {total} {total === 1 ? 'alerta activa' : 'alertas activas'}
@@ -130,7 +130,7 @@ export default function NotificationsPage() {
               </h2>
               <div className="flex flex-col gap-2">
                 {propuestasVis.map(p => (
-                  <div key={p.id} className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`trade-${p.id}`)}`}>
+                  <div key={p.id} className={`p-4 rounded-2x1 border border-otline-variant bg-surface-container flex flex-col sm:flex-row gap-3 sm:items-center ${alertClass(`trade-${p.id}`)}`}>
                     <div className="bg-tertiary-container rounded-full p-2 shrink-0">
                       <Icon name="swap_horiz" size={18} className="text-tertiary" />
                     </div>
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
               </h2>
               <div className="flex flex-col gap-2">
                 {sugerenciasVis.map(s => (
-                  <div key={s.publicacion.id} className={`p-4 rounded-2xl border border-outline-variant bg-surface-container flex items-center gap-3 ${alertClass(`sug-${s.publicacion.id}`)}`}>
+                  <div key={s.publicacion.id} className={`p-4 rounded-2x1 border border-otline-variant bg-surface-container flex flex-col sm:flex-row gap-3 sm:items-center ${alertClass(`sug-${s.publicacion.id}`)}`}>
                     <div className="bg-primary-container rounded-full p-2 shrink-0">
                       <Icon name="auto_awesome" size={18} className="text-primary" />
                     </div>
