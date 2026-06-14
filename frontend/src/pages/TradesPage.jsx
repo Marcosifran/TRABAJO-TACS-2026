@@ -33,12 +33,12 @@ export default function TradesPage() {
   const [sugAlbum, setSugAlbum] = useState([])
 
   // Estados para el Chat
-  const [chatModal, setChatModal]       = useState(null)
+  const [chatModal, setChatModal] = useState(null)
   const [chatMessages, setChatMessages] = useState([])
-  const [chatInput, setChatInput]       = useState('')
-  const [chatLoading, setChatLoading]   = useState(false)
-  const [chatSending, setChatSending]   = useState(false)
-  const messagesEndRef                  = useRef(null)
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatSending, setChatSending] = useState(false)
+  const messagesEndRef = useRef(null)
 
   const ratingForm = useModalForm({ puntuacion: 0, comentario: '' })
   const sugTrade = useModalForm({ selectedOffer: [] })
@@ -578,11 +578,13 @@ export default function TradesPage() {
             {/* Cabecera del chat con info del intercambio */}
             <div className="bg-surface-container/60 p-3 rounded-lg flex items-center justify-between text-xs mb-3 border border-outline/35">
               <div>
-                <span className="font-semibold text-primary">Te ofrece:</span> #{chatModal.figuritas_ofrecidas.join(', #')}
+                <span className="font-semibold text-primary">Te ofrece:</span> #
+                {chatModal.figuritas_ofrecidas.join(', #')}
               </div>
               <Icon name="swap_horiz" className="text-on-surface-variant mx-1" size={16} />
               <div>
-                <span className="font-semibold text-secondary">Ofreces:</span> #{chatModal.figurita_solicitada}
+                <span className="font-semibold text-secondary">Ofreces:</span> #
+                {chatModal.figurita_solicitada}
               </div>
             </div>
 
@@ -598,7 +600,9 @@ export default function TradesPage() {
                 </div>
               ) : (
                 chatMessages.map((msg) => {
-                  const isMe = msg.remitente_id !== (chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)
+                  const isMe =
+                    msg.remitente_id !==
+                    (chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)
                   return (
                     <div
                       key={msg.id}
@@ -613,7 +617,10 @@ export default function TradesPage() {
                       </div>
                       <div>{msg.contenido}</div>
                       <div className="text-[9px] opacity-60 text-right mt-1">
-                        {new Date(msg.fecha_envio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.fecha_envio).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </div>
                     </div>
                   )
@@ -623,7 +630,10 @@ export default function TradesPage() {
             </div>
 
             {/* Input del chat */}
-            <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-outline/25 pt-3">
+            <form
+              onSubmit={handleSendMessage}
+              className="flex gap-2 border-t border-outline/25 pt-3"
+            >
               <input
                 type="text"
                 className="flex-1 bg-surface-container border border-outline/35 rounded-full px-4 py-2 text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/50"
@@ -638,7 +648,11 @@ export default function TradesPage() {
                 className="!rounded-full p-2 h-10 w-10 flex items-center justify-center min-w-0"
                 disabled={!chatInput.trim() || chatSending}
               >
-                <Icon name={chatSending ? 'progress_activity' : 'send'} size={18} className={chatSending ? 'animate-spin' : ''} />
+                <Icon
+                  name={chatSending ? 'progress_activity' : 'send'}
+                  size={18}
+                  className={chatSending ? 'animate-spin' : ''}
+                />
               </Button>
             </form>
           </div>
