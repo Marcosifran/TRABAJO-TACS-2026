@@ -20,18 +20,18 @@ import {
   cancelarOferta,
   aceptarOferta,
 } from '../api/subastas'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 import SubastaCardRow from '../components/SubastaCardRow'
 
 const EMPTY_AUCTION = { figurita_id: '', duracion: '24' }
 
 export default function AuctionsPage() {
-  const { user, users } = useUser()
+  const { user, users } = useAuth()
   const location = useLocation()
   const now = useNow()
   const pendingSubastaRef = useRef(location.state?.subastaId ?? null)
   const [tab, setTab] = useState('activas')
-  const userId = users.indexOf(user) + 1
+  const userId = user.id
 
   const bid = useModalForm({ offerIds: [] })
   const create = useModalForm(EMPTY_AUCTION)
@@ -252,7 +252,7 @@ export default function AuctionsPage() {
                   <div className="flex flex-col gap-1">
                     <span className="font-bold text-primary text-base">
                       {oferta.figurita_subastada
-                        ? `${oferta.figurita_subastada.jugador} — ${oferta.subasta ? (users[oferta.subasta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.subasta.usuario_id}`) : ''}`
+                        ? `${oferta.figurita_subastada.jugador} — ${oferta.subasta ? (users.find((u) => u.id === oferta.subasta.usuario_id)?.nombre ?? `Usuario ${oferta.subasta.usuario_id}`) : ''}`
                         : `Subasta #${oferta.subasta_id}`}
                     </span>
                     <span className="text-sm text-on-surface-variant">
@@ -473,7 +473,7 @@ export default function AuctionsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm text-on-surface">
-                      {users[oferta.usuario_id - 1]?.nombre ?? `Usuario ${oferta.usuario_id}`}
+                      {users.find((u) => u.id === oferta.usuario_id)?.nombre ?? `Usuario ${oferta.usuario_id}`}
                     </span>
                     <span className="text-xs text-on-surface-variant">Oferta #{oferta.id}</span>
                   </div>

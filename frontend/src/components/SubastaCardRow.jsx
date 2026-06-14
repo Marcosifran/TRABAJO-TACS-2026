@@ -12,8 +12,7 @@ export default function SubastaCardRow({
   onCancelar,
   showVerOfertasButton = true,
 }) {
-  const currentUserId = users.indexOf(user) + 1
-  const isOwner = sub.usuario_id === currentUserId
+  const isOwner = sub.usuario_id === user.id
   const now = useNow()
   const activa = isAuctionActive(sub, now)
   const cierre = lineaCierraEn(sub.fin)
@@ -23,7 +22,7 @@ export default function SubastaCardRow({
       <div>
         <h3 className="font-bold text-lg text-primary">
           {pubsMap[sub.figurita_id]
-            ? `${pubsMap[sub.figurita_id].jugador} — ${users[sub.usuario_id - 1]?.nombre ?? `Usuario ${sub.usuario_id}`}`
+            ? `${pubsMap[sub.figurita_id].jugador} — ${users.find(u => u.id === sub.usuario_id)?.nombre ?? `Usuario ${sub.usuario_id}`}`
             : `Subasta #${sub.id}`}
         </h3>
         <p className="text-on-surface-variant text-sm mt-1">

@@ -79,3 +79,25 @@ def test_jwt_obtenido_permite_acceder_a_endpoint_protegido(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 200
+
+
+def test_listar_usuarios_devuelve_seed_sin_datos_sensibles(client):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": SEED_EMAIL, "password": SEED_PASSWORD},
+    )
+    token = login.json()["access_token"]
+
+    resp = client.get("/api/v1/usuarios", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    usuarios = resp.json()
+    assert any(u["email"] == SEED_EMAIL for u in usuarios)
+    # Nunca se exponen el hash de la contraseña ni el token legacy.
+    for u in usuarios:
+        assert "password_hash" not in u
+        assert "token" not in u
+
+
+def test_listar_usuarios_requiere_autenticacion(client):
+    resp = client.get("/api/v1/usuarios")
+    assert resp.status_code in (401, 422)

@@ -1,10 +1,22 @@
 from fastapi import APIRouter, Depends
 from app.schemas.faltante import FaltanteCreate
-from app.schemas import ReputacionResponse
+from app.schemas import ReputacionResponse, UsuarioResponse
 from app.services import usuario_service, album_service, calificacion_service, subasta_service, publicacion_service
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"], dependencies=[Depends(get_current_user)])
+
+
+@router.get(
+    "",
+    response_model=list[UsuarioResponse],
+    responses={
+        200: {"description": "Listado de usuarios (id, nombre, email) para resolver nombres en la UI"},
+        401: {"description": "Token ausente o inválido"},
+    },
+)
+def listar_usuarios():
+    return usuario_service.listar_usuarios()
 
 
 @router.get(

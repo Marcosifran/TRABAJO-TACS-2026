@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import useSWR from 'swr'
 import Icon from './ui/Icon'
 import Badge from './ui/Badge'
 import Avatar from './ui/Avatar'
 import { useTheme } from '../context/ThemeContext'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 import { formatTiempoRestante } from '../utils/auctionTime'
 
 const NAV = [
@@ -24,9 +24,15 @@ const POLL_INTERVAL = 20000 // 20 segundos
 
 export default function AppShell({ children }) {
   const { dark, toggleDark } = useTheme()
-  const { user, users, switchUser } = useUser()
+  const { user, users, logout } = useAuth()
   const location = useLocation()
-  const userId = users.indexOf(user) + 1
+  const navigate = useNavigate()
+  const userId = user.id
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   const [notifs, setNotifs] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -53,8 +59,6 @@ export default function AppShell({ children }) {
 
   // Resetea los "vistos" cuando cambia el usuario para evitar falsos positivos
   useEffect(() => {
-    seenSugIds.current = null
-    seenTradeIds.current = null
     seenAuctIds.current = new Set()
   }, [user])
 
@@ -94,7 +98,7 @@ export default function AppShell({ children }) {
       const nuevas = pendientes.filter((i) => !seenTradeIds.current.has(i.id))
       if (nuevas.length > 0) {
         const t = nuevas[0]
-        const ofertante = users[t.propuesto_por - 1]?.nombre ?? `Usuario ${t.propuesto_por}`
+        const ofertante = users.find((u) => u.id === t.propuesto_por)?.nombre ?? `Usuario ${t.propuesto_por}`
         pushNotif(
           `trade-${t.id}`,
           'swap_horiz',
@@ -249,13 +253,13 @@ export default function AppShell({ children }) {
               </div>
               <div className="text-2xs text-on-surface-variant truncate">{user.email}</div>
             </div>
-            {/* Selector de usuario para desarrollo */}
+            {/* Cerrar sesión */}
             <button
-              onClick={() => switchUser(users.indexOf(user) === 0 ? 1 : 0)}
+              onClick={handleLogout}
               className="p-1 rounded-full hover:bg-surface-variant transition-colors cursor-pointer border-0 bg-transparent shrink-0"
-              title="Cambiar usuario (dev)"
+              title="Cerrar sesión"
             >
-              <Icon name="switch_account" size={18} className="text-on-surface-variant" />
+              <Icon name="logout" size={18} className="text-on-surface-variant" />
             </button>
           </div>
         </div>

@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
-import { useUser } from '../context/UserContext'
+import { useAuth } from '../context/AuthContext'
 import { formatTiempoRestante, isAuctionActive } from '../utils/auctionTime'
 
 const storageKey = (userId) => `figuswap-alertas-leidas:user-${userId}`
@@ -23,9 +23,9 @@ function saveLeidas(set, userId) {
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
-  const { user, users } = useUser()
+  const { user, users } = useAuth()
   const fadeTimers = useRef(new Map())
-  const userId = users.indexOf(user) + 1
+  const userId = user.id
 
   const [leidas, setLeidas] = useState(() => loadLeidas(userId))
   const [fading, setFading] = useState(new Set())
@@ -159,8 +159,9 @@ export default function NotificationsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-on-surface">
-                        {users[p.propuesto_por - 1]?.nombre ?? `Usuario ${p.propuesto_por}`} quiere
-                        intercambiar
+                        {users.find((u) => u.id === p.propuesto_por)?.nombre ??
+                          `Usuario ${p.propuesto_por}`}{' '}
+                        quiere intercambiar
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
                         Ofrece: {p.figuritas_ofrecidas.map((n) => `#${n}`).join(', ')} · Solicita: #
@@ -252,7 +253,7 @@ export default function NotificationsPage() {
                           : `Subasta #${s.id}`}
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
-                        De {users[s.usuario_id - 1]?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra
+                        De {users.find((u) => u.id === s.usuario_id)?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra
                         en {formatTiempoRestante(s.fin)}
                       </div>
                     </div>
