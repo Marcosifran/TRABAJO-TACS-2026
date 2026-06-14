@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     user_1_token: str = ""
     user_2_token: str = ""
 
+    # Contraseña de los usuarios sembrados (demo). Permite loguear a marcos/jeronimo
+    # con el nuevo flujo JWT sin perder los datos asociados a sus ids 1 y 2.
+    seed_user_password: str = "figuswap123"
+
     # Configuración JWT para el backend.
     jwt_secret: str = "dev-jwt-secret-change-me-please-use-env-overrides"
     jwt_algorithm: str = "HS256"

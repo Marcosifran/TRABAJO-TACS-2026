@@ -5,6 +5,7 @@ pydantic-settings
 pytest
 httpx
 PyJWT
+bcrypt
 pymongo[srv]
 requests
 beautifulsoup4
