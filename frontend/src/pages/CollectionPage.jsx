@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
+import useSWR from 'swr'
 import { useModalForm } from '../hooks/useModalForm'
 import Button from '../components/ui/Button'
 import Tabs from '../components/ui/Tabs'
@@ -16,9 +17,8 @@ import {
   listarMisPublicaciones,
   retirarPublicacion,
 } from '../api/publicaciones'
-import { registrarFaltante, listarFaltantes } from '../api/faltantes'
+import { registrarFaltante } from '../api/faltantes'
 import { getMaestroJugador } from '../api/maestro'
-import { listarMiAlbum } from '../api/album'
 
 const SELECCIONES = [
   'Argentina',
@@ -57,48 +57,24 @@ function figToCard(fig, ownerName, pub) {
 }
 
 export default function CollectionPage() {
-  const { user } = useUser()
+  const { user, users } = useUser()
+  const userId = users.indexOf(user) + 1
   const pubModal = useModalForm(EMPTY_PUB)
   const faltModal = useModalForm(EMPTY_FALT)
   const [tab, setTab] = useState('tengo')
-  const [album, setAlbum] = useState([])
-  const [publicaciones, setPublicaciones] = useState([])
-  const [faltantes, setFaltantes] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [loadingFalt, setLoadingFalt] = useState(false)
   const [loadingMaestro, setLoadingMaestro] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const maestroTimer = useRef(null)
 
-  const cargarDatos = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [albumData, pubsData] = await Promise.all([listarMiAlbum(), listarMisPublicaciones()])
-      setAlbum(albumData.figuritas || albumData)
-      setPublicaciones(pubsData)
-    } catch (e) {
-      setSnack({ open: true, message: e.message, type: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const { data: albumRaw, isLoading: loading, mutate: mutateAlbum } = useSWR(['/album', userId])
+  const { data: publicaciones = [], mutate: mutatePubs } = useSWR(['/usuarios/publicaciones', userId])
+  const {
+    data: faltantes = [],
+    isLoading: loadingFalt,
+    mutate: mutateFaltantes,
+  } = useSWR(['/usuarios/faltantes', userId])
 
-  const cargarFaltantes = useCallback(async () => {
-    setLoadingFalt(true)
-    try {
-      const data = await listarFaltantes()
-      setFaltantes(data || [])
-    } catch (e) {
-      setSnack({ open: true, message: e.message, type: 'error' })
-    } finally {
-      setLoadingFalt(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    cargarDatos()
-    cargarFaltantes()
-  }, [cargarDatos, cargarFaltantes])
+  const album = albumRaw?.figuritas || albumRaw || []
 
   async function handlePublish() {
     if (!pubModal.form.numero || !pubModal.form.jugador) {
@@ -109,7 +85,6 @@ export default function CollectionPage() {
     try {
       let figId = pubModal.form._figId
 
-      // Si no viene de una figurita existente en el álbum, la agregamos primero
       if (!figId) {
         const albumEntry = await agregarAlAlbum({
           numero: pubModal.form.numero,
@@ -128,7 +103,8 @@ export default function CollectionPage() {
 
       pubModal.close()
       setSnack({ open: true, message: 'Figurita publicada con éxito', type: 'success' })
-      cargarDatos()
+      mutateAlbum()
+      mutatePubs()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     } finally {
@@ -151,7 +127,7 @@ export default function CollectionPage() {
     try {
       await retirarPublicacion(pubId)
       setSnack({ open: true, message: 'Publicación retirada', type: 'info' })
-      cargarDatos()
+      mutatePubs()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     }
@@ -192,7 +168,7 @@ export default function CollectionPage() {
       })
       faltModal.close()
       setSnack({ open: true, message: 'Faltante registrado con éxito', type: 'success' })
-      cargarFaltantes()
+      mutateFaltantes()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     } finally {

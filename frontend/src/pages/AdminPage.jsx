@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useSWR from 'swr'
 import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import { obtenerEstadisticas, listarCalificaciones } from '../api/admin'
 
 const CARDS = [
   { key: 'usuarios', icon: 'group', label: 'Usuarios', colorVar: 'var(--color-primary)' },
@@ -39,22 +38,8 @@ const PREVIEW_COUNT = 5
 
 export default function AdminPage() {
   const navigate = useNavigate()
-  const [stats, setStats] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [calificaciones, setCalificaciones] = useState([])
-  const [loadingCals, setLoadingCals] = useState(true)
-
-  useEffect(() => {
-    obtenerEstadisticas()
-      .then((data) => setStats(data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-
-    listarCalificaciones()
-      .then((data) => setCalificaciones(data))
-      .catch(() => {})
-      .finally(() => setLoadingCals(false))
-  }, [])
+  const { data: stats, isLoading: loading } = useSWR('/admin/estadisticas')
+  const { data: calificaciones = [], isLoading: loadingCals } = useSWR('/admin/calificaciones')
 
   const totalIntercambios = stats
     ? Object.values(stats.intercambios_por_estado).reduce((a, b) => a + b, 0)

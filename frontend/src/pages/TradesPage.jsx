@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { useModalForm } from '../hooks/useModalForm'
 import { useLocation } from 'react-router-dom'
 import Tabs from '../components/ui/Tabs'
@@ -17,44 +18,40 @@ import {
   calificarIntercambio,
   proponerIntercambio,
 } from '../api/intercambios'
-import { obtenerSugerencias } from '../api/faltantes'
 import { listarMiAlbum } from '../api/album'
+import { useUser } from '../context/UserContext'
 
 export default function TradesPage() {
   const location = useLocation()
+  const { user, users } = useUser()
+  const userId = users.indexOf(user) + 1
+
   const [tab, setTab] = useState(location.state?.tab || 'recibidas')
-  const [recibidas, setRecibidas] = useState([])
-  const [enviadas, setEnviadas] = useState([])
-  const [sugerencias, setSugerencias] = useState([])
-  const [loading, setLoading] = useState(false)
-  const ratingForm = useModalForm({ puntuacion: 0, comentario: '' })
-  const sugTrade = useModalForm({ selectedOffer: [] })
   const [calificados, setCalificados] = useState(new Set())
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const [sugAlbum, setSugAlbum] = useState([])
 
-  const fetchIntercambios = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await listarIntercambios()
-      setRecibidas(data.recibidos || [])
-      setEnviadas(data.enviados || [])
+  const ratingForm = useModalForm({ puntuacion: 0, comentario: '' })
+  const sugTrade = useModalForm({ selectedOffer: [] })
 
-      const sugsData = await obtenerSugerencias()
-      setSugerencias(sugsData || [])
-    } catch (e) {
-      setSnack({ open: true, message: 'Error cargando intercambios: ' + e.message, type: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const {
+    data: intercambiosData,
+    isLoading: loading,
+    mutate: mutateIntercambios,
+  } = useSWR(['/intercambios/', userId])
+  const { data: sugerencias = [], mutate: mutateSugerencias } = useSWR([
+    '/publicaciones/sugerencias',
+    userId,
+  ])
+
+  const recibidas = intercambiosData?.recibidos || []
+  const enviadas = intercambiosData?.enviados || []
 
   useEffect(() => {
     if (location.state?.proponer) {
       sugTrade.openWith(location.state.proponer)
     }
-    fetchIntercambios()
-  }, [fetchIntercambios])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (sugTrade.open) {
@@ -70,7 +67,7 @@ export default function TradesPage() {
     try {
       await responderIntercambio(id, decision)
       setSnack({ open: true, message: `Intercambio ${decision} exitosamente`, type: 'success' })
-      fetchIntercambios()
+      mutateIntercambios()
     } catch (e) {
       setSnack({
         open: true,
@@ -116,6 +113,8 @@ export default function TradesPage() {
       })
       setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
       sugTrade.close()
+      mutateIntercambios()
+      mutateSugerencias()
     } catch (e) {
       setSnack({ open: true, message: 'Error al enviar propuesta: ' + e.message, type: 'error' })
     } finally {

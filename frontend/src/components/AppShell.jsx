@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import clsx from 'clsx'
+import useSWR from 'swr'
 import Icon from './ui/Icon'
 import Badge from './ui/Badge'
 import Avatar from './ui/Avatar'
 import { useTheme } from '../context/ThemeContext'
 import { useUser } from '../context/UserContext'
-import { obtenerSugerencias } from '../api/faltantes'
-import { listarSubastas } from '../api/subastas'
-import { listarIntercambios } from '../api/intercambios'
 import { formatTiempoRestante } from '../utils/auctionTime'
 
 const NAV = [
@@ -28,6 +26,7 @@ export default function AppShell({ children }) {
   const { dark, toggleDark } = useTheme()
   const { user, users, switchUser } = useUser()
   const location = useLocation()
+  const userId = users.indexOf(user) + 1
 
   const [notifs, setNotifs] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -52,101 +51,82 @@ export default function AppShell({ children }) {
     setNotifs((prev) => prev.filter((n) => n.id !== id))
   }
 
-  // Poll sugerencias
+  // Resetea los "vistos" cuando cambia el usuario para evitar falsos positivos
   useEffect(() => {
     seenSugIds.current = null
-    async function pollSugs() {
-      try {
-        const data = await obtenerSugerencias()
-        const sugs = data || []
-        const ids = new Set(sugs.map((s) => s.publicacion.id))
-        if (seenSugIds.current === null) {
-          seenSugIds.current = ids
-          return
-        }
-        const nuevas = sugs.filter((s) => !seenSugIds.current.has(s.publicacion.id))
-        if (nuevas.length > 0) {
-          const p = nuevas[0].publicacion
-          pushNotif(
-            `sug-${p.id}`,
-            'auto_awesome',
-            '¡Nueva sugerencia disponible!',
-            `#${p.numero} ${p.jugador} (${p.equipo})${nuevas.length > 1 ? ` y ${nuevas.length - 1} más` : ''}`,
-          )
-          seenSugIds.current = ids
-        }
-      } catch {
-        /* ignorar */
-      }
-    }
-    pollSugs()
-    const t = setInterval(pollSugs, POLL_INTERVAL)
-    return () => clearInterval(t)
-  }, [user])
-
-  // Poll propuestas de intercambio recibidas
-  useEffect(() => {
     seenTradeIds.current = null
-    async function pollTrades() {
-      try {
-        const data = await listarIntercambios()
-        const pendientes = (data.recibidos || []).filter((i) => i.estado === 'pendiente')
-        const ids = new Set(pendientes.map((i) => i.id))
-        if (seenTradeIds.current === null) {
-          seenTradeIds.current = ids
-          return
-        }
-        const nuevas = pendientes.filter((i) => !seenTradeIds.current.has(i.id))
-        if (nuevas.length > 0) {
-          const t = nuevas[0]
-          const ofertante = users[t.propuesto_por - 1]?.nombre ?? `Usuario ${t.propuesto_por}`
-          pushNotif(
-            `trade-${t.id}`,
-            'swap_horiz',
-            '¡Nueva propuesta de intercambio!',
-            `${ofertante} quiere la figurita #${t.figurita_solicitada}`,
-          )
-          seenTradeIds.current = ids
-        }
-      } catch {
-        /* ignorar */
-      }
-    }
-    pollTrades()
-    const t = setInterval(pollTrades, POLL_INTERVAL)
-    return () => clearInterval(t)
+    seenAuctIds.current = new Set()
   }, [user])
 
-  // Poll subastas por vencer (< 24 hs)
-  useEffect(() => {
-    seenAuctIds.current = new Set()
-    async function pollSubastas() {
-      try {
-        const data = await listarSubastas()
-        const ahora = Date.now()
-        const porVencer = (data || []).filter((s) => {
-          const ms = new Date(s.fin) - ahora
-          return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
-        })
-        porVencer.forEach((s) => {
-          if (seenAuctIds.current.has(s.id)) return
-          seenAuctIds.current.add(s.id)
-          const tiempo = formatTiempoRestante(s.fin)
-          pushNotif(
-            `auct-${s.id}`,
-            'gavel',
-            '⏳ Subasta por finalizar',
-            `Subasta #${s.id} cierra en ${tiempo}`,
-          )
-        })
-      } catch {
-        /* ignorar */
+  // SWR con polling: sugerencias — comparte cache con NotificationsPage y TradesPage
+  useSWR(['/publicaciones/sugerencias', userId], {
+    refreshInterval: POLL_INTERVAL,
+    onSuccess: (sugs = []) => {
+      const ids = new Set(sugs.map((s) => s.publicacion.id))
+      if (seenSugIds.current === null) {
+        seenSugIds.current = ids
+        return
       }
-    }
-    pollSubastas()
-    const t = setInterval(pollSubastas, POLL_INTERVAL)
-    return () => clearInterval(t)
-  }, [user])
+      const nuevas = sugs.filter((s) => !seenSugIds.current.has(s.publicacion.id))
+      if (nuevas.length > 0) {
+        const p = nuevas[0].publicacion
+        pushNotif(
+          `sug-${p.id}`,
+          'auto_awesome',
+          '¡Nueva sugerencia disponible!',
+          `#${p.numero} ${p.jugador} (${p.equipo})${nuevas.length > 1 ? ` y ${nuevas.length - 1} más` : ''}`,
+        )
+        seenSugIds.current = ids
+      }
+    },
+  })
+
+  // SWR con polling: intercambios — comparte cache con TradesPage y NotificationsPage
+  useSWR(['/intercambios/', userId], {
+    refreshInterval: POLL_INTERVAL,
+    onSuccess: (data) => {
+      const pendientes = (data?.recibidos || []).filter((i) => i.estado === 'pendiente')
+      const ids = new Set(pendientes.map((i) => i.id))
+      if (seenTradeIds.current === null) {
+        seenTradeIds.current = ids
+        return
+      }
+      const nuevas = pendientes.filter((i) => !seenTradeIds.current.has(i.id))
+      if (nuevas.length > 0) {
+        const t = nuevas[0]
+        const ofertante = users[t.propuesto_por - 1]?.nombre ?? `Usuario ${t.propuesto_por}`
+        pushNotif(
+          `trade-${t.id}`,
+          'swap_horiz',
+          '¡Nueva propuesta de intercambio!',
+          `${ofertante} quiere la figurita #${t.figurita_solicitada}`,
+        )
+        seenTradeIds.current = ids
+      }
+    },
+  })
+
+  // SWR con polling: subastas — comparte cache con AuctionsPage, HomePage, SearchPage
+  useSWR('/subastas', {
+    refreshInterval: POLL_INTERVAL,
+    onSuccess: (data = []) => {
+      const ahora = Date.now()
+      const porVencer = data.filter((s) => {
+        const ms = new Date(s.fin) - ahora
+        return s.estado === 'activa' && ms > 0 && ms < 24 * 3600 * 1000
+      })
+      porVencer.forEach((s) => {
+        if (seenAuctIds.current.has(s.id)) return
+        seenAuctIds.current.add(s.id)
+        pushNotif(
+          `auct-${s.id}`,
+          'gavel',
+          '⏳ Subasta por finalizar',
+          `Subasta #${s.id} cierra en ${formatTiempoRestante(s.fin)}`,
+        )
+      })
+    },
+  })
 
   return (
     <div className="flex h-screen bg-surface text-on-surface font-sans overflow-hidden">

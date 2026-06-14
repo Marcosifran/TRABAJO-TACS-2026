@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
+import useSWR from 'swr'
 import { useModalForm } from '../hooks/useModalForm'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
@@ -9,11 +10,8 @@ import Modal from '../components/ui/Modal'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import SubastaCardRow from '../components/SubastaCardRow'
-import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
-import { listarFaltantes, obtenerReputacion, obtenerSugerencias } from '../api/faltantes'
-import { listarIntercambios } from '../api/intercambios'
-import { listarMiAlbum } from '../api/album'
-import { listarSubastas, ofertarSubasta } from '../api/subastas'
+import { useState } from 'react'
+import { ofertarSubasta } from '../api/subastas'
 import WorldCupSchedule from '../sections/WorldCupSchedule'
 import { useUser } from '../context/UserContext'
 import { isAuctionActive } from '../utils/auctionTime'
@@ -21,82 +19,47 @@ import { isAuctionActive } from '../utils/auctionTime'
 export default function HomePage() {
   const navigate = useNavigate()
   const { user, users } = useUser()
-  const [figuritasCount, setFiguritasCount] = useState('—')
-  const [faltanCount, setFaltanCount] = useState('—')
-  const [intercambiosCount, setIntercambiosCount] = useState('—')
-  const [reputacion, setReputacion] = useState('—')
-  const [ultimasPublicadas, setUltimasPublicadas] = useState([])
-  const [sugerencias, setSugerencias] = useState([])
-  const [subastasPorFinalizar, setSubastasPorFinalizar] = useState([])
-  const [pubsMap, setPubsMap] = useState({})
+  const userId = users.indexOf(user) + 1
 
   const bid = useModalForm({ offerIds: [] })
-  const [miAlbum, setMiAlbum] = useState([])
-  const [snack, setSnack] = useState({
-    open: false,
-    message: '',
-    type: 'info',
-  })
+  const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
 
-  useEffect(() => {
-    listarMiAlbum()
-      .then((data) => setFiguritasCount((data.figuritas || data).length))
-      .catch(() => {})
-    listarFaltantes()
-      .then((data) => setFaltanCount((data || []).length))
-      .catch(() => {})
-    listarIntercambios()
-      .then((data) =>
-        setIntercambiosCount((data.enviados?.length || 0) + (data.recibidos?.length || 0)),
-      )
-      .catch(() => {})
-    // Nota: El ID del usuario debería venir del contexto. Uso 1 como fallback si no hay.
-    const userId = users.indexOf(user) + 1
-    obtenerReputacion(userId)
-      .then((data) =>
-        setReputacion(data.promedio_puntuacion != null ? data.promedio_puntuacion.toFixed(1) : '—'),
-      )
-      .catch(() => {})
-    buscarPublicaciones({ incluir_propias: true })
-      .then((data) => setUltimasPublicadas(data.slice(0, 4)))
-      .catch(() => {})
-    obtenerSugerencias()
-      .then((data) => setSugerencias(data || []))
-      .catch(() => {})
-  }, [user])
+  const { data: albumRaw } = useSWR(['/album', userId])
+  const { data: faltantesData = [] } = useSWR(['/usuarios/faltantes', userId])
+  const { data: intercambiosData } = useSWR(['/intercambios/', userId])
+  const { data: reputacionData } = useSWR(`/usuarios/${userId}/reputacion`)
+  const { data: todasPubs = [] } = useSWR('/publicaciones?incluir_propias=true')
+  const { data: sugerencias = [] } = useSWR(['/publicaciones/sugerencias', userId])
+  const { data: subastas = [], mutate: mutateSubastas } = useSWR('/subastas')
+  const { data: misPubs = [] } = useSWR(['/usuarios/publicaciones', userId])
 
-  useEffect(() => {
-    let cancelled = false
-    async function loadSubastasYAlbum() {
-      try {
-        const [subs, pubs, otrasPubs, album] = await Promise.all([
-          listarSubastas(),
-          listarMisPublicaciones(),
-          buscarPublicaciones(),
-          listarMiAlbum(),
-        ])
-        if (cancelled) return
-        const map = {}
-        ;[...pubs, ...otrasPubs].forEach((p) => {
-          map[p.id] = p
-        })
-        setPubsMap(map)
-        setMiAlbum(album.figuritas || album)
-        const ahora = Date.now()
-        const list = (subs || [])
-          .filter((s) => isAuctionActive(s, ahora))
-          .sort((a, b) => new Date(a.fin) - new Date(b.fin))
-          .slice(0, 4)
-        setSubastasPorFinalizar(list)
-      } catch {
-        /* ignorar */
-      }
-    }
-    loadSubastasYAlbum()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const miAlbum = albumRaw?.figuritas || albumRaw || []
+  const figuritasCount = miAlbum.length
+  const faltanCount = faltantesData.length
+  const intercambiosCount =
+    (intercambiosData?.enviados?.length || 0) + (intercambiosData?.recibidos?.length || 0)
+  const reputacion =
+    reputacionData?.promedio_puntuacion != null
+      ? reputacionData.promedio_puntuacion.toFixed(1)
+      : '—'
+
+  const ultimasPublicadas = todasPubs.slice(0, 4)
+
+  const pubsMap = useMemo(() => {
+    const map = {}
+    ;[...misPubs, ...todasPubs].forEach((p) => {
+      map[p.id] = p
+    })
+    return map
+  }, [misPubs, todasPubs])
+
+  const subastasPorFinalizar = useMemo(() => {
+    const ahora = Date.now()
+    return subastas
+      .filter((s) => isAuctionActive(s, ahora))
+      .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+      .slice(0, 4)
+  }, [subastas])
 
   function toggleOferta(id) {
     bid.setForm((f) => ({
@@ -115,6 +78,7 @@ export default function HomePage() {
       await ofertarSubasta(bid.open.id, bid.form.offerIds)
       setSnack({ open: true, message: 'Oferta enviada con éxito', type: 'success' })
       bid.close()
+      mutateSubastas()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
@@ -126,19 +90,19 @@ export default function HomePage() {
     {
       icon: 'collections_bookmark',
       label: 'Figuritas',
-      value: figuritasCount,
+      value: figuritasCount || '—',
       colorVar: 'var(--color-primary)',
     },
     {
       icon: 'playlist_add',
       label: 'Faltan',
-      value: faltanCount,
+      value: faltanCount || '—',
       colorVar: 'var(--color-secondary)',
     },
     {
       icon: 'swap_horiz',
       label: 'Intercambios',
-      value: intercambiosCount,
+      value: intercambiosCount || '—',
       colorVar: 'var(--color-tertiary)',
     },
     { icon: 'star', label: 'Reputación', value: reputacion, colorVar: 'var(--color-gold)' },

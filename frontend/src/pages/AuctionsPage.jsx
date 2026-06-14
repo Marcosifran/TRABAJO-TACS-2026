@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import useSWR from 'swr'
 import { useModalForm } from '../hooks/useModalForm'
 import { useLocation } from 'react-router-dom'
 import { useNow } from '../hooks/useNow'
@@ -11,8 +12,6 @@ import Input from '../components/ui/Input'
 import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import {
-  listarSubastas,
-  listarMisSubastas,
   crearSubasta,
   cancelarSubasta,
   ofertarSubasta,
@@ -21,8 +20,6 @@ import {
   cancelarOferta,
   aceptarOferta,
 } from '../api/subastas'
-import { listarMisPublicaciones, buscarPublicaciones } from '../api/publicaciones'
-import { listarMiAlbum } from '../api/album'
 import { useUser } from '../context/UserContext'
 import SubastaCardRow from '../components/SubastaCardRow'
 
@@ -34,11 +31,7 @@ export default function AuctionsPage() {
   const now = useNow()
   const pendingSubastaRef = useRef(location.state?.subastaId ?? null)
   const [tab, setTab] = useState('activas')
-  const [subastas, setSubastas] = useState([])
-  const [misSubastas, setMisSubastas] = useState([])
-  const [misPublicaciones, setMisPublicaciones] = useState([])
-  const [miAlbum, setMiAlbum] = useState([])
-  const [pubsMap, setPubsMap] = useState({})
+  const userId = users.indexOf(user) + 1
 
   const bid = useModalForm({ offerIds: [] })
   const create = useModalForm(EMPTY_AUCTION)
@@ -48,53 +41,36 @@ export default function AuctionsPage() {
   const [misOfertas, setMisOfertas] = useState([])
   const [loadingMisOfertas, setLoadingMisOfertas] = useState(false)
   const [confirmCancelModal, setConfirmCancelModal] = useState(null)
-
-  const [snack, setSnack] = useState({
-    open: false,
-    message: '',
-    type: 'info',
-  })
   const [loading, setLoading] = useState(false)
+  const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
 
-  const cargarDatos = async () => {
-    try {
-      const [subs, misSubs, pubs, otrasPubs, album] = await Promise.all([
-        listarSubastas(),
-        listarMisSubastas(),
-        listarMisPublicaciones(),
-        buscarPublicaciones(),
-        listarMiAlbum(),
-      ])
-      setSubastas(subs || [])
-      setMisSubastas(misSubs || [])
-      setMisPublicaciones(pubs.filter((p) => p.tipo_intercambio === 'subasta'))
-      setMiAlbum(album)
-      const map = {}
-      ;[...pubs, ...otrasPubs].forEach((p) => {
-        map[p.id] = p
-      })
-      setPubsMap(map)
-    } catch (error) {
-      setSnack({
-        open: true,
-        message: 'Error al cargar datos: ' + error.message,
-        type: 'error',
-      })
-    }
-  }
+  const { data: subastas = [], mutate: mutateSubastas } = useSWR('/subastas')
+  const { data: misSubastas = [], mutate: mutateMisSubastas } = useSWR([
+    '/usuarios/subastas',
+    userId,
+  ])
+  const { data: misPublicacionesRaw = [] } = useSWR(['/usuarios/publicaciones', userId])
+  const { data: otrasPubs = [] } = useSWR('/publicaciones')
+  const { data: albumRaw } = useSWR(['/album', userId])
 
-  useEffect(() => {
-    cargarDatos()
-  }, [])
+  const miAlbum = albumRaw?.figuritas || albumRaw || []
+  const misPublicaciones = misPublicacionesRaw.filter((p) => p.tipo_intercambio === 'subasta')
 
+  const pubsMap = (() => {
+    const map = {}
+    ;[...misPublicacionesRaw, ...otrasPubs].forEach((p) => {
+      map[p.id] = p
+    })
+    return map
+  })()
+
+  // Abre el modal de oferta si venimos desde otra página con un subastaId
   useEffect(() => {
     if (!pendingSubastaRef.current || subastas.length === 0) return
     const target = subastas.find((s) => s.id === pendingSubastaRef.current)
-    if (target) {
-      bid.openWith(target)
-    }
+    if (target) bid.openWith(target)
     pendingSubastaRef.current = null
-  }, [subastas])
+  }, [subastas]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCreate() {
     if (!create.form.figurita_id) {
@@ -113,7 +89,8 @@ export default function AuctionsPage() {
       })
       setSnack({ open: true, message: 'Subasta iniciada con éxito', type: 'success' })
       create.close()
-      cargarDatos()
+      mutateSubastas()
+      mutateMisSubastas()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
@@ -153,7 +130,8 @@ export default function AuctionsPage() {
     try {
       await cancelarSubasta(sub.id)
       setSnack({ open: true, message: 'Subasta cancelada', type: 'info' })
-      cargarDatos()
+      mutateSubastas()
+      mutateMisSubastas()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     }
@@ -190,6 +168,7 @@ export default function AuctionsPage() {
       await ofertarSubasta(bid.open.id, bid.form.offerIds)
       setSnack({ open: true, message: 'Oferta enviada con éxito', type: 'success' })
       bid.close()
+      mutateSubastas()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
@@ -201,14 +180,10 @@ export default function AuctionsPage() {
     setLoading(true)
     try {
       await aceptarOferta(offersModal.id, ofertaId)
-
-      setSnack({
-        open: true,
-        message: 'Oferta aceptada',
-        type: 'success',
-      })
+      setSnack({ open: true, message: 'Oferta aceptada', type: 'success' })
       setOffersModal(null)
-      cargarDatos()
+      mutateSubastas()
+      mutateMisSubastas()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
@@ -216,22 +191,15 @@ export default function AuctionsPage() {
     }
   }
 
-  // Preparamos las opciones para el select (solo publicaciones tipo subasta)
   const figuritasEnSubastaActiva = new Set(
     misSubastas.filter((s) => isAuctionActive(s, now)).map((s) => s.figurita_id),
   )
   const opcionesSubasta = misPublicaciones
     .filter((p) => !figuritasEnSubastaActiva.has(p.id))
-    .map((p) => ({
-      value: p.id,
-      label: `${p.jugador} (${p.equipo})`,
-    }))
+    .map((p) => ({ value: p.id, label: `${p.jugador} (${p.equipo})` }))
   opcionesSubasta.unshift({ value: '', label: 'Seleccioná una figurita...' })
 
-  // Filtramos las activas para que no muestre las finalizadas
   const activasFiltradas = subastas.filter((sub) => isAuctionActive(sub, now))
-
-  // Decidimos qué lista usar según la pestaña
   const listaSubastas = tab === 'activas' ? activasFiltradas : misSubastas
 
   return (
@@ -302,8 +270,6 @@ export default function AuctionsPage() {
                     </span>
                     {(() => {
                       const activa = isAuctionActive(oferta.subasta, now)
-
-                      // Si sigue activa, mostramos el texto normal
                       if (activa) {
                         return (
                           <span className="text-xs font-medium mt-0.5 text-green-600">
@@ -311,10 +277,7 @@ export default function AuctionsPage() {
                           </span>
                         )
                       }
-
-                      // Si ya finalizó, nos fijamos si esta oferta es la ganadora
                       const esGanadora = oferta.subasta?.oferta_ganadora_id === oferta.id
-
                       return (
                         <span
                           className={`text-sm font-bold mt-1 ${
