@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useModalForm } from '../hooks/useModalForm'
 import Button from '../components/ui/Button'
 import Tabs from '../components/ui/Tabs'
 import Modal from '../components/ui/Modal'
@@ -57,18 +58,14 @@ function figToCard(fig, ownerName, pub) {
 
 export default function CollectionPage() {
   const { user } = useUser()
+  const pubModal = useModalForm(EMPTY_PUB)
+  const faltModal = useModalForm(EMPTY_FALT)
   const [tab, setTab] = useState('tengo')
-  const [showPub, setShowPub] = useState(false)
-  const [showFalt, setShowFalt] = useState(false)
-  const [pubForm, setPubForm] = useState(EMPTY_PUB)
-  const [faltForm, setFaltForm] = useState(EMPTY_FALT)
   const [album, setAlbum] = useState([])
   const [publicaciones, setPublicaciones] = useState([])
   const [faltantes, setFaltantes] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingFalt, setLoadingFalt] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [submittingFalt, setSubmittingFalt] = useState(false)
   const [loadingMaestro, setLoadingMaestro] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const maestroTimer = useRef(null)
@@ -104,52 +101,50 @@ export default function CollectionPage() {
   }, [cargarDatos, cargarFaltantes])
 
   async function handlePublish() {
-    if (!pubForm.numero || !pubForm.jugador) {
+    if (!pubModal.form.numero || !pubModal.form.jugador) {
       setSnack({ open: true, message: 'Completá número y jugador', type: 'error' })
       return
     }
-    setSubmitting(true)
+    pubModal.setPending(true)
     try {
-      let figId = pubForm._figId
+      let figId = pubModal.form._figId
 
       // Si no viene de una figurita existente en el álbum, la agregamos primero
       if (!figId) {
         const albumEntry = await agregarAlAlbum({
-          numero: pubForm.numero,
-          equipo: pubForm.equipo,
-          jugador: pubForm.jugador,
-          cantidad: pubForm.cantidad,
+          numero: pubModal.form.numero,
+          equipo: pubModal.form.equipo,
+          jugador: pubModal.form.jugador,
+          cantidad: pubModal.form.cantidad,
         })
         figId = albumEntry.id
       }
 
       await publicarFigurita({
         figurita_personal_id: figId,
-        tipo_intercambio: pubForm.tipo,
-        cantidad_disponible: pubForm.cantidad,
+        tipo_intercambio: pubModal.form.tipo,
+        cantidad_disponible: pubModal.form.cantidad,
       })
 
-      setShowPub(false)
-      setPubForm(EMPTY_PUB)
+      pubModal.close()
       setSnack({ open: true, message: 'Figurita publicada con éxito', type: 'success' })
       cargarDatos()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     } finally {
-      setSubmitting(false)
+      pubModal.setPending(false)
     }
   }
 
   function openPublishExisting(fig, tipo) {
-    setPubForm({
+    pubModal.openWith(true, {
       numero: fig.numero,
       equipo: fig.seleccion,
       jugador: fig.jugador,
       cantidad: fig.cantidad,
       tipo: tipo || 'intercambio_directo',
-      _figId: fig.id, // Guardamos el ID para saber que ya existe
+      _figId: fig.id,
     })
-    setShowPub(true)
   }
 
   async function handleRetirar(pubId) {
@@ -184,25 +179,24 @@ export default function CollectionPage() {
   }
 
   async function handleAddFaltante() {
-    if (!faltForm.numero) {
+    if (!faltModal.form.numero) {
       setSnack({ open: true, message: 'Ingresá el número de la figurita', type: 'error' })
       return
     }
-    setSubmittingFalt(true)
+    faltModal.setPending(true)
     try {
       await registrarFaltante({
-        numero_figurita: faltForm.numero,
-        equipo: faltForm.seleccion,
-        jugador: faltForm.jugador,
+        numero_figurita: faltModal.form.numero,
+        equipo: faltModal.form.seleccion,
+        jugador: faltModal.form.jugador,
       })
-      setShowFalt(false)
-      setFaltForm(EMPTY_FALT)
+      faltModal.close()
       setSnack({ open: true, message: 'Faltante registrado con éxito', type: 'success' })
       cargarFaltantes()
     } catch (e) {
       setSnack({ open: true, message: e.message, type: 'error' })
     } finally {
-      setSubmittingFalt(false)
+      faltModal.setPending(false)
     }
   }
 
@@ -222,16 +216,10 @@ export default function CollectionPage() {
           </p>
         </div>
         <div className="flex gap-2.5">
-          <Button
-            icon="add"
-            onClick={() => {
-              setPubForm(EMPTY_PUB)
-              setShowPub(true)
-            }}
-          >
+          <Button icon="add" onClick={() => pubModal.openWith()}>
             Publicar figurita
           </Button>
-          <Button variant="outlined" icon="playlist_add" onClick={() => setShowFalt(true)}>
+          <Button variant="outlined" icon="playlist_add" onClick={() => faltModal.openWith()}>
             Registrar faltante
           </Button>
         </div>
@@ -270,10 +258,7 @@ export default function CollectionPage() {
               title="Tu álbum está vacío"
               subtitle="Publicá tu primera figurita para empezar a intercambiar"
               action="Publicar figurita"
-              onAction={() => {
-                setPubForm(EMPTY_PUB)
-                setShowPub(true)
-              }}
+              onAction={() => pubModal.openWith()}
             />
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
@@ -337,7 +322,7 @@ export default function CollectionPage() {
             title="No tenés figuritas faltantes"
             subtitle="Registrá las figuritas que te faltan para recibir sugerencias automáticas"
             action="Registrar faltante"
-            onAction={() => setShowFalt(true)}
+            onAction={() => faltModal.openWith()}
           />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(136px,1fr))] gap-2">
@@ -364,14 +349,11 @@ export default function CollectionPage() {
 
       {/* Boton Publicar Figurita */}
       <Modal
-        open={showPub}
-        onClose={() => {
-          if (!submitting) {
-            setShowPub(false)
-            setPubForm(EMPTY_PUB)
-          }
-        }}
-        title={pubForm._figId ? 'Publicar figurita del álbum' : 'Nueva figurita y publicación'}
+        open={!!pubModal.open}
+        onClose={() => !pubModal.pending && pubModal.close()}
+        title={
+          pubModal.form._figId ? 'Publicar figurita del álbum' : 'Nueva figurita y publicación'
+        }
         width={480}
       >
         <div className="flex flex-col gap-4">
@@ -381,26 +363,26 @@ export default function CollectionPage() {
               type="number"
               icon="tag"
               placeholder="Ej: 10"
-              value={pubForm.numero}
+              value={pubModal.form.numero}
               onChange={(v) => {
-                setPubForm({ ...pubForm, numero: v })
-                if (!pubForm._figId) buscarEnMaestro(v, setPubForm)
+                pubModal.setForm((f) => ({ ...f, numero: v }))
+                if (!pubModal.form._figId) buscarEnMaestro(v, pubModal.setForm)
               }}
-              disabled={!!pubForm._figId}
+              disabled={!!pubModal.form._figId}
             />
             <Input
               label="Cantidad"
               type="number"
               icon="inventory_2"
-              value={pubForm.cantidad}
-              onChange={(v) => setPubForm({ ...pubForm, cantidad: v })}
+              value={pubModal.form.cantidad}
+              onChange={(v) => pubModal.setForm((f) => ({ ...f, cantidad: v }))}
             />
           </div>
           <Input
             label="Selección / Equipo"
             icon="shield"
             placeholder="Se completa al ingresar el número"
-            value={pubForm.equipo}
+            value={pubModal.form.equipo}
             onChange={() => {}}
             disabled
           />
@@ -408,7 +390,7 @@ export default function CollectionPage() {
             label="Jugador"
             icon="person"
             placeholder="Se completa al ingresar el número"
-            value={pubForm.jugador}
+            value={pubModal.form.jugador}
             onChange={() => {}}
             disabled
           />
@@ -418,15 +400,15 @@ export default function CollectionPage() {
             </label>
             <div className="flex gap-2">
               <Chip
-                selected={pubForm.tipo === 'intercambio_directo'}
-                onClick={() => setPubForm({ ...pubForm, tipo: 'intercambio_directo' })}
+                selected={pubModal.form.tipo === 'intercambio_directo'}
+                onClick={() => pubModal.setForm((f) => ({ ...f, tipo: 'intercambio_directo' }))}
                 icon="swap_horiz"
               >
                 Intercambio
               </Chip>
               <Chip
-                selected={pubForm.tipo === 'subasta'}
-                onClick={() => setPubForm({ ...pubForm, tipo: 'subasta' })}
+                selected={pubModal.form.tipo === 'subasta'}
+                onClick={() => pubModal.setForm((f) => ({ ...f, tipo: 'subasta' }))}
                 icon="gavel"
               >
                 Subasta
@@ -434,22 +416,15 @@ export default function CollectionPage() {
             </div>
           </div>
           <div className="flex gap-2.5 justify-end mt-2">
-            <Button
-              variant="text"
-              onClick={() => {
-                setShowPub(false)
-                setPubForm(EMPTY_PUB)
-              }}
-              disabled={submitting}
-            >
+            <Button variant="text" onClick={pubModal.close} disabled={pubModal.pending}>
               Cancelar
             </Button>
             <Button
-              icon={submitting ? 'progress_activity' : 'publish'}
+              icon={pubModal.pending ? 'progress_activity' : 'publish'}
               onClick={handlePublish}
-              disabled={submitting}
+              disabled={pubModal.pending}
             >
-              {submitting ? 'Publicando...' : 'Publicar'}
+              {pubModal.pending ? 'Publicando...' : 'Publicar'}
             </Button>
           </div>
         </div>
@@ -457,8 +432,8 @@ export default function CollectionPage() {
 
       {/* Boton Registrar Faltante */}
       <Modal
-        open={showFalt}
-        onClose={() => !submittingFalt && setShowFalt(false)}
+        open={!!faltModal.open}
+        onClose={() => !faltModal.pending && faltModal.close()}
         title="Registrar faltante"
         width={420}
       >
@@ -468,17 +443,17 @@ export default function CollectionPage() {
             type="number"
             icon={loadingMaestro ? 'progress_activity' : 'tag'}
             placeholder="Ej: 321"
-            value={faltForm.numero}
+            value={faltModal.form.numero}
             onChange={(v) => {
-              setFaltForm({ ...faltForm, numero: v })
-              buscarEnMaestro(v, setFaltForm)
+              faltModal.setForm((f) => ({ ...f, numero: v }))
+              buscarEnMaestro(v, faltModal.setForm)
             }}
           />
           <Input
             label="Selección / Equipo"
             icon="shield"
             placeholder="Se completa al ingresar el número"
-            value={faltForm.seleccion}
+            value={faltModal.form.seleccion}
             onChange={() => {}}
             disabled
           />
@@ -486,20 +461,20 @@ export default function CollectionPage() {
             label="Jugador"
             icon="person"
             placeholder="Se completa al ingresar el número"
-            value={faltForm.jugador}
+            value={faltModal.form.jugador}
             onChange={() => {}}
             disabled
           />
           <div className="flex gap-2.5 justify-end mt-2">
-            <Button variant="text" onClick={() => setShowFalt(false)} disabled={submittingFalt}>
+            <Button variant="text" onClick={faltModal.close} disabled={faltModal.pending}>
               Cancelar
             </Button>
             <Button
-              icon={submittingFalt ? 'progress_activity' : 'playlist_add'}
+              icon={faltModal.pending ? 'progress_activity' : 'playlist_add'}
               onClick={handleAddFaltante}
-              disabled={submittingFalt}
+              disabled={faltModal.pending}
             >
-              {submittingFalt ? 'Registrando...' : 'Registrar'}
+              {faltModal.pending ? 'Registrando...' : 'Registrar'}
             </Button>
           </div>
         </div>

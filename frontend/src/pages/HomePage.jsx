@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useModalForm } from '../hooks/useModalForm'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -29,10 +30,8 @@ export default function HomePage() {
   const [subastasPorFinalizar, setSubastasPorFinalizar] = useState([])
   const [pubsMap, setPubsMap] = useState({})
 
-  const [bidModal, setBidModal] = useState(null)
-  const [offerIds, setOfferIds] = useState([])
+  const bid = useModalForm({ offerIds: [] })
   const [miAlbum, setMiAlbum] = useState([])
-  const [loadingOferta, setLoadingOferta] = useState(false)
   const [snack, setSnack] = useState({
     open: false,
     message: '',
@@ -100,34 +99,26 @@ export default function HomePage() {
   }, [])
 
   function toggleOferta(id) {
-    setOfferIds((prev) =>
-      prev.includes(id) ? prev.filter((offerId) => offerId !== id) : [...prev, id],
-    )
+    bid.setForm((f) => ({
+      ...f,
+      offerIds: f.offerIds.includes(id) ? f.offerIds.filter((x) => x !== id) : [...f.offerIds, id],
+    }))
   }
 
   async function handleOfertar() {
-    if (offerIds.length === 0) {
-      setSnack({
-        open: true,
-        message: 'Seleccioná al menos una figurita',
-        type: 'error',
-      })
+    if (bid.form.offerIds.length === 0) {
+      setSnack({ open: true, message: 'Seleccioná al menos una figurita', type: 'error' })
       return
     }
-    setLoadingOferta(true)
+    bid.setPending(true)
     try {
-      await ofertarSubasta(bidModal.id, offerIds)
-      setSnack({
-        open: true,
-        message: 'Oferta enviada con éxito',
-        type: 'success',
-      })
-      setBidModal(null)
-      setOfferIds([])
+      await ofertarSubasta(bid.open.id, bid.form.offerIds)
+      setSnack({ open: true, message: 'Oferta enviada con éxito', type: 'success' })
+      bid.close()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoadingOferta(false)
+      bid.setPending(false)
     }
   }
 
@@ -254,10 +245,7 @@ export default function HomePage() {
                   pubsMap={pubsMap}
                   user={user}
                   users={users}
-                  onOfertar={(s) => {
-                    setBidModal(s)
-                    setOfferIds([])
-                  }}
+                  onOfertar={(s) => bid.openWith(s)}
                   showVerOfertasButton={false}
                 />
               ))}
@@ -310,12 +298,12 @@ export default function HomePage() {
       </div>
 
       <Modal
-        open={!!bidModal}
-        onClose={() => setBidModal(null)}
-        title={`Ofertar en Subasta #${bidModal?.id}`}
+        open={!!bid.open}
+        onClose={bid.close}
+        title={`Ofertar en Subasta #${bid.open?.id}`}
         width={520}
       >
-        {bidModal && (
+        {bid.open && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-on-surface-variant">
               Seleccioná las figuritas de tu álbum que querés ofrecer a cambio:
@@ -331,12 +319,12 @@ export default function HomePage() {
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}
-                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${bid.form.offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
                   >
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-primary"
-                      checked={offerIds.includes(fig.id)}
+                      checked={bid.form.offerIds.includes(fig.id)}
                       onChange={() => toggleOferta(fig.id)}
                     />
                     <div className="flex flex-col">
@@ -351,15 +339,15 @@ export default function HomePage() {
             )}
 
             <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-outline-variant">
-              <Button variant="text" onClick={() => setBidModal(null)} disabled={loadingOferta}>
+              <Button variant="text" onClick={bid.close} disabled={bid.pending}>
                 Cancelar
               </Button>
               <Button
                 icon="gavel"
                 onClick={handleOfertar}
-                disabled={loadingOferta || offerIds.length === 0}
+                disabled={bid.pending || bid.form.offerIds.length === 0}
               >
-                {loadingOferta ? 'Enviando...' : `Enviar oferta (${offerIds.length})`}
+                {bid.pending ? 'Enviando...' : `Enviar oferta (${bid.form.offerIds.length})`}
               </Button>
             </div>
           </div>
