@@ -1,16 +1,42 @@
-from app.repositories import album_repo, publicacion_repo, intercambio_repo, usuario_repo, calificacion_repo
+from app.repositories import (
+    album_repo,
+    publicacion_repo,
+    intercambio_repo,
+    usuario_repo,
+    calificacion_repo,
+    faltante_repo,
+)
+from app.domain.intercambio import Intercambio
+from app.domain.publicacion import Publicacion
 from app.domain.errors import (
     DomainConflictError,
     DomainNotFoundError,
     DomainPermissionError,
     DomainValidationError,
 )
-from app.schemas.intercambio_sch import IntercambioCreate, IntercambioDecision
-from app.schemas.intercambio_sch import EstadoIntercambio
-from app.schemas.album_sch import FiguritaAlbumCreate
+from app.schemas import (
+    FiguritaAlbumCreate,
+    IntercambioCreate,
+    IntercambioDecision,
+    EstadoIntercambio,
+    EstadoRespuestaIntercambio,
+    TipoIntercambio,
+)
+
+
+def _intercambio_a_dict(intercambio: Intercambio, ya_calificado: bool = False) -> dict:
+    return {
+        "id": intercambio.id,
+        "propuesto_por": intercambio.propuesto_por,
+        "solicitado_a": intercambio.solicitado_a,
+        "figuritas_ofrecidas": intercambio.figuritas_ofrecidas,
+        "figurita_solicitada": intercambio.figurita_solicitada,
+        "estado": intercambio.estado.value,
+        "ya_calificado": ya_calificado,
+    }
+
 
 def validar_usuario_destino(intercambio: IntercambioCreate, usuario_id: int) -> None:
-    """Valida que el usuario no se proponga un intercambio a sí mismo y que exista."""
     if intercambio.solicitado_a_id == usuario_id:
         raise DomainValidationError("No podés proponerte un intercambio a vos mismo")
 
@@ -21,48 +47,37 @@ def validar_usuario_destino(intercambio: IntercambioCreate, usuario_id: int) -> 
 def obtener_publicaciones_para_intercambio(
     intercambio: IntercambioCreate,
     usuario_id: int,
-) -> tuple[list[dict], dict]:
-    """
-    Busca en publicacion_repo las publicaciones involucradas en el intercambio.
-    Solo considera publicaciones de tipo intercambio_directo.
-
-    Valida que:
-    - El proponente tenga publicadas todas las figuritas que ofrece.
-    - El receptor tenga publicada la figurita solicitada.
-    - Todas sean de tipo intercambio_directo.
-
-    Returns:
-        Tupla (publicaciones_ofrecidas, publicacion_solicitada)
-    """
+) -> tuple[list[Publicacion], Publicacion]:
     todas_publicaciones = publicacion_repo.get_all()
 
-    # Buscamos en el álbum del proponente los números ofrecidos
-    album_proponente = album_repo.get_by_usuario(usuario_id)
-    numeros_en_album = {f["numero"] for f in album_proponente if f["cantidad"] > 0}
-    
+    album_proponente = album_repo.get_by_user(usuario_id)
+    numeros_en_album = {f.numero for f in album_proponente if f.cantidad > 0}
+
     numeros_faltantes = [
         n for n in intercambio.figuritas_ofrecidas_numero
         if n not in numeros_en_album
     ]
-    
+
     if numeros_faltantes:
         raise DomainNotFoundError("No tenés en tu álbum todas las figuritas que ofrecés")
-    
-    # NUEVO: Validar que no estén publicadas como SUBASTA
+
     for numero in intercambio.figuritas_ofrecidas_numero:
-        if any(p["numero"] == numero and p["usuario_id"] == usuario_id and p["tipo_intercambio"] == "subasta" for p in todas_publicaciones):
+        if any(
+            p.numero == numero
+            and p.usuario_id == usuario_id
+            and p.tipo_intercambio == TipoIntercambio.SUBASTA
+            for p in todas_publicaciones
+        ):
             raise DomainNotFoundError(f"La figurita {numero} está publicada como subasta")
 
-    # Mantenemos la lógica de que la solicitada SÍ debe estar publicada
-    publicaciones_ofrecidas = [] 
+    publicaciones_ofrecidas: list[Publicacion] = []
 
-    # Buscamos la publicación del receptor con el número solicitado
     publicacion_solicitada = next(
         (
             p for p in todas_publicaciones
-            if p["numero"] == intercambio.figurita_solicitada_numero
-            and p["usuario_id"] == intercambio.solicitado_a_id
-            and p["tipo_intercambio"] == "intercambio_directo"
+            if p.numero == intercambio.figurita_solicitada_numero
+            and p.usuario_id == intercambio.solicitado_a_id
+            and p.tipo_intercambio == TipoIntercambio.INTERCAMBIO_DIRECTO
         ),
         None,
     )
@@ -76,21 +91,20 @@ def obtener_publicaciones_para_intercambio(
 
 
 def validar_cantidad_disponible(
-    publicaciones_ofrecidas: list[dict],
-    publicacion_solicitada: dict,
+    publicaciones_ofrecidas: list[Publicacion],
+    publicacion_solicitada: Publicacion,
 ) -> None:
-    """Valida que todas las publicaciones involucradas tengan cantidad disponible."""
-    if any(p["cantidad_disponible"] < 1 for p in publicaciones_ofrecidas):
+    if any(p.cantidad_disponible < 1 for p in publicaciones_ofrecidas):
         raise DomainValidationError("Alguna figurita ofrecida no tiene stock disponible")
 
-    if publicacion_solicitada["cantidad_disponible"] < 1:
+    if publicacion_solicitada.cantidad_disponible < 1:
         raise DomainValidationError("La figurita solicitada no tiene stock disponible")
 
 
 def validar_intercambio(
     intercambio: IntercambioCreate,
     usuario_id: int,
-) -> tuple[list[dict], dict]:
+) -> tuple[list[Publicacion], Publicacion]:
     """
     Ejecuta todas las validaciones de negocio para un intercambio propuesto.
 
@@ -110,14 +124,14 @@ def validar_intercambio(
     )
 
     # Validar que la figurita solicitada no sea la misma que alguna ofrecida (por número, equipo y jugador)
-    album_proponente = album_repo.get_by_usuario(usuario_id)
+    album_proponente = album_repo.get_by_user(usuario_id)
     for num_ofrecido in intercambio.figuritas_ofrecidas_numero:
-        fig_ofrecida = next((f for f in album_proponente if f["numero"] == num_ofrecido and f["cantidad"] > 0), None)
+        fig_ofrecida = next((f for f in album_proponente if f.numero == num_ofrecido and f.cantidad > 0), None)
         if fig_ofrecida:
             if (
-                fig_ofrecida["numero"] == publicacion_solicitada["numero"]
-                and fig_ofrecida["equipo"].lower() == publicacion_solicitada["equipo"].lower()
-                and fig_ofrecida["jugador"].lower() == publicacion_solicitada["jugador"].lower()
+                fig_ofrecida.numero == publicacion_solicitada.numero
+                and fig_ofrecida.equipo.lower() == publicacion_solicitada.equipo.lower()
+                and fig_ofrecida.jugador.lower() == publicacion_solicitada.jugador.lower()
             ):
                 raise DomainValidationError(
                     "La figurita solicitada no puede estar incluida entre las ofrecidas"
@@ -128,142 +142,92 @@ def validar_intercambio(
 
 
 def proponer_intercambio(intercambio: IntercambioCreate, usuario_id: int) -> dict:
-    """Valida y persiste una propuesta de intercambio."""
     validar_intercambio(intercambio, usuario_id)
-    return intercambio_repo.crear_intercambio(
+    creado = intercambio_repo.crear_intercambio(
         intercambio=intercambio,
         propuesto_por=usuario_id,
         solicitado_a=intercambio.solicitado_a_id,
     )
+    return _intercambio_a_dict(creado)
 
 
 def listar_intercambios_de(usuario_id: int) -> dict[str, list[dict]]:
-    """Devuelve intercambios enviados y recibidos con el flag de calificación."""
     intercambios = intercambio_repo.listar_intercambios_por_usuario(usuario_id)
+    resultado: dict[str, list[dict]] = {"enviados": [], "recibidos": []}
     for grupo in ("enviados", "recibidos"):
         for intercambio in intercambios.get(grupo, []):
-            intercambio["ya_calificado"] = bool(
-                calificacion_repo.buscar_por_intercambio_y_calificador(intercambio["id"], usuario_id)
+            ya_calificado = bool(
+                calificacion_repo.buscar_por_intercambio_y_calificador(intercambio.id, usuario_id)
             )
-    return intercambios
+            resultado[grupo].append(_intercambio_a_dict(intercambio, ya_calificado=ya_calificado))
+    return resultado
 
 
-def realizar_intercambio_aceptado(intercambio: dict) -> None:
-    """
-    Realiza el intercambio efectivo de figuritas entre los usuarios.
-    Actualiza tanto el álbum como las publicaciones activas para reflejar el cambio de stock.
-    """
-
-    # 1. Procesar figuritas ofrecidas por el proponente -> entregadas al solicitado_a
-    for numero in intercambio["figuritas_ofrecidas"]:
-        # Restar del álbum del proponente
-        fig_prop = album_repo.get_por_numero_y_usuario(numero, intercambio["propuesto_por"])
-        if fig_prop:
-            equipo, jugador = fig_prop["equipo"], fig_prop["jugador"]
-            fig_prop["cantidad"] -= 1
-            if fig_prop["cantidad"] <= 0:
-                album_repo.delete(fig_prop["id"])
-                
-                # Limpiar todas las publicaciones asociadas si se quedó sin stock
-                pubs_a_borrar = [p for p in publicacion_repo.get_all() 
-                                 if p["numero"] == numero and p["usuario_id"] == intercambio["propuesto_por"]]
-                for p in pubs_a_borrar:
-                    publicacion_repo.delete(p["id"])
-            else:
-                # Restar de publicaciones del proponente (si existía una para este número)
-                pub_prop = next((p for p in publicacion_repo.get_all() 
-                                 if p["numero"] == numero and p["usuario_id"] == intercambio["propuesto_por"]), None)
-                if pub_prop:
-                    pub_prop["cantidad_disponible"] -= 1
-                    if pub_prop["cantidad_disponible"] <= 0:
-                        publicacion_repo.delete(pub_prop["id"])
+def _transferir_figurita(numero: int, de_usuario_id: int, a_usuario_id: int) -> None:
+    fig = album_repo.get_by_number_and_user(numero, de_usuario_id)
+    if fig:
+        equipo, jugador = fig.equipo, fig.jugador
+        resultado = album_repo.adjust_cantidad(fig.id, -1)
+        if resultado is None:
+            for p in publicacion_repo.get_all():
+                if p.numero == numero and p.usuario_id == de_usuario_id:
+                    publicacion_repo.delete(p.id)
         else:
-            equipo, jugador = "Desconocido", "Desconocido"
-
-        # Sumar al álbum del receptor (solicitado_a)
-        fig_rec = album_repo.get_por_numero_y_usuario(numero, intercambio["solicitado_a"])
-        if fig_rec:
-            fig_rec["cantidad"] += 1
-        else:
-            album_repo.create(
-                FiguritaAlbumCreate(numero=numero, equipo=equipo, jugador=jugador, cantidad=1),
-                usuario_id=intercambio["solicitado_a"]
+            pub = next(
+                (
+                    p for p in publicacion_repo.get_all()
+                    if p.numero == numero and p.usuario_id == de_usuario_id
+                ),
+                None,
             )
-        
-        # Remover de faltantes del receptor
-        usuario_repo.remove_faltante(intercambio["solicitado_a"], numero)
-
-    # 2. Procesar figurita solicitada al receptor -> entregada al proponente
-    num_solicitado = intercambio["figurita_solicitada"]
-    
-    # Restar del álbum del receptor (solicitado_a)
-    fig_sol = album_repo.get_por_numero_y_usuario(num_solicitado, intercambio["solicitado_a"])
-    if fig_sol:
-        equipo_sol, jugador_sol = fig_sol["equipo"], fig_sol["jugador"]
-        fig_sol["cantidad"] -= 1
-        if fig_sol["cantidad"] <= 0:
-            album_repo.delete(fig_sol["id"])
-            
-            # Limpiar todas las publicaciones asociadas si se quedó sin stock
-            pubs_a_borrar = [p for p in publicacion_repo.get_all() 
-                             if p["numero"] == num_solicitado and p["usuario_id"] == intercambio["solicitado_a"]]
-            for p in pubs_a_borrar:
-                publicacion_repo.delete(p["id"])
-        else:
-            # Restar de publicaciones del receptor
-            pub_sol = next((p for p in publicacion_repo.get_all() 
-                           if p["numero"] == num_solicitado and p["usuario_id"] == intercambio["solicitado_a"]), None)
-            if pub_sol:
-                pub_sol["cantidad_disponible"] -= 1
-                if pub_sol["cantidad_disponible"] <= 0:
-                    publicacion_repo.delete(pub_sol["id"])
+            if pub:
+                publicacion_repo.adjust_cantidad(pub.id, -1)
     else:
-        equipo_sol, jugador_sol = "Desconocido", "Desconocido"
+        equipo, jugador = "Desconocido", "Desconocido"
 
-    # Sumar al álbum del proponente
-    fig_prop_rec = album_repo.get_por_numero_y_usuario(num_solicitado, intercambio["propuesto_por"])
-    if fig_prop_rec:
-        fig_prop_rec["cantidad"] += 1
+    fig_dest = album_repo.get_by_number_and_user(numero, a_usuario_id)
+    if fig_dest:
+        album_repo.adjust_cantidad(fig_dest.id, 1)
     else:
         album_repo.create(
-            FiguritaAlbumCreate(numero=num_solicitado, equipo=equipo_sol, jugador=jugador_sol, cantidad=1),
-            usuario_id=intercambio["propuesto_por"]
+            FiguritaAlbumCreate(numero=numero, equipo=equipo, jugador=jugador, cantidad=1),
+            usuario_id=a_usuario_id,
         )
 
-    # Remover de faltantes del proponente
-    usuario_repo.remove_faltante(intercambio["propuesto_por"], num_solicitado)
+    faltante_repo.remove_missing(a_usuario_id, numero)
+
+
+def realizar_intercambio_aceptado(intercambio: Intercambio) -> None:
+    for numero in intercambio.figuritas_ofrecidas:
+        _transferir_figurita(numero, intercambio.propuesto_por, intercambio.solicitado_a)
+
+    _transferir_figurita(
+        intercambio.figurita_solicitada,
+        intercambio.solicitado_a,
+        intercambio.propuesto_por,
+    )
+
 
 def responder_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     decision: IntercambioDecision,
     usuario_id: int,
 ) -> dict:
-    """
-    Permite al receptor de un intercambio aceptarlo o rechazarlo.
-
-    Valida que:
-    - El intercambio exista.
-    - El usuario sea el receptor.
-    - El intercambio esté pendiente.
-
-    Returns:
-        El intercambio actualizado con el nuevo estado.
-    """
-    intercambio = intercambio_repo.buscar_intercambio_por_id(intercambio_id)
+    intercambio = intercambio_repo.find_exchange_by_id(intercambio_id)
 
     if not intercambio:
         raise DomainNotFoundError("Intercambio no encontrado")
 
-    if intercambio["solicitado_a"] != usuario_id:
+    if intercambio.solicitado_a != usuario_id:
         raise DomainPermissionError("Solo el usuario receptor puede responder este intercambio")
 
-    if intercambio["estado"] != EstadoIntercambio.PENDIENTE.value:
+    if intercambio.estado != EstadoIntercambio.PENDIENTE:
         raise DomainValidationError("El intercambio ya fue respondido")
 
-    if decision.estado.value == "aceptado":
+    if decision.estado == EstadoRespuestaIntercambio.ACEPTADO:
         realizar_intercambio_aceptado(intercambio)
 
-    intercambio_actualizado = intercambio_repo.responder_intercambio(
+    intercambio_actualizado = intercambio_repo.answer_exchange(
         intercambio_id,
         decision.estado.value,
     )
@@ -271,4 +235,4 @@ def responder_intercambio(
     if not intercambio_actualizado:
         raise DomainConflictError("Intercambio no encontrado o no tenés permisos para responderlo")
 
-    return intercambio_actualizado
+    return _intercambio_a_dict(intercambio_actualizado)

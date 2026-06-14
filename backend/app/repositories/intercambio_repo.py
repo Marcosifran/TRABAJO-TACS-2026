@@ -1,58 +1,79 @@
-# intercambio_repo.py
-from app.schemas.intercambio_sch import IntercambioCreate
-from app.schemas.intercambio_sch import EstadoIntercambio
+from bson import ObjectId
+from pymongo import ReturnDocument
 
-_db: list[dict] = []
-
-'''
-Repositorio para manejar datos de intercambios. Se usan listas en memoria para simular
-una base de datos, pero luego se implementará MongoDB.
-Implementación de CRUD para intercambios.
-'''
+from app.core.database import get_db
+from app.domain.intercambio import Intercambio
+from app.schemas import IntercambioCreate, EstadoIntercambio
 
 
-def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> dict:
-    nuevo = {
-        "id": len(_db) + 1,
+def _get_collection():
+    return get_db()["intercambios"]
+
+
+def _from_doc(doc: dict) -> Intercambio:
+    return Intercambio(
+        id=doc["id"],
+        propuesto_por=doc["propuesto_por"],
+        solicitado_a=doc["solicitado_a"],
+        figuritas_ofrecidas=doc["figuritas_ofrecidas"],
+        figurita_solicitada=doc["figurita_solicitada"],
+        estado=EstadoIntercambio(doc["estado"]),
+    )
+
+
+def create_exchange(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> Intercambio:
+    oid = ObjectId()
+    doc = {
+        "_id": oid,
+        "id": str(oid),
         "propuesto_por": propuesto_por,
         "solicitado_a": solicitado_a,
         "figuritas_ofrecidas": intercambio.figuritas_ofrecidas_numero,
         "figurita_solicitada": intercambio.figurita_solicitada_numero,
         "estado": EstadoIntercambio.PENDIENTE.value,
     }
-    _db.append(nuevo)
-    return nuevo
-
-def listar_intercambios() -> list[dict]:
-    return _db
+    _get_collection().insert_one(doc)
+    del doc["_id"]
+    return _from_doc(doc)
 
 
-def buscar_intercambio_por_id(intercambio_id: int) -> dict | None:
-    for intercambio in _db:
-        if intercambio["id"] == intercambio_id:
-            return intercambio
-    return None
+def list_exchanges() -> list[Intercambio]:
+    return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
 
 
-def responder_intercambio(intercambio_id: int, estado: str) -> dict | None:
-    intercambio = buscar_intercambio_por_id(intercambio_id)
-    if not intercambio:
-        return None
-    intercambio["estado"] = estado
-    return intercambio
-
-def buscar_intercambios_por_usuario(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
+def find_exchange_by_id(intercambio_id: str) -> Intercambio | None:
+    doc = _get_collection().find_one({"id": intercambio_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None
 
 
-def buscar_intercambios_enviados(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["propuesto_por"] == usuario_id]
+def answer_exchange(intercambio_id: str, estado: str) -> Intercambio | None:
+    doc = _get_collection().find_one_and_update(
+        {"id": intercambio_id},
+        {"$set": {"estado": estado}},
+        return_document=ReturnDocument.AFTER,
+        projection={"_id": 0},
+    )
+    return _from_doc(doc) if doc else None
 
 
-def buscar_intercambios_recibidos(usuario_id: int) -> list[dict]:
-    return [intercambio for intercambio in _db if intercambio["solicitado_a"] == usuario_id]
+def find_exchanges_sent(usuario_id: int) -> list[Intercambio]:
+    return [_from_doc(doc) for doc in _get_collection().find({"propuesto_por": usuario_id}, {"_id": 0})]
 
-def listar_intercambios_por_usuario(usuario_id: int) -> dict[str, list[dict]]:
-    enviados = buscar_intercambios_enviados(usuario_id)
-    recibidos = buscar_intercambios_recibidos(usuario_id)
-    return {"enviados": enviados, "recibidos": recibidos}
+
+def find_exchanges_received(usuario_id: int) -> list[Intercambio]:
+    return [_from_doc(doc) for doc in _get_collection().find({"solicitado_a": usuario_id}, {"_id": 0})]
+
+
+def list_exchanges_by_user(usuario_id: int) -> dict[str, list[Intercambio]]:
+    return {
+        "enviados": find_exchanges_sent(usuario_id),
+        "recibidos": find_exchanges_received(usuario_id),
+    }
+
+
+def crear_intercambio(intercambio: IntercambioCreate, propuesto_por: int, solicitado_a: int) -> Intercambio:
+    return create_exchange(intercambio, propuesto_por, solicitado_a)
+
+
+def listar_intercambios_por_usuario(usuario_id: int) -> dict[str, list[Intercambio]]:
+    return list_exchanges_by_user(usuario_id)

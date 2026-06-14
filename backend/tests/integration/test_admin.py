@@ -1,6 +1,3 @@
-import pytest
-import datetime
-
 ENDPOINT_ADMIN_STATS = "/api/v1/admin/estadisticas"
 ENDPOINT_ALBUM = "/api/v1/album"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones"

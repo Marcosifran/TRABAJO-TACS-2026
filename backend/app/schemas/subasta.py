@@ -6,14 +6,21 @@ class EstadoSubasta(str, Enum):
     ACTIVA = "activa"
     INACTIVA = "inactiva"
     FINALIZADA = "finalizada"
+    CANCELADA = "cancelada"
 
 class SubastaCreate(BaseModel):
-    figurita_id: int = Field(..., description="ID de la figurita que se pondrá en subasta")
+    figurita_id: str = Field(..., description="ID de la publicación que se pondrá en subasta")
     inicio: dt.datetime = Field(..., description="Fecha de inicio de la subasta")
     fin: dt.datetime = Field(..., description="Fecha de fin de la subasta")
 
 class SubastaResponse(BaseModel):
-    id: int
-    figurita_id: int
+    id: str
+    figurita_id: str
     usuario_id: int
-    estado: str = Field(..., description="Estado de la subasta")
+    inicio: dt.datetime
+    fin: dt.datetime
+    estado: EstadoSubasta
+    figurita_jugador: str | None = None
+    figurita_equipo: str | None = None
+    figurita_numero: int | None = None
+    oferta_ganadora_id: str | None = None

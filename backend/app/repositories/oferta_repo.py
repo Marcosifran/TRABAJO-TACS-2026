@@ -1,31 +1,53 @@
-_db_ofertas: list[dict] = []
+from bson import ObjectId
 
-def crear_oferta(subasta_id: int, ofrecidas:list[int], usuario_id: int) -> dict:
-    nueva_oferta = {
-        "id": len(_db_ofertas) + 1,
-        "subasta_id": subasta_id,   #figurita que se subasta
-        "ofrecidas": ofrecidas, #figurita que se ofrece
-        "usuario_id": usuario_id    #usuario que ofrece
+from app.core.database import get_db
+from app.domain.oferta import Oferta
+
+
+def _get_collection():
+    return get_db()["ofertas"]
+
+
+def _from_doc(doc: dict) -> Oferta:
+    return Oferta(
+        id=doc["id"],
+        subasta_id=doc["subasta_id"],
+        usuario_id=doc["usuario_id"],
+        ofrecidas=doc["ofrecidas"],
+    )
+
+
+def create_offer(subasta_id: str, ofrecidas: list[str], usuario_id: int) -> Oferta:
+    oid = ObjectId()
+    doc = {
+        "_id": oid,
+        "id": str(oid),
+        "subasta_id": subasta_id,
+        "ofrecidas": ofrecidas,
+        "usuario_id": usuario_id,
     }
+    _get_collection().insert_one(doc)
+    del doc["_id"]
+    return _from_doc(doc)
 
-    _db_ofertas.append(nueva_oferta)
-    return nueva_oferta
 
-def get_all() -> list[dict]:
-    return _db_ofertas
+def get_all() -> list[Oferta]:
+    return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
 
-def get_by_subasta(subasta_id: int) -> list[dict]:
-    return [o for o in _db_ofertas if o["subasta_id"] == subasta_id]
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
-    return [o for o in _db_ofertas if o["usuario_id"] == usuario_id]
+def get_by_auction(subasta_id: str, limit: int = 50, offset: int = 0) -> list[Oferta]:
+    return [_from_doc(doc) for doc in _get_collection().find({"subasta_id": subasta_id}, {"_id": 0}).skip(offset).limit(limit)]
 
-def get_by_id(oferta_id: int) -> dict | None:
-    return next((o for o in _db_ofertas if o["id"] == oferta_id), None)
 
-def delete(oferta_id: int) -> bool:
-    for i, o in enumerate(_db_ofertas):
-        if o["id"] == oferta_id:
-            _db_ofertas.pop(i)
-            return True
-    return False
+def get_by_user(usuario_id: int) -> list[Oferta]:
+    return [_from_doc(doc) for doc in _get_collection().find({"usuario_id": usuario_id}, {"_id": 0})]
+
+
+def get_by_id(oferta_id: str) -> Oferta | None:
+    doc = _get_collection().find_one({"id": oferta_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None
+
+
+def delete(oferta_id: str) -> bool:
+    res = _get_collection().delete_one({"id": oferta_id})
+    return res.deleted_count > 0

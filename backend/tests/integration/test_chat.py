@@ -42,7 +42,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
     return resp_pub.json()["id"]
 
 
-def crear_intercambio_pendiente(client, token_user1, token_user2) -> int:
+def crear_intercambio_pendiente(client, token_user1, token_user2) -> str:
     """Helper para crear un intercambio pendiente entre user1 y user2."""
     agregar_y_publicar(client, token_user1, 1, "Argentina", "Jugador 1")
     agregar_y_publicar(client, token_user2, 2, "Brasil",    "Jugador 2")
@@ -143,8 +143,9 @@ class TestChatIntercambio:
 
     def test_mensajes_en_intercambio_inexistente_retorna_404(self, client, token_user1):
         """Endpoints de chat sobre un intercambio no existente devuelven 404."""
+        non_existent_id = "64b0f1a9c1a5e123456789ab"
         resp_send = client.post(
-            f"{ENDPOINT_INTERCAMBIOS}9999/mensajes",
+            f"{ENDPOINT_INTERCAMBIOS}{non_existent_id}/mensajes",
             json={"contenido": "Test"},
             headers={"X-User-Token": token_user1}
         )
@@ -152,7 +153,7 @@ class TestChatIntercambio:
         assert "Intercambio no encontrado" in resp_send.json()["detail"]
 
         resp_get = client.get(
-            f"{ENDPOINT_INTERCAMBIOS}9999/mensajes",
+            f"{ENDPOINT_INTERCAMBIOS}{non_existent_id}/mensajes",
             headers={"X-User-Token": token_user1}
         )
         assert resp_get.status_code == 404

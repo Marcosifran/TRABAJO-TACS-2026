@@ -1,37 +1,51 @@
+import { useState, useEffect } from 'react'
+import TiltCard from './TiltCard'
 import Icon from './ui/Icon'
 import Avatar from './ui/Avatar'
 import Button from './ui/Button'
+import FiguritaRow from './FiguritaRow'
+import { getMaestroJugador } from '../api/maestro'
+import { cardGradient } from '../utils/flagColors'
 
-const FLAG_COLORS = {
-  Argentina:      ['#74ACDF', '#FFFFFF', '#74ACDF'],
-  Brasil:         ['#009C3B', '#FFDF00', '#009C3B'],
-  Francia:        ['#002395', '#FFFFFF', '#ED2939'],
-  Alemania:       ['#000000', '#DD0000', '#FFCE00'],
-  España:         ['#AA151B', '#F1BF00', '#AA151B'],
-  Inglaterra:     ['#FFFFFF', '#CE1124', '#FFFFFF'],
-  Portugal:       ['#006600', '#FF0000', '#006600'],
-  México:         ['#006847', '#FFFFFF', '#CE1126'],
-  USA:            ['#002868', '#FFFFFF', '#BF0A30'],
-  Canadá:         ['#FF0000', '#FFFFFF', '#FF0000'],
-}
 const CAT_ICONS = {
-  Escudo: 'shield', Jugador: 'person', Estadio: 'stadium',
-  Leyenda: 'star', Especial: 'auto_awesome',
+  Escudo: 'shield',
+  Jugador: 'person',
+  Estadio: 'stadium',
+  Leyenda: 'star',
+  Especial: 'auto_awesome',
 }
 
-function flagGradient(seleccion) {
-  const c = FLAG_COLORS[seleccion] || ['#666', '#999', '#666']
-  return `linear-gradient(135deg, ${c[0]}99, ${c[1]}99, ${c[2]}99)`
-}
-function cardGradient(seleccion) {
-  const c = FLAG_COLORS[seleccion] || ['#666', '#999', '#666']
-  return `linear-gradient(135deg, ${c[0]}, ${c[2]})`
-}
+export default function FiguritaCard({
+  figurita,
+  compact = false,
+  showTradeType = true,
+  size = 'md',
+  backActions = null,
+  onAction = null,
+}) {
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [maestro, setMaestro] = useState(null)
+  const isCollection = size === 'collection'
+  const isSmall = size === 'sm'
+  const sizeClass = isCollection
+    ? 'w-[136px] h-[218px]'
+    : isSmall
+      ? 'w-[11rem] h-[17rem]'
+      : 'w-52 h-80'
+  const cardPadding = isCollection ? 'p-3' : isSmall ? 'p-3' : 'p-5'
+  const frontNumberClass = isCollection ? 'text-2xl' : isSmall ? 'text-2xl' : 'text-5xl'
+  const frontNameClass = isCollection ? 'text-xs' : isSmall ? 'text-sm' : 'text-xl'
+  const frontSelectionClass = isCollection ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-base'
 
-export default function FiguritaCard({ figurita, onTrade, compact = false }) {
+  useEffect(() => {
+    if (isFlipped && !maestro) {
+      getMaestroJugador(figurita.numero).then(setMaestro).catch(console.error)
+    }
+  }, [isFlipped, maestro, figurita.numero])
+
   if (compact) {
     return (
-      <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-variant transition-colors">
+      <FiguritaRow className="gap-3 px-3.5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-variant">
         <div
           className="w-10 h-12 rounded-md shrink-0 flex items-center justify-center"
           style={{ background: cardGradient(figurita.seleccion) }}
@@ -47,60 +61,76 @@ export default function FiguritaCard({ figurita, onTrade, compact = false }) {
             x{figurita.cantidad}
           </span>
         )}
-      </div>
+      </FiguritaRow>
     )
   }
 
-  return (
-    <div className="rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elev-2 cursor-pointer">
-      {/* Header */}
-      <div
-        className="h-24 flex items-center justify-center relative"
-        style={{ background: flagGradient(figurita.seleccion) }}
-      >
-        <div
-          className="w-14 h-[68px] rounded-lg flex flex-col items-center justify-center shadow-md border-2 border-white/50"
-          style={{ background: cardGradient(figurita.seleccion) }}
-        >
-          <span className="text-xl font-extrabold text-white drop-shadow">#{figurita.numero}</span>
-          <Icon
-            name={CAT_ICONS[figurita.categoria] || 'style'}
-            size={14}
-            className="text-white/80"
-          />
-        </div>
-        {figurita.tipo === 'subasta' && (
-          <div className="absolute top-2 right-2 bg-gold text-black text-[11px] font-bold px-2 py-0.5 rounded-md">
-            SUBASTA
-          </div>
-        )}
-      </div>
+  const gradient = cardGradient(figurita.seleccion)
 
-      {/* Body */}
-      <div className="p-3.5">
-        <div className="text-[15px] font-semibold text-on-surface truncate mb-0.5">{figurita.jugador}</div>
-        <div className="text-[13px] text-on-surface-variant mb-2">{figurita.seleccion} · {figurita.categoria}</div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Avatar name={figurita.owner || '?'} size={22} />
-            <span className="text-xs text-on-surface-variant">{figurita.owner}</span>
-          </div>
-          {figurita.cantidad != null && (
-            <span className="text-xs font-semibold text-primary">x{figurita.cantidad}</span>
-          )}
-        </div>
-        {onTrade && (
-          <Button
-            variant="tonal"
-            size="sm"
-            icon="swap_horiz"
-            onClick={e => { e.stopPropagation(); onTrade(figurita) }}
-            className="w-full mt-2.5 justify-center"
+  return (
+    <div className={sizeClass}>
+      <TiltCard>
+        <div
+          className="relative w-full h-full text-white"
+          style={{ background: gradient }}
+          onClick={() => setIsFlipped(!isFlipped)}
+        >
+          {/* Front of the card */}
+          <div
+            className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}
           >
-            {figurita.tipo === 'subasta' ? 'Ofertar' : 'Proponer intercambio'}
-          </Button>
-        )}
-      </div>
+            <div className={`${frontNumberClass} font-bold`}>#{figurita.numero}</div>
+            <div>
+              <div className={`${frontNameClass} font-bold`}>{figurita.jugador}</div>
+              <div className={frontSelectionClass}>{figurita.seleccion}</div>
+            </div>
+          </div>
+
+          {/* Back of the card (details) */}
+          <div
+            className={`absolute inset-0 ${cardPadding} flex flex-col justify-between transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          >
+            <div>
+              <div className="flex items-center gap-1.5">
+                <Avatar name={figurita.owner || '?'} size={22} />
+                <span className="text-xs">{figurita.owner}</span>
+              </div>
+              <div className="mt-3 text-xs leading-snug">
+                {maestro ? (
+                  <>
+                    <p>País: {maestro.equipo}</p>
+                    <p>Posición: {maestro.posicion}</p>
+                  </>
+                ) : (
+                  <p>Cargando...</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
+              {backActions}
+              {showTradeType && figurita.tipo === 'intercambio' && (
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-trade)' }}
+                  onClick={onAction ?? undefined}
+                >
+                  Intercambio
+                </div>
+              )}
+              {showTradeType && figurita.tipo === 'subasta' && (
+                <div
+                  className={`text-white text-center text-[10px] font-medium py-1 rounded-lg transition-opacity ${onAction ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  style={{ backgroundColor: 'var(--color-auction)' }}
+                  onClick={onAction ?? undefined}
+                >
+                  Subasta
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </TiltCard>
     </div>
   )
 }

@@ -21,3 +21,14 @@ router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(requir
 def obtener_estadisticas():
     """Devuelve estadísticas globales: usuarios, figuritas, intercambios y subastas."""
     return admin_service.obtener_estadisticas()
+
+
+@router.get(
+    "/calificaciones",
+    responses={
+        200: {"description": "Listado de todas las calificaciones con sus comentarios"},
+    },
+)
+def listar_calificaciones():
+    """Devuelve todas las calificaciones registradas en la plataforma."""
+    return admin_service.listar_calificaciones()

@@ -1,79 +1,104 @@
-from app.schemas.album_sch import FiguritaAlbumResponse, FiguritaAlbumCreate
+from typing import Any
+from bson import ObjectId
+from pymongo import ReturnDocument
 
-_db: list[dict] = []
-_next_id = 1
+from app.core.database import get_db
+from app.domain.album import FiguritaAlbum
+from app.schemas import FiguritaAlbumCreate
 
-"""Repositorio para manejar las operaciones relacionadas con las figuritas del álbum."""
 
-def get_all() -> list[dict]:
-    """Obtiene todas las figuritas en general"""
-    return _db
+def _get_collection():
+    return get_db()["album"]
 
-def get_by_id(figurita_id: int) -> dict | None:
-    """Obtiene una figurita por su ID."""
-    return next((figurita for figurita in _db if figurita["id"] == figurita_id), None)
 
-def get_by_usuario(usuario_id: int) -> list[dict]:
-    """Obtiene todas las figuritas de un usuario específico."""
-    return [figurita for figurita in _db if figurita["usuario_id"] == usuario_id]
+def _from_doc(doc: dict) -> FiguritaAlbum:
+    return FiguritaAlbum(
+        id=doc["id"],
+        usuario_id=doc["usuario_id"],
+        numero=doc["numero"],
+        equipo=doc["equipo"],
+        jugador=doc["jugador"],
+        cantidad=doc["cantidad"],
+    )
 
-def buscar(
+
+def get_all() -> list[FiguritaAlbum]:
+    return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
+
+
+def get_by_id(figurita_id: str) -> FiguritaAlbum | None:
+    doc = _get_collection().find_one({"id": figurita_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None
+
+
+def get_by_user(usuario_id: int) -> list[FiguritaAlbum]:
+    return [_from_doc(doc) for doc in _get_collection().find({"usuario_id": usuario_id}, {"_id": 0})]
+
+
+def find(
     numero: int | None,
     equipo: str | None,
     jugador: str | None,
     usuario_id: int | None = None,
-) -> list[dict]:
-    resultado = list(_db)
+    limit: int = 50,
+    offset: int = 0,
+) -> list[FiguritaAlbum]:
+    query: dict[str, Any] = {}
     if usuario_id is not None:
-        resultado = [f for f in resultado if f["usuario_id"] == usuario_id]
+        query["usuario_id"] = usuario_id
     if numero is not None:
-        resultado = [f for f in resultado if f["numero"] == numero]
+        query["numero"] = numero
     if equipo is not None:
-        resultado = [f for f in resultado if equipo.lower() in f["equipo"].lower()]
+        query["equipo"] = {"$regex": equipo, "$options": "i"}
     if jugador is not None:
-        resultado = [f for f in resultado if jugador.lower() in f["jugador"].lower()]
-    return resultado
+        query["jugador"] = {"$regex": jugador, "$options": "i"}
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0}).skip(offset).limit(limit)]
 
-def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> dict:
-    """Agrega una figurita al album personal de un usuario."""
-    global _next_id
-    nueva = figurita.model_dump()
-    nueva["id"] = _next_id
-    nueva["usuario_id"] = usuario_id
-    _next_id += 1
-    _db.append(nueva)
-    return nueva
 
-def update_cantidad(figurita_id:int, cantidad: int) -> dict | None:
-    """Actualiza la cantidad de una figurita en el album personal de un usuario. Retorna la cantidad disponible o None si no se encuentra la figurita."""
-    figurita = get_by_id(figurita_id)
-    if not figurita:
+def create(figurita: FiguritaAlbumCreate, usuario_id: int) -> FiguritaAlbum:
+    oid = ObjectId()
+    doc = figurita.model_dump()
+    doc["_id"] = oid
+    doc["id"] = str(oid)
+    doc["usuario_id"] = usuario_id
+    _get_collection().insert_one(doc)
+    del doc["_id"]
+    return _from_doc(doc)
+
+
+def adjust_cantidad(figurita_id: str, delta: int) -> FiguritaAlbum | None:
+    """Ajusta la cantidad en `delta`. Elimina la fila si llega a 0 o menos."""
+    fig = get_by_id(figurita_id)
+    if fig is None:
         return None
-    figurita["cantidad"] = cantidad
-    return figurita
-
-def delete(figurita_id: int) -> bool:
-    """Elimina una figurita del album personal de un usuario. Retorna True si se eliminó correctamente, False si no se encontró la figurita."""
-    for index, figurita in enumerate(_db):
-        if figurita["id"] == figurita_id:
-            _db.pop(index)
-            return True
-    return False
-
-def get_por_numero_y_usuario(numero: int, usuario_id: int) -> dict | None:
-    return next(
-        (f for f in _db if f["numero"] == numero and f["usuario_id"] == usuario_id),
-        None,
+    nueva_cantidad = fig.cantidad + delta
+    if nueva_cantidad <= 0:
+        delete(figurita_id)
+        return None
+    doc = _get_collection().find_one_and_update(
+        {"id": figurita_id},
+        {"$set": {"cantidad": nueva_cantidad}},
+        return_document=ReturnDocument.AFTER,
+        projection={"_id": 0},
     )
+    return _from_doc(doc) if doc else None
 
-def update(figurita_actualizada: dict) -> dict:
-    """
-    busca la figurita por id y actualiza los datos en la bd
-    """
 
-    for i, fig in enumerate(_db):
-        if fig["id"] == figurita_actualizada["id"]:
-            _db[i] = figurita_actualizada
-            return _db[i]
-    raise ValueError("No se pudo actualizar. Figurita no encontrada")
+def transfer_to(figurita_id: str, new_usuario_id: int) -> FiguritaAlbum | None:
+    doc = _get_collection().find_one_and_update(
+        {"id": figurita_id},
+        {"$set": {"usuario_id": new_usuario_id}},
+        return_document=ReturnDocument.AFTER,
+        projection={"_id": 0},
+    )
+    return _from_doc(doc) if doc else None
 
+
+def delete(figurita_id: str) -> bool:
+    res = _get_collection().delete_one({"id": figurita_id})
+    return res.deleted_count > 0
+
+
+def get_by_number_and_user(numero: int, usuario_id: int) -> FiguritaAlbum | None:
+    doc = _get_collection().find_one({"numero": numero, "usuario_id": usuario_id}, {"_id": 0})
+    return _from_doc(doc) if doc else None

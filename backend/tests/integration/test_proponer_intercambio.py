@@ -8,8 +8,6 @@ Incluye cobertura de:
 - Limpieza de faltantes al aceptar
 """
 
-import pytest
-
 ENDPOINT_ALBUM         = "/api/v1/album/"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones/"
 ENDPOINT_FALTANTES     = "/api/v1/usuarios/faltantes"
@@ -365,12 +363,12 @@ class TestResponderIntercambio:
         album_user1 = client.get(
             "/api/v1/usuarios/figuritas",
             headers={"X-User-Token": token_user1},
-        ).json()["figuritas"]
+        ).json()
 
         album_user2 = client.get(
             "/api/v1/usuarios/figuritas",
             headers={"X-User-Token": token_user2},
-        ).json()["figuritas"]
+        ).json()
 
         numeros_user1 = [f["numero"] for f in album_user1]
         numeros_user2 = [f["numero"] for f in album_user2]
@@ -393,12 +391,12 @@ class TestResponderIntercambio:
         album_user1 = client.get(
             "/api/v1/usuarios/figuritas",
             headers={"X-User-Token": token_user1},
-        ).json()["figuritas"]
+        ).json()
 
         album_user2 = client.get(
             "/api/v1/usuarios/figuritas",
             headers={"X-User-Token": token_user2},
-        ).json()["figuritas"]
+        ).json()
 
         numeros_user1 = [f["numero"] for f in album_user1]
         numeros_user2 = [f["numero"] for f in album_user2]
@@ -429,7 +427,7 @@ class TestResponderIntercambio:
         faltantes_user2 = client.get(
             ENDPOINT_FALTANTES,
             headers={"X-User-Token": token_user2},
-        ).json()["faltantes"]
+        ).json()
 
         numeros = [f["numero_figurita"] for f in faltantes_user2]
         assert 1 not in numeros

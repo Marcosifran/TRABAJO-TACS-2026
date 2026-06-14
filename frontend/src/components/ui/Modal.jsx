@@ -3,15 +3,12 @@ import Icon from './Icon'
 export default function Modal({ open, onClose, title, children, width = 520 }) {
   if (!open) return null
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
-        onClick={e => e.stopPropagation()}
-        className="relative bg-surface-container-high rounded-3xl p-7 shadow-elev-3 dark:shadow-elev-3-dark animate-modal overflow-y-auto max-h-[85vh] scrollbar-none"
-        style={{ width, maxWidth: '90vw' }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative bg-surface-container-high rounded-3xl p-7 shadow-elev-3 dark:shadow-elev-3-dark animate-modal overflow-y-auto max-h-[85vh] max-w-[90vw] scrollbar-none"
+        style={{ width }}
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold text-on-surface m-0">{title}</h2>

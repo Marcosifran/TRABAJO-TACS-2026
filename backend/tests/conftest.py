@@ -2,34 +2,73 @@
 Configuración global de pytest — compartida entre tests unitarios y de integración.
 """
 
+import os
 import pytest
-from app.repositories import (
-    album_repo,
-    publicacion_repo,
-    usuario_repo,
-    intercambio_repo,
-    subasta_repo,
-    oferta_repo,
-    calificacion_repo,
-    mensaje_repo,
-)
+from app.core.database import connect_to_mongo, close_mongo_connection, get_db
+
+# DB separada de prod/dev para que el drop final no destruya datos reales.
+# Sobreescribir con TEST_MONGODB_URL si se corre fuera de Docker.
+_TEST_DB_NAME = "mundial_figuritas_test"
+
+
+def _default_test_mongodb_url() -> str:
+    """Elige la URL de Mongo para tests según el entorno.
+
+    - TEST_MONGODB_URL explícita: siempre gana.
+    - En Docker Compose, `mongodb` resuelve y se usa ese host.
+    - En el host, `mongodb` no resuelve, así que usamos `localhost`.
+    """
+    url = os.getenv("TEST_MONGODB_URL")
+    if url:
+        return url
+
+    try:
+        import socket
+
+        socket.gethostbyname("mongodb")
+        return "mongodb://mongodb:27017"
+    except OSError:
+        return "mongodb://localhost:27017"
+
+
+_TEST_MONGODB_URL = _default_test_mongodb_url()
+
+
+_COLLECTIONS = [
+    "album",
+    "publicaciones",
+    "figuritas",
+    "intercambios",
+    "subastas",
+    "ofertas",
+    "calificaciones",
+    "faltantes",
+    "maestro_figuritas",
+    "mensajes",  # Colección para el chat de intercambios
+]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mongo_connection():
+    """
+    Abre la conexión a MongoDB una sola vez para toda la sesión de tests.
+    Usa _TEST_DB_NAME (distinto a la DB de prod) para que el drop final
+    no destruya datos reales. La URL se puede sobreescribir con TEST_MONGODB_URL.
+    """
+    connect_to_mongo(url=_TEST_MONGODB_URL, db_name=_TEST_DB_NAME)
+    yield
+    # Al finalizar la sesión limpiamos la base de test completa
+    get_db().client.drop_database(_TEST_DB_NAME)
+    close_mongo_connection()
 
 
 @pytest.fixture(autouse=True)
-def limpiar_db():
+def limpiar_db(mongo_connection):
     """
-    Se ejecuta automáticamente antes y después de cada test.
-    Limpia el estado en memoria para garantizar aislamiento entre tests.
+    Se ejecuta automáticamente antes de cada test.
+    Limpia las colecciones de la base de test para garantizar aislamiento.
     """
-    album_repo._db.clear()
-    album_repo._next_id = 1
-    publicacion_repo._db.clear()
-    publicacion_repo._next_id = 1
-    usuario_repo._db_faltantes.clear()
-    intercambio_repo._db.clear()
-    calificacion_repo._db.clear()
-    subasta_repo._db_subastas.clear()
-    oferta_repo._db_ofertas.clear()
-    mensaje_repo._db.clear()
-    mensaje_repo._next_id = 1
+    db = get_db()
+    for col in _COLLECTIONS:
+        db[col].delete_many({})
     yield

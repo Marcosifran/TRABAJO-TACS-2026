@@ -1,12 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.intercambio_sch import IntercambioCreate, IntercambioResponse, IntercambioDecision
-from app.schemas.calificacion_sch import CalificacionCreate, CalificacionResponse
+from fastapi import APIRouter, Depends
+from app.schemas import IntercambioCreate, IntercambioResponse, IntercambioDecision
+from app.schemas import CalificacionCreate, CalificacionResponse
 from app.schemas.mensaje_sch import MensajeCreate, MensajeResponse
 from app.dependencies import get_current_user
 from app.services import intercambio_service, calificacion_service, chat_service
-from app.domain.errors import DomainError
-    
+
 router = APIRouter(prefix="/intercambios", tags=["Intercambios"])
+
 
 @router.post(
     "/",
@@ -25,6 +25,7 @@ def proponer_intercambio(intercambio: IntercambioCreate, usuario: dict = Depends
 
 @router.get(
     "/",
+    status_code=200,
     responses={
         200: {"description": "Lista de intercambios donde el usuario es proponente o receptor"},
         401: {"description": "Token ausente o inválido"},
@@ -45,12 +46,17 @@ def listar_intercambios(usuario: dict = Depends(get_current_user)):
         404: {"description": "Intercambio no encontrado"},
     },
 )
-def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, usuario: dict = Depends(get_current_user)):        
+def responder_intercambio(
+    intercambio_id: str,
+    decision: IntercambioDecision,
+    usuario: dict = Depends(get_current_user),
+):
     return intercambio_service.responder_intercambio(
-            intercambio_id=intercambio_id,
-            decision=decision,
-            usuario_id=usuario["id"],
-        )
+        intercambio_id=intercambio_id,
+        decision=decision,
+        usuario_id=usuario["id"],
+    )
+
 
 @router.post(
     "/{intercambio_id}/calificaciones",
@@ -66,7 +72,7 @@ def responder_intercambio(intercambio_id: int, decision: IntercambioDecision, us
     },
 )
 def calificar_tras_intercambio(
-    intercambio_id: int,
+    intercambio_id: str,
     body: CalificacionCreate,
     usuario: dict = Depends(get_current_user),
 ):
@@ -76,9 +82,10 @@ def calificar_tras_intercambio(
         data=body,
     )
 
+
 @router.post(
     "/{intercambio_id}/mensajes",
-    response_model = MensajeResponse,
+    response_model=MensajeResponse,
     status_code=201,
     responses={
         201: {"description": "Mensaje enviado exitosamente"},
@@ -88,29 +95,29 @@ def calificar_tras_intercambio(
     },
 )
 def enviar_mensaje_chat(
-    intercambio_id: int,
+    intercambio_id: str,
     body: MensajeCreate,
     usuario: dict = Depends(get_current_user),
 ):
     return chat_service.enviar_mensaje(
         intercambio_id=intercambio_id,
         remitente_id=usuario["id"],
-        contenido = body.contenido,
+        contenido=body.contenido,
     )
+
 
 @router.get(
     "/{intercambio_id}/mensajes",
     response_model=list[MensajeResponse],
     responses={
-        200:{"description": "Lista de mensajes del chat de ese intercambio"},
-        401:{"description": "Token ausente o inválido"},
-        403:{"description": "No participás en este intercambio"},
-        404:{"description": "Intercambio no encontrado"},
+        200: {"description": "Lista de mensajes del chat de ese intercambio"},
+        401: {"description": "Token ausente o inválido"},
+        403: {"description": "No participás en este intercambio"},
+        404: {"description": "Intercambio no encontrado"},
     }
 )
-
 def obtener_mensajes_chat(
-    intercambio_id: int,
+    intercambio_id: str,
     usuario: dict = Depends(get_current_user),
 ):
     return chat_service.obtener_mensaje(

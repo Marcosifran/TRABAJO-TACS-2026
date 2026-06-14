@@ -1,13 +1,17 @@
 import { apiFetch } from './client'
 
 /** Propone un intercambio a otro usuario. */
-export function proponerIntercambio({ figuritas_ofrecidas_numero, figurita_solicitada_numero, solicitado_a_id }) {
+export function proponerIntercambio({
+  figuritas_ofrecidas_numero,
+  figurita_solicitada_numero,
+  solicitado_a_id,
+}) {
   return apiFetch('/intercambios/', {
     method: 'POST',
     body: JSON.stringify({
       figuritas_ofrecidas_numero,
       figurita_solicitada_numero,
-      solicitado_a_id
+      solicitado_a_id,
     }),
   })
 }

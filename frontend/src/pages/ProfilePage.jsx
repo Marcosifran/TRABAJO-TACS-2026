@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import Card from '../components/ui/Card'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -7,66 +7,68 @@ import StarRating from '../components/ui/StarRating'
 import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
 import { useUser } from '../context/UserContext'
-import { listarMisPublicaciones } from '../api/publicaciones'
-import { listarFaltantes, obtenerReputacion } from '../api/faltantes'
-import { listarIntercambios } from '../api/intercambios'
 
 export default function ProfilePage() {
   const { user, users } = useUser()
-  const [publicaciones,      setPublicaciones]      = useState([])
-  const [faltanCount,        setFaltanCount]        = useState(0)
-  const [intercambiosCount,  setIntercambiosCount]  = useState(0)
-  const [reputacion,         setReputacion]         = useState(null)
+  const userId = users.indexOf(user) + 1
 
-  useEffect(() => {
-    listarMisPublicaciones()
-      .then(data => setPublicaciones(data))
-      .catch(() => {})
-    listarFaltantes()
-      .then(data => setFaltanCount(data.faltantes.length))
-      .catch(() => {})
-    listarIntercambios()
-      .then(data => {
-        const aceptados = [
-          ...(data.enviados  || []),
-          ...(data.recibidos || []),
-        ].filter(i => i.estado === 'aceptado').length
-        setIntercambiosCount(aceptados)
-      })
-      .catch(() => {})
-    const userId = users.indexOf(user) + 1
-    obtenerReputacion(userId)
-      .then(data => setReputacion(data))
-      .catch(() => {})
-  }, [user])
+  const { data: publicaciones = [] } = useSWR(['/usuarios/publicaciones', userId])
+  const { data: faltantesData = [] } = useSWR(['/usuarios/faltantes', userId])
+  const { data: intercambiosData } = useSWR(['/intercambios/', userId])
+  const { data: reputacion } = useSWR(`/usuarios/${userId}/reputacion`)
+
+  const faltanCount = faltantesData.length
+  const intercambiosCount = [
+    ...(intercambiosData?.enviados || []),
+    ...(intercambiosData?.recibidos || []),
+  ].filter((i) => i.estado === 'aceptado').length
 
   const STATS = [
-    { icon: 'collections_bookmark', label: 'Figuritas',   value: publicaciones.length, colorVar: 'var(--color-primary)' },
-    { icon: 'playlist_add',         label: 'Faltan',       value: faltanCount,          colorVar: 'var(--color-secondary)' },
-    { icon: 'swap_horiz',           label: 'Intercambios', value: intercambiosCount,    colorVar: 'var(--color-tertiary)' },
+    {
+      icon: 'collections_bookmark',
+      label: 'Figuritas',
+      value: publicaciones.length,
+      colorVar: 'var(--color-primary)',
+    },
+    {
+      icon: 'playlist_add',
+      label: 'Faltan',
+      value: faltanCount,
+      colorVar: 'var(--color-secondary)',
+    },
+    {
+      icon: 'swap_horiz',
+      label: 'Intercambios',
+      value: intercambiosCount,
+      colorVar: 'var(--color-tertiary)',
+    },
   ]
 
   const ultimas = publicaciones.slice(-5).reverse()
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-[800px]">
-      <Card elevated className="mb-6 p-5 sm:p-7">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start md:items-center gap-5 text-center sm:text-left">
+    <div className="p-8 max-w-[800px]">
+      <Card elevated className="mb-6 p-7">
+        <div className="flex items-center gap-5">
           <Avatar name={user.nombre} size={72} />
           <div className="flex-1">
             <h1 className="text-2xl font-bold m-0 text-on-surface">{user.nombre}</h1>
             <p className="text-on-surface-variant text-sm mt-1 mb-2">{user.email}</p>
-            <div className="flex flex-wrap justify-center sm:justify-start items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
               <StarRating value={reputacion?.promedio_puntuacion ?? 0} size={20} />
               <span className="text-sm font-semibold text-on-surface">
-                {reputacion?.promedio_puntuacion != null ? reputacion.promedio_puntuacion.toFixed(1) : '—'}
+                {reputacion?.promedio_puntuacion != null
+                  ? reputacion.promedio_puntuacion.toFixed(1)
+                  : '—'}
               </span>
-              <span className="text-[13px] text-on-surface-variant">
+              <span className="text-xs-plus text-on-surface-variant">
                 ({reputacion?.cantidad_calificaciones ?? 0} calificaciones)
               </span>
             </div>
           </div>
-          <Button variant="outlined" icon="edit" className="w-full sm:w-auto">Editar perfil</Button>
+          <Button variant="outlined" icon="edit">
+            Editar perfil
+          </Button>
         </div>
       </Card>
 
@@ -74,8 +76,8 @@ export default function ProfilePage() {
         {STATS.map((s, i) => (
           <Card key={i} className="text-center p-5">
             <Icon name={s.icon} size={28} style={{ color: s.colorVar }} />
-            <div className="text-2xl sm:text-3xl font-bold text-on-surface my-2">{s.value}</div>
-            <div className="text-[13px] text-on-surface-variant">{s.label}</div>
+            <div className="text-3xl font-bold text-on-surface my-2">{s.value}</div>
+            <div className="text-xs-plus text-on-surface-variant">{s.label}</div>
           </Card>
         ))}
       </div>
@@ -89,7 +91,7 @@ export default function ProfilePage() {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {ultimas.map(pub => (
+          {ultimas.map((pub) => (
             <FiguritaCard
               key={pub.id}
               compact

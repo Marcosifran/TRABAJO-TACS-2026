@@ -1,21 +1,23 @@
 import datetime as dt
+from bson import ObjectId
+from app.core.database import get_db
 
-_db: list[dict] = []
-_next_id: int = 1
+def _get_collection():
+    return get_db()["mensajes"]
 
-def crear_mensaje(intercambio_id: int, remitente_id: int, contenido: str) -> dict:
-    global _next_id
+def crear_mensaje(intercambio_id: str, remitente_id: int, contenido: str) -> dict:
+    oid = ObjectId()
     nuevo = {
-        "id": _next_id,
+        "_id": oid,
+        "id": str(oid),
         "intercambio_id": intercambio_id,
         "remitente_id": remitente_id,
         "contenido": contenido,
         "fecha_envio": dt.datetime.now()
     }
-    _db.append(nuevo)
-    _next_id += 1
+    _get_collection().insert_one(nuevo)
+    del nuevo["_id"]
     return nuevo
 
-def listar_mensajes_por_intercambio(intercambio_id: int) -> list[dict]:
-    return [msg for msg in _db if msg["intercambio_id"] == intercambio_id]
-
+def listar_mensajes_por_intercambio(intercambio_id: str) -> list[dict]:
+    return list(_get_collection().find({"intercambio_id": intercambio_id}, {"_id": 0}).sort("fecha_envio", 1))
