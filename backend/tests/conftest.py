@@ -45,6 +45,7 @@ _COLLECTIONS = [
     "faltantes",
     "maestro_figuritas",
     "mensajes",  # Colección para el chat de intercambios
+    "usuarios",
 ]
 
 
