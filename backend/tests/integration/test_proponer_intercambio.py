@@ -23,7 +23,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     figurita_id = resp_album.json()["id"]
@@ -35,7 +35,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
             "tipo_intercambio": tipo,
             "cantidad_disponible": cantidad,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_pub.status_code == 201
     return resp_pub.json()["id"]
@@ -64,7 +64,7 @@ class TestProponerIntercambio:
         resp = client.post(
             ENDPOINT_INTERCAMBIOS,
             json=propuesta,
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 201
@@ -88,7 +88,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 201
@@ -108,7 +108,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 1,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 400
@@ -125,7 +125,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 1,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 201
@@ -142,7 +142,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 1,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 400
@@ -161,7 +161,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -180,7 +180,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 99,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -200,7 +200,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -220,7 +220,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -236,7 +236,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 422
@@ -252,7 +252,7 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 99,
                 "solicitado_a_id": 999,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 404
@@ -269,13 +269,13 @@ class TestProponerIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         assert resp_crear.status_code == 201
 
         resp_listar = client.get(
             ENDPOINT_INTERCAMBIOS,
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp_listar.status_code == 200
@@ -308,7 +308,7 @@ class TestResponderIntercambio:
                 "figurita_solicitada_numero": 2,
                 "solicitado_a_id": 2,
             },
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         assert resp.status_code == 201
         return resp.json()["id"]
@@ -322,7 +322,7 @@ class TestResponderIntercambio:
         resp = client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "aceptado"},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 403
@@ -334,14 +334,14 @@ class TestResponderIntercambio:
         resp_1 = client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "aceptado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
         assert resp_1.status_code == 200
 
         resp_2 = client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "rechazado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp_2.status_code == 400
@@ -357,17 +357,17 @@ class TestResponderIntercambio:
         client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "aceptado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         album_user1 = client.get(
             "/api/v1/usuarios/figuritas",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         ).json()
 
         album_user2 = client.get(
             "/api/v1/usuarios/figuritas",
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         ).json()
 
         numeros_user1 = [f["numero"] for f in album_user1]
@@ -385,17 +385,17 @@ class TestResponderIntercambio:
         client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "rechazado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         album_user1 = client.get(
             "/api/v1/usuarios/figuritas",
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         ).json()
 
         album_user2 = client.get(
             "/api/v1/usuarios/figuritas",
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         ).json()
 
         numeros_user1 = [f["numero"] for f in album_user1]
@@ -415,18 +415,18 @@ class TestResponderIntercambio:
         client.post(
             ENDPOINT_FALTANTES,
             json={"numero_figurita": 1},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         client.patch(
             f"{ENDPOINT_INTERCAMBIOS}{intercambio_id}/estado",
             json={"estado": "aceptado"},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         faltantes_user2 = client.get(
             ENDPOINT_FALTANTES,
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         ).json()
 
         numeros = [f["numero_figurita"] for f in faltantes_user2]

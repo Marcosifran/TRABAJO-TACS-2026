@@ -50,20 +50,43 @@ Para ejecutar este proyecto de forma local, es necesario tener instalado el moto
 
 ---
 
-## Identificación de Usuarios
+## Autenticación
 
-El TP no requiere autenticación completa, pero los usuarios deben poder diferenciarse para atacar los casos de uso. La solución implementada usa **tokens fijos por usuario** distribuidos fuera del repositorio.
+La app usa **autenticación JWT**. Los usuarios se registran (`POST /api/v1/auth/register`) o
+inician sesión (`POST /api/v1/auth/login`) con email y contraseña, y reciben un `access_token`.
 
 ### Cómo funciona
 
-Cada request a un endpoint protegido debe incluir el header `X-User-Token` con el token correspondiente al usuario. El backend resuelve la identidad a partir de ese token sin necesidad de login.
+Cada request a un endpoint protegido debe incluir el header `Authorization: Bearer <jwt>` con el
+token devuelto por el login. El backend verifica la firma del JWT y resuelve la identidad del
+usuario a partir del `sub` (id) del token.
 
 ```
+POST /api/v1/auth/login        →  { "access_token": "<jwt>", "token_type": "bearer", "usuario": {...} }
+
 POST /api/v1/figuritas/
-X-User-Token: <token-del-usuario>
+Authorization: Bearer <jwt>
 ```
 
-Si el header está ausente o el token no corresponde a ningún usuario, el backend responde `401 Unauthorized`.
+Si el header está ausente el backend responde `422`; si el token es inválido o expiró, `401 Unauthorized`.
+
+### Usuarios sembrados (para login rápido)
+
+Para no tener que registrarse, la app trae dos usuarios demo ya cargados. Ambos usan la contraseña
+definida en `SEED_USER_PASSWORD` (por defecto `figuswap123`):
+
+| Email          | Contraseña    | Rol            |
+| -------------- | ------------- | -------------- |
+| `marcos@utn`   | `figuswap123` | Admin          |
+| `jeronimo@utn` | `figuswap123` | Usuario normal |
+
+Ejemplo de login:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"marcos@utn","password":"figuswap123"}'
+```
 
 ---
 
@@ -72,24 +95,22 @@ Si el header está ausente o el token no corresponde a ningún usuario, el backe
 Copiar `.env.example` como `.env` en la raíz del proyecto y completar los valores:
 
 ```env
-# Tokens de usuario (cualquier UUID sirve)
-USER_1_TOKEN=<uuid-del-usuario-1>
-USER_2_TOKEN=<uuid-del-usuario-2>
-
-VITE_USER_1_TOKEN=<uuid-del-usuario-1>
-VITE_USER_2_TOKEN=<uuid-del-usuario-2>
+# Autenticación JWT
+JWT_SECRET=<secreto-aleatorio-largo>
+SEED_USER_PASSWORD=figuswap123
 
 # MongoDB
 MONGODB_URL=<connection-string>
 MONGODB_DB_NAME=mundial_figuritas_db
+
+# Base de datos para tests (opcional; por defecto localhost)
+TEST_MONGODB_URL=<connection-string>
+TEST_MONGODB_DB_NAME=mundial_figuritas_test_db
 ```
 
-**Cómo generar un token:**
+**Cómo generar el `JWT_SECRET`:**
 ```bash
-# Python
-python -c "import uuid; print(uuid.uuid4())"
-# Linux / macOS
-uuidgen
+python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
 ### Opción A — MongoDB local con Docker (recomendado para desarrollo)

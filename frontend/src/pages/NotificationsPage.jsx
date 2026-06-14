@@ -253,8 +253,10 @@ export default function NotificationsPage() {
                           : `Subasta #${s.id}`}
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
-                        De {users.find((u) => u.id === s.usuario_id)?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra
-                        en {formatTiempoRestante(s.fin)}
+                        De{' '}
+                        {users.find((u) => u.id === s.usuario_id)?.nombre ??
+                          `Usuario ${s.usuario_id}`}{' '}
+                        · Cierra en {formatTiempoRestante(s.fin)}
                       </div>
                     </div>
                     <Button size="sm" variant="tonal" onClick={() => navigate('/subastas')}>

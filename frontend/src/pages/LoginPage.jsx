@@ -38,7 +38,9 @@ export default function LoginPage() {
         <div className="flex items-center gap-2.5 justify-center mb-8">
           <div
             className="w-[42px] h-[42px] rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            style={{
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))',
+            }}
           >
             <Icon name="swap_horiz" size={24} className="text-white" />
           </div>

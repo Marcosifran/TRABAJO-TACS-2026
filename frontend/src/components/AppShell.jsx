@@ -98,7 +98,8 @@ export default function AppShell({ children }) {
       const nuevas = pendientes.filter((i) => !seenTradeIds.current.has(i.id))
       if (nuevas.length > 0) {
         const t = nuevas[0]
-        const ofertante = users.find((u) => u.id === t.propuesto_por)?.nombre ?? `Usuario ${t.propuesto_por}`
+        const ofertante =
+          users.find((u) => u.id === t.propuesto_por)?.nombre ?? `Usuario ${t.propuesto_por}`
         pushNotif(
           `trade-${t.id}`,
           'swap_horiz',

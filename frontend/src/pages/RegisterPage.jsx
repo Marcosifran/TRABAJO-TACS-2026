@@ -42,7 +42,9 @@ export default function RegisterPage() {
         <div className="flex items-center gap-2.5 justify-center mb-8">
           <div
             className="w-[42px] h-[42px] rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))' }}
+            style={{
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-tertiary))',
+            }}
           >
             <Icon name="swap_horiz" size={24} className="text-white" />
           </div>
@@ -54,7 +56,9 @@ export default function RegisterPage() {
 
         <div className="bg-surface-container rounded-2xl border border-outline-variant p-6">
           <h1 className="text-xl font-bold mb-1">Crear cuenta</h1>
-          <p className="text-sm text-on-surface-variant mb-5">Registrate para empezar a intercambiar.</p>
+          <p className="text-sm text-on-surface-variant mb-5">
+            Registrate para empezar a intercambiar.
+          </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input

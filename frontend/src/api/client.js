@@ -86,7 +86,11 @@ export async function apiFetch(path, { signal, timeoutMs = DEFAULT_TIMEOUT_MS, .
     // Token expirado / inválido en una ruta protegida: avisamos para que la
     // sesión se cierre y el usuario sea enviado al login. Se excluyen las rutas
     // de /auth, donde un 401 es simplemente "credenciales inválidas".
-    if (res.status === 401 && !path.startsWith('/auth/') && sessionStorage.getItem('figuswap-token')) {
+    if (
+      res.status === 401 &&
+      !path.startsWith('/auth/') &&
+      sessionStorage.getItem('figuswap-token')
+    ) {
       window.dispatchEvent(new CustomEvent('figuswap:unauthorized'))
     }
     const message =

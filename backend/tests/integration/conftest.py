@@ -5,7 +5,7 @@ Fixtures exclusivas para tests de integración.
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.repositories import usuario_repo
+from app.security import create_access_token
 
 
 @pytest.fixture
@@ -19,14 +19,21 @@ def client():
 
 @pytest.fixture
 def token_user1():
-    """Token del usuario 1, cargado desde el entorno."""
-    return usuario_repo.get_seeded_token(0)
+    """
+    Valor del header Authorization para el usuario sembrado 1 (marcos, id 1).
+    Es un JWT real generado en el momento, listo para usar como
+    headers={"Authorization": token_user1}.
+    """
+    return f"Bearer {create_access_token(subject=1, email='marcos@utn')}"
 
 
 @pytest.fixture
 def token_user2():
-    """Token del usuario 2, cargado desde el entorno."""
-    return usuario_repo.get_seeded_token(1)
+    """
+    Valor del header Authorization para el usuario sembrado 2 (jeronimo, id 2).
+    Mismo formato que token_user1.
+    """
+    return f"Bearer {create_access_token(subject=2, email='jeronimo@utn')}"
 
 
 @pytest.fixture

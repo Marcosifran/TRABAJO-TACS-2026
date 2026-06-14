@@ -9,7 +9,7 @@ WebApp for the TACS course (UTN) for trading "figuritas" (collectible stickers):
 ## Stack & Layout
 
 - **Backend** — FastAPI (Python 3.12), under `backend/app/`. All state is held in **in-memory Python lists** inside the `repositories/` modules — there is no database yet. Restarting the backend wipes everything.
-- **Frontend** — React 19 + Vite + Tailwind, under `frontend/src/`. Router via `react-router-dom`. State via React Context (`ThemeContext`, `UserContext`).
+- **Frontend** — React 19 + Vite + Tailwind, under `frontend/src/`. Router via `react-router-dom`. State via React Context (`ThemeContext`, `AuthContext`).
 - **Orchestration** — Docker Compose. Both services bind-mount the source for hot reload; the frontend container has an anonymous volume on `/app/node_modules` so the host's missing/different `node_modules` doesn't shadow the container's.
 - **`seed.py`** — standalone script at the repo root that pumps demo data into a running backend via HTTP (reads tokens from `.env`).
 
@@ -34,7 +34,7 @@ pytest tests/integration/test_subastas.py -v          # single file
 pytest tests/integration/test_subastas.py::test_xxx   # single test
 ```
 
-Tests require `USER_1_TOKEN` and `USER_2_TOKEN` in the environment (CI sets them to `test-token-user1` / `test-token-user2`). Locally they're read from the root `.env`.
+Tests don't need any auth env vars: the integration fixtures mint real JWTs for the two seed users (`backend/tests/integration/conftest.py`). They run against the **test** database — `TEST_MONGODB_URL` / `TEST_MONGODB_DB_NAME` from the root `.env`, falling back to `mongodb://localhost:27017` / `mundial_figuritas_db` (what CI uses). The suite drops that database on teardown, so never point it at the dev/prod DB.
 
 **Frontend (inside `frontend/`):**
 
@@ -49,9 +49,13 @@ There are no frontend tests configured.
 
 ## Authentication model
 
-There is **no login**. The backend identifies users by a fixed `X-User-Token` header resolved against the seeded list in `backend/app/repositories/usuario_repo.py` (two hardcoded users whose tokens come from `USER_1_TOKEN` / `USER_2_TOKEN` env vars). `app/dependencies.py::get_current_user` is the FastAPI dependency that all protected endpoints use; it returns the user dict or raises 401.
+Auth is **JWT-based**. `POST /auth/login` (email + password) and `POST /auth/register` are public and return `{access_token, token_type: "bearer", usuario}` (`app/routers/auth.py` → `app/services/auth_service.py`). Passwords are bcrypt-hashed (`app/core/security_passwords.py`). Tokens are signed/verified in `app/security.py` with `JWT_SECRET` from the env; the JWT subject (`sub`) is the integer user id.
 
-On the frontend, `UserContext` holds the active user and writes the corresponding token into `sessionStorage` under `figuswap-token`. `api/client.js::apiFetch` reads that key and injects it as `X-User-Token` on every request. Switching the active user from the UI updates `sessionStorage` and re-renders. The frontend reads tokens from Vite env vars `VITE_USER_1_TOKEN` / `VITE_USER_2_TOKEN` (which must match the backend `USER_*_TOKEN` values — both halves live in the same root `.env`).
+`app/dependencies.py::get_current_user` is the FastAPI dependency every protected endpoint uses: it reads `Authorization: Bearer <jwt>`, verifies it, resolves the id via `usuario_repo.get_by_id`, and returns the user dict or raises 401 (422 if the header is missing). There is **no** legacy `X-User-Token` fallback anymore.
+
+Two seed users live in memory (`backend/app/repositories/usuario_repo.py`): `marcos@utn` (id 1, admin) and `jeronimo@utn` (id 2), both with password `SEED_USER_PASSWORD` (default `figuswap123`). Registered users are persisted in the Mongo `usuarios` collection.
+
+On the frontend, `AuthContext` holds `{ user, users, token }`, exposes `login` / `register` / `logout`, and stores the JWT in `sessionStorage` under `figuswap-token`. `api/client.js::apiFetch` reads that key and injects `Authorization: Bearer <jwt>` on every request; a 401 from a non-`/auth/` route dispatches a `figuswap:unauthorized` event that logs the user out.
 
 When adding a new protected endpoint, declare `usuario: dict = Depends(get_current_user)` and trust `usuario["id"]` — do not accept a user id from the request body.
 
@@ -83,10 +87,12 @@ When adding a new resource (e.g. `comentarios`), create one file in each of the 
 The root `.env` is shared by both services (see `docker-compose.yml` `env_file: .env` on both). It needs:
 
 ```
-USER_1_TOKEN=<uuid>
-USER_2_TOKEN=<uuid>
-VITE_USER_1_TOKEN=<same uuid as USER_1_TOKEN>
-VITE_USER_2_TOKEN=<same uuid as USER_2_TOKEN>
+JWT_SECRET=<long random secret>          # signs/verifies JWTs
+SEED_USER_PASSWORD=figuswap123           # password for the two seed users
+MONGODB_URL=<mongo connection string>
+MONGODB_DB_NAME=mundial_figuritas_db
+TEST_MONGODB_URL=<mongo for tests>       # optional; defaults to localhost
+TEST_MONGODB_DB_NAME=mundial_figuritas_test_db
 ```
 
-The backend/frontend halves must match or auth requests will 401. `.env.example` documents the format.
+`.env.example` documents the format. There are no per-user token env vars anymore — users authenticate via `POST /auth/login`.

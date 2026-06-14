@@ -2,12 +2,16 @@ from app.repositories import usuario_repo
 from app.core.security_passwords import hash_password, verify_password
 from app.security import create_access_token
 from app.schemas.auth_sch import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.usuario import UsuarioResponse
 from app.domain.errors import DomainAuthError, DomainConflictError
 
 
 def _build_token_response(usuario: dict) -> TokenResponse:
     access_token = create_access_token(subject=usuario["id"], email=usuario["email"])
-    return TokenResponse(access_token=access_token, usuario=usuario)
+    return TokenResponse(
+        access_token=access_token,
+        usuario=UsuarioResponse.model_validate(usuario),
+    )
 
 
 def login(data: LoginRequest) -> TokenResponse:

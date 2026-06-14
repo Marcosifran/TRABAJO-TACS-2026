@@ -38,19 +38,33 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login"    element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegisterPage />} />
 
             <Route element={<ProtectedLayout />}>
-              <Route path="/"              element={<HomePage />} />
-              <Route path="/coleccion"     element={<CollectionPage />} />
-              <Route path="/buscar"        element={<SearchPage />} />
-              <Route path="/intercambios"  element={<TradesPage />} />
-              <Route path="/subastas"      element={<AuctionsPage />} />
-              <Route path="/alertas"       element={<NotificationsPage />} />
-              <Route path="/perfil"        element={<ProfilePage />} />
-              <Route path="/admin"                element={<RequireAdmin><AdminPage /></RequireAdmin>} />
-              <Route path="/admin/calificaciones" element={<RequireAdmin><AdminCalificacionesPage /></RequireAdmin>} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/coleccion" element={<CollectionPage />} />
+              <Route path="/buscar" element={<SearchPage />} />
+              <Route path="/intercambios" element={<TradesPage />} />
+              <Route path="/subastas" element={<AuctionsPage />} />
+              <Route path="/alertas" element={<NotificationsPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <AdminPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin/calificaciones"
+                element={
+                  <RequireAdmin>
+                    <AdminCalificacionesPage />
+                  </RequireAdmin>
+                }
+              />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

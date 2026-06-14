@@ -1,7 +1,6 @@
 from bson import ObjectId
 from app.core.config import settings
 from app.core.security_passwords import hash_password
-import hmac
 from app.core.database import get_db
 
 
@@ -18,14 +17,9 @@ def _get_faltantes_collection():
 _seed_password_hash = hash_password(settings.seed_user_password)
 
 _db_usuarios: list[dict] = [
-    {"id": 1, "nombre": "marcos", "email": "marcos@utn", "token": settings.user_1_token, "password_hash": _seed_password_hash, "es_admin": True},
-    {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "token": settings.user_2_token, "password_hash": _seed_password_hash, "es_admin": False},
+    {"id": 1, "nombre": "marcos", "email": "marcos@utn", "password_hash": _seed_password_hash, "es_admin": True},
+    {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "password_hash": _seed_password_hash, "es_admin": False},
 ]
-
-
-def get_seeded_token(user_index: int) -> str:
-    """Token del usuario sembrado por índice (0-based). Uso exclusivo de tests."""
-    return _db_usuarios[user_index]["token"]
 
 
 def get_all() -> list[dict]:
@@ -38,21 +32,6 @@ def get_by_id(usuario_id: int) -> dict | None:
     if user:
         return user
     return _get_usuarios_collection().find_one({"id": usuario_id}, {"_id": 0})
-
-
-def get_by_token(token: str) -> dict | None:
-    """Busca usuario por token. Usa comparación segura para los usuarios en memoria
-    y cae a MongoDB si no se encuentra localmente.
-    """
-    if not token:
-        return None
-
-    for u in _db_usuarios:
-        stored = u.get("token")
-        if stored and hmac.compare_digest(stored, token):
-            return u
-
-    return _get_usuarios_collection().find_one({"token": token}, {"_id": 0})
 
 
 def get_by_email(email: str) -> dict | None:

@@ -45,17 +45,23 @@ export function AuthProvider({ children }) {
     setUser(usuario)
   }, [])
 
-  const login = useCallback(async (email, password) => {
-    const { access_token, usuario } = await loginRequest(email, password)
-    persistSession(access_token, usuario)
-    return usuario
-  }, [persistSession])
+  const login = useCallback(
+    async (email, password) => {
+      const { access_token, usuario } = await loginRequest(email, password)
+      persistSession(access_token, usuario)
+      return usuario
+    },
+    [persistSession],
+  )
 
-  const register = useCallback(async (nombre, email, password) => {
-    const { access_token, usuario } = await registerRequest(nombre, email, password)
-    persistSession(access_token, usuario)
-    return usuario
-  }, [persistSession])
+  const register = useCallback(
+    async (nombre, email, password) => {
+      const { access_token, usuario } = await registerRequest(nombre, email, password)
+      persistSession(access_token, usuario)
+      return usuario
+    },
+    [persistSession],
+  )
 
   const logout = useCallback(() => {
     sessionStorage.removeItem(TOKEN_KEY)
@@ -79,9 +85,15 @@ export function AuthProvider({ children }) {
     if (!token) return
     let cancelado = false
     listarUsuarios()
-      .then(data => { if (!cancelado) setUsers(data || []) })
-      .catch(() => { /* lookups caen al fallback "Usuario N" */ })
-    return () => { cancelado = true }
+      .then((data) => {
+        if (!cancelado) setUsers(data || [])
+      })
+      .catch(() => {
+        /* lookups caen al fallback "Usuario N" */
+      })
+    return () => {
+      cancelado = true
+    }
   }, [token])
 
   return (

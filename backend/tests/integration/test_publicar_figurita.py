@@ -14,7 +14,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
     resp_album = client.post(
         ENDPOINT_ALBUM,
         json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
     assert resp_album.status_code == 201
     figurita_id = resp_album.json()["id"]
@@ -26,7 +26,7 @@ def agregar_y_publicar(client, token, numero, equipo, jugador, cantidad=1, tipo=
             "tipo_intercambio": tipo,
             "cantidad_disponible": 1,
         },
-        headers={"X-User-Token": token},
+        headers={"Authorization": token},
     )
 
 class TestAgregarAlbum:
@@ -41,7 +41,7 @@ class TestAgregarAlbum:
         resp_album = client.post(
             ENDPOINT_ALBUM,
             json={"numero": numero, "equipo": equipo, "jugador": jugador, "cantidad": cantidad},
-            headers={"X-User-Token": token},
+            headers={"Authorization": token},
         )
         assert resp_album.status_code == 201
         figurita_id = resp_album.json()["id"]
@@ -49,7 +49,7 @@ class TestAgregarAlbum:
         resp_pub = client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": tipo, "cantidad_disponible": 1},
-            headers={"X-User-Token": token},
+            headers={"Authorization": token},
         )
         return resp_pub
 
@@ -58,7 +58,7 @@ class TestAgregarAlbum:
             resp = client.post(
                 ENDPOINT_ALBUM,
                 json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2},
-                headers={"X-User-Token": token_user1},
+                headers={"Authorization": token_user1},
             )
 
             assert resp.status_code == 201
@@ -76,7 +76,7 @@ class TestAgregarAlbum:
             resp = client.post(
                 ENDPOINT_ALBUM,
                 json={"equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
-                headers={"X-User-Token": token_user1},
+                headers={"Authorization": token_user1},
             )
             assert resp.status_code == 422
 
@@ -85,7 +85,7 @@ class TestAgregarAlbum:
             resp = client.post(
                 ENDPOINT_ALBUM,
                 json={"numero": 0, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
-                headers={"X-User-Token": token_user1},
+                headers={"Authorization": token_user1},
             )
             assert resp.status_code == 422
 
@@ -94,7 +94,7 @@ class TestAgregarAlbum:
             resp = client.post(
                 ENDPOINT_ALBUM,
                 json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 0},
-                headers={"X-User-Token": token_user1},
+                headers={"Authorization": token_user1},
             )
             assert resp.status_code == 422
 
@@ -123,14 +123,14 @@ class TestPublicarParaIntercambio:
         resp_album = client.post(
             ENDPOINT_ALBUM,
             json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         figurita_id = resp_album.json()["id"]
 
         resp = client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 1},
-            headers={"X-User-Token": token_user2},
+            headers={"Authorization": token_user2},
         )
 
         assert resp.status_code == 403
@@ -140,19 +140,19 @@ class TestPublicarParaIntercambio:
         resp_album = client.post(
             ENDPOINT_ALBUM,
             json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 2},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         figurita_id = resp_album.json()["id"]
 
         client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         resp = client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": "subasta", "cantidad_disponible": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 409
@@ -162,14 +162,14 @@ class TestPublicarParaIntercambio:
         resp_album = client.post(
             ENDPOINT_ALBUM,
             json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         figurita_id = resp_album.json()["id"]
 
         resp = client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": "intercambio_directo", "cantidad_disponible": 5},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 400
@@ -179,14 +179,14 @@ class TestPublicarParaIntercambio:
         resp_album = client.post(
             ENDPOINT_ALBUM,
             json={"numero": 10, "equipo": "Argentina", "jugador": "Messi", "cantidad": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
         figurita_id = resp_album.json()["id"]
 
         resp = client.post(
             ENDPOINT_PUBLICACIONES,
             json={"figurita_personal_id": figurita_id, "tipo_intercambio": "invalido", "cantidad_disponible": 1},
-            headers={"X-User-Token": token_user1},
+            headers={"Authorization": token_user1},
         )
 
         assert resp.status_code == 422

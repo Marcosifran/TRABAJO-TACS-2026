@@ -22,7 +22,7 @@ export default function SubastaCardRow({
       <div>
         <h3 className="font-bold text-lg text-primary">
           {pubsMap[sub.figurita_id]
-            ? `${pubsMap[sub.figurita_id].jugador} — ${users.find(u => u.id === sub.usuario_id)?.nombre ?? `Usuario ${sub.usuario_id}`}`
+            ? `${pubsMap[sub.figurita_id].jugador} — ${users.find((u) => u.id === sub.usuario_id)?.nombre ?? `Usuario ${sub.usuario_id}`}`
             : `Subasta #${sub.id}`}
         </h3>
         <p className="text-on-surface-variant text-sm mt-1">

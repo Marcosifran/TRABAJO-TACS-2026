@@ -473,7 +473,8 @@ export default function AuctionsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm text-on-surface">
-                      {users.find((u) => u.id === oferta.usuario_id)?.nombre ?? `Usuario ${oferta.usuario_id}`}
+                      {users.find((u) => u.id === oferta.usuario_id)?.nombre ??
+                        `Usuario ${oferta.usuario_id}`}
                     </span>
                     <span className="text-xs text-on-surface-variant">Oferta #{oferta.id}</span>
                   </div>

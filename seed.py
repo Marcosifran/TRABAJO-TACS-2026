@@ -25,28 +25,26 @@ def parse_args():
 
 BASE_URL = parse_args()
 
-# ── Leer tokens del .env ──────────────────────────────────────────────────────
+# ── Credenciales de los usuarios sembrados ────────────────────────────────────
+# El backend ya no usa el header legacy X-User-Token: nos logueamos con
+# email/contraseña y usamos el JWT devuelto en Authorization: Bearer.
 
 def load_env(path=".env"):
-    tokens = {}
+    valores = {}
     env_file = Path(path)
     if not env_file.exists():
-        print(f"[ERROR] No se encontró el archivo {path}")
-        sys.exit(1)
+        return valores
     for line in env_file.read_text().splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             key, _, value = line.partition("=")
-            tokens[key.strip()] = value.strip()
-    return tokens
+            valores[key.strip()] = value.strip()
+    return valores
 
 env = load_env()
-TOKEN_U1 = env.get("USER_1_TOKEN", "")
-TOKEN_U2 = env.get("USER_2_TOKEN", "")
-
-if not TOKEN_U1 or not TOKEN_U2:
-    print("[ERROR] USER_1_TOKEN o USER_2_TOKEN no están definidos en .env")
-    sys.exit(1)
+SEED_PASSWORD = env.get("SEED_USER_PASSWORD", "figuswap123")
+EMAIL_U1 = "marcos@utn"
+EMAIL_U2 = "jeronimo@utn"
 
 # ── HTTP helper ───────────────────────────────────────────────────────────────
 
@@ -55,7 +53,7 @@ def request(method, path, body=None, token=None):
     data = json.dumps(body).encode() if body else None
     headers = {"Content-Type": "application/json"}
     if token:
-        headers["X-User-Token"] = token
+        headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req) as resp:
@@ -71,6 +69,17 @@ def post(path, body, token):
 
 def get(path, token):
     return request("GET", path, token=token)
+
+def login(email, password):
+    """Loguea un usuario sembrado y devuelve su JWT (access_token)."""
+    resp = request("POST", "/auth/login", {"email": email, "password": password})
+    if not resp or "access_token" not in resp:
+        print(f"[ERROR] No se pudo loguear {email}. ¿Backend levantado y credenciales correctas?")
+        sys.exit(1)
+    return resp["access_token"]
+
+TOKEN_U1 = login(EMAIL_U1, SEED_PASSWORD)
+TOKEN_U2 = login(EMAIL_U2, SEED_PASSWORD)
 
 # ── Datos de prueba ───────────────────────────────────────────────────────────
 

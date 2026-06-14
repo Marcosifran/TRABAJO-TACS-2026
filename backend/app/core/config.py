@@ -8,10 +8,6 @@ class Settings(BaseSettings):
     app_version: str = "2026.1"
     debug: bool = False
 
-    # Tokens de cada usuario. Se cargan desde .env de la raíz.
-    user_1_token: str = ""
-    user_2_token: str = ""
-
     # Contraseña de los usuarios sembrados (demo). Permite loguear a marcos/jeronimo
     # con el nuevo flujo JWT sin perder los datos asociados a sus ids 1 y 2.
     seed_user_password: str = "figuswap123"
