@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useModalForm } from '../hooks/useModalForm'
 import { useLocation } from 'react-router-dom'
 import Tabs from '../components/ui/Tabs'
 import Modal from '../components/ui/Modal'
@@ -26,17 +27,11 @@ export default function TradesPage() {
   const [enviadas, setEnviadas] = useState([])
   const [sugerencias, setSugerencias] = useState([])
   const [loading, setLoading] = useState(false)
-  const [ratingModal, setRatingModal] = useState(null)
-  const [rating, setRating] = useState(0)
-  const [comment, setComment] = useState('')
+  const ratingForm = useModalForm({ puntuacion: 0, comentario: '' })
+  const sugTrade = useModalForm({ selectedOffer: [] })
   const [calificados, setCalificados] = useState(new Set())
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
-
-  // Estados para el modal de propuesta desde sugerencias
-  const [sugTradeModal, setSugTradeModal] = useState(null)
   const [sugAlbum, setSugAlbum] = useState([])
-  const [sugSelectedOffer, setSugSelectedOffer] = useState([])
-  const [sugSubmitting, setSugSubmitting] = useState(false)
 
   const fetchIntercambios = useCallback(async () => {
     setLoading(true)
@@ -56,20 +51,20 @@ export default function TradesPage() {
 
   useEffect(() => {
     if (location.state?.proponer) {
-      setSugTradeModal(location.state.proponer)
+      sugTrade.openWith(location.state.proponer)
     }
     fetchIntercambios()
   }, [fetchIntercambios])
 
   useEffect(() => {
-    if (sugTradeModal) {
+    if (sugTrade.open) {
       listarMiAlbum()
         .then((data) => setSugAlbum(data.figuritas || data))
         .catch((e) =>
           setSnack({ open: true, message: 'Error cargando álbum: ' + e.message, type: 'error' }),
         )
     }
-  }, [sugTradeModal])
+  }, [sugTrade.open])
 
   async function handleResponse(id, decision) {
     try {
@@ -86,24 +81,25 @@ export default function TradesPage() {
   }
 
   async function handleRate() {
-    if (rating === 0) {
+    if (ratingForm.form.puntuacion === 0) {
       setSnack({ open: true, message: 'Por favor, seleccioná una puntuación', type: 'error' })
       return
     }
     try {
-      await calificarIntercambio(ratingModal.id, { puntuacion: rating, comentario: comment })
-      setCalificados((prev) => new Set([...prev, ratingModal.id]))
+      await calificarIntercambio(ratingForm.open.id, {
+        puntuacion: ratingForm.form.puntuacion,
+        comentario: ratingForm.form.comentario,
+      })
+      setCalificados((prev) => new Set([...prev, ratingForm.open.id]))
       setSnack({ open: true, message: 'Calificación enviada', type: 'success' })
-      setRatingModal(null)
-      setRating(0)
-      setComment('')
+      ratingForm.close()
     } catch (e) {
       setSnack({ open: true, message: 'Error al enviar calificación: ' + e.message, type: 'error' })
     }
   }
 
   async function handleSugTrade() {
-    if (sugSelectedOffer.length === 0) {
+    if (sugTrade.form.selectedOffer.length === 0) {
       setSnack({
         open: true,
         message: 'Seleccioná al menos una figurita para ofrecer',
@@ -111,27 +107,29 @@ export default function TradesPage() {
       })
       return
     }
-    setSugSubmitting(true)
+    sugTrade.setPending(true)
     try {
       await proponerIntercambio({
-        figuritas_ofrecidas_numero: sugSelectedOffer,
-        figurita_solicitada_numero: sugTradeModal.publicacion.numero,
-        solicitado_a_id: sugTradeModal.publicacion.usuario_id,
+        figuritas_ofrecidas_numero: sugTrade.form.selectedOffer,
+        figurita_solicitada_numero: sugTrade.open.publicacion.numero,
+        solicitado_a_id: sugTrade.open.publicacion.usuario_id,
       })
       setSnack({ open: true, message: 'Propuesta enviada con éxito', type: 'success' })
-      setSugTradeModal(null)
-      setSugSelectedOffer([])
+      sugTrade.close()
     } catch (e) {
       setSnack({ open: true, message: 'Error al enviar propuesta: ' + e.message, type: 'error' })
     } finally {
-      setSugSubmitting(false)
+      sugTrade.setPending(false)
     }
   }
 
   function toggleSugOffer(numero) {
-    setSugSelectedOffer((prev) =>
-      prev.includes(numero) ? prev.filter((n) => n !== numero) : [...prev, numero],
-    )
+    sugTrade.setForm((f) => ({
+      ...f,
+      selectedOffer: f.selectedOffer.includes(numero)
+        ? f.selectedOffer.filter((n) => n !== numero)
+        : [...f.selectedOffer, numero],
+    }))
   }
 
   const [filtroEstado, setFiltroEstado] = useState('todos')
@@ -262,7 +260,7 @@ export default function TradesPage() {
                       variant="tonal"
                       size="sm"
                       icon="swap_horiz"
-                      onClick={() => setSugTradeModal(sug)}
+                      onClick={() => sugTrade.openWith(sug)}
                     >
                       Proponer intercambio
                     </Button>
@@ -366,7 +364,7 @@ export default function TradesPage() {
                     className="w-full"
                     icon="star"
                     onClick={() =>
-                      setRatingModal({
+                      ratingForm.openWith({
                         id: item.id,
                         user:
                           tab === 'recibidas'
@@ -392,26 +390,23 @@ export default function TradesPage() {
 
       {/* Modal proponer intercambio desde sugerencia */}
       <Modal
-        open={!!sugTradeModal}
-        onClose={() => {
-          setSugTradeModal(null)
-          setSugSelectedOffer([])
-        }}
+        open={!!sugTrade.open}
+        onClose={sugTrade.close}
         title="Proponer intercambio"
         width={560}
       >
-        {sugTradeModal && (
+        {sugTrade.open && (
           <div>
             <div className="bg-surface-container rounded-xl p-3.5 mb-5 flex items-center gap-3.5">
               <Icon name="arrow_forward" size={20} className="text-primary" />
               <div>
                 <div className="text-xs text-on-surface-variant">Querés obtener</div>
                 <div className="font-semibold text-on-surface">
-                  #{sugTradeModal.publicacion.numero} {sugTradeModal.publicacion.jugador} (
-                  {sugTradeModal.publicacion.equipo})
+                  #{sugTrade.open.publicacion.numero} {sugTrade.open.publicacion.jugador} (
+                  {sugTrade.open.publicacion.equipo})
                 </div>
                 <div className="text-xs text-on-surface-variant">
-                  de {sugTradeModal.ofrecida_por}
+                  de {sugTrade.open.ofrecida_por}
                 </div>
               </div>
             </div>
@@ -429,7 +424,7 @@ export default function TradesPage() {
                   {sugAlbum.map((fig) => (
                     <Chip
                       key={fig.id}
-                      selected={sugSelectedOffer.includes(fig.numero)}
+                      selected={sugTrade.form.selectedOffer.includes(fig.numero)}
                       onClick={() => toggleSugOffer(fig.numero)}
                     >
                       #{fig.numero} {fig.jugador || fig.equipo}
@@ -440,21 +435,15 @@ export default function TradesPage() {
             </div>
 
             <div className="flex gap-2.5 justify-end mt-5">
-              <Button
-                variant="text"
-                onClick={() => {
-                  setSugTradeModal(null)
-                  setSugSelectedOffer([])
-                }}
-              >
+              <Button variant="text" onClick={sugTrade.close}>
                 Cancelar
               </Button>
               <Button
-                icon={sugSubmitting ? 'progress_activity' : 'send'}
+                icon={sugTrade.pending ? 'progress_activity' : 'send'}
                 onClick={handleSugTrade}
-                disabled={sugSelectedOffer.length === 0 || sugSubmitting}
+                disabled={sugTrade.form.selectedOffer.length === 0 || sugTrade.pending}
               >
-                {sugSubmitting ? 'Enviando...' : 'Enviar propuesta'}
+                {sugTrade.pending ? 'Enviando...' : 'Enviar propuesta'}
               </Button>
             </div>
           </div>
@@ -463,33 +452,43 @@ export default function TradesPage() {
 
       {/* Rating Modal */}
       <Modal
-        open={!!ratingModal}
-        onClose={() => setRatingModal(null)}
+        open={!!ratingForm.open}
+        onClose={ratingForm.close}
         title="Calificar usuario"
         width={380}
       >
-        {ratingModal && (
+        {ratingForm.open && (
           <div className="text-center py-2.5">
-            <Avatar name={ratingModal.user} size={56} />
-            <div className="font-semibold text-base mt-2.5 text-on-surface">{ratingModal.user}</div>
+            <Avatar name={ratingForm.open.user} size={56} />
+            <div className="font-semibold text-base mt-2.5 text-on-surface">
+              {ratingForm.open.user}
+            </div>
             <p className="text-on-surface-variant text-sm mt-2 mb-4">
               ¿Cómo fue la experiencia de intercambio?
             </p>
 
             <div className="flex justify-center mb-4">
-              <StarRating value={rating} onChange={setRating} size={36} />
+              <StarRating
+                value={ratingForm.form.puntuacion}
+                onChange={(v) => ratingForm.setForm((f) => ({ ...f, puntuacion: v }))}
+                size={36}
+              />
             </div>
 
             <textarea
               className="w-full bg-surface-container border border-outline rounded-lg p-3 text-sm text-on-surface focus:outline-primary mb-4"
               rows={3}
               placeholder="Escribe un comentario opcional..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              value={ratingForm.form.comentario}
+              onChange={(e) => ratingForm.setForm((f) => ({ ...f, comentario: e.target.value }))}
             />
 
             <div className="mt-2">
-              <Button onClick={handleRate} className="w-full" disabled={rating === 0}>
+              <Button
+                onClick={handleRate}
+                className="w-full"
+                disabled={ratingForm.form.puntuacion === 0}
+              >
                 Enviar calificación
               </Button>
             </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useModalForm } from '../hooks/useModalForm'
 import { useLocation } from 'react-router-dom'
 import { useNow } from '../hooks/useNow'
 import { isAuctionActive } from '../utils/auctionTime'
@@ -39,16 +40,13 @@ export default function AuctionsPage() {
   const [miAlbum, setMiAlbum] = useState([])
   const [pubsMap, setPubsMap] = useState({})
 
-  const [bidModal, setBidModal] = useState(null)
-  const [offerIds, setOfferIds] = useState([])
+  const bid = useModalForm({ offerIds: [] })
+  const create = useModalForm(EMPTY_AUCTION)
   const [offersModal, setOffersModal] = useState(null)
   const [ofertas, setOfertas] = useState([])
   const [loadingOfertas, setLoadingOfertas] = useState(false)
   const [misOfertas, setMisOfertas] = useState([])
   const [loadingMisOfertas, setLoadingMisOfertas] = useState(false)
-
-  const [createModal, setCreate] = useState(false)
-  const [newAuction, setNewAuction] = useState(EMPTY_AUCTION)
   const [confirmCancelModal, setConfirmCancelModal] = useState(null)
 
   const [snack, setSnack] = useState({
@@ -93,46 +91,33 @@ export default function AuctionsPage() {
     if (!pendingSubastaRef.current || subastas.length === 0) return
     const target = subastas.find((s) => s.id === pendingSubastaRef.current)
     if (target) {
-      setBidModal(target)
-      setOfferIds([])
+      bid.openWith(target)
     }
     pendingSubastaRef.current = null
   }, [subastas])
 
   async function handleCreate() {
-    if (!newAuction.figurita_id) {
-      setSnack({
-        open: true,
-        message: 'Seleccioná una publicación',
-        type: 'error',
-      })
+    if (!create.form.figurita_id) {
+      setSnack({ open: true, message: 'Seleccioná una publicación', type: 'error' })
       return
     }
-
-    setLoading(true)
+    create.setPending(true)
     try {
       const inicio = new Date()
       const fin = new Date()
-      fin.setHours(fin.getHours() + Number(newAuction.duracion))
-
+      fin.setHours(fin.getHours() + Number(create.form.duracion))
       await crearSubasta({
-        figurita_id: newAuction.figurita_id,
+        figurita_id: create.form.figurita_id,
         inicio: inicio.toISOString(),
         fin: fin.toISOString(),
       })
-
-      setSnack({
-        open: true,
-        message: 'Subasta iniciada con éxito',
-        type: 'success',
-      })
-      setCreate(false)
-      setNewAuction(EMPTY_AUCTION)
+      setSnack({ open: true, message: 'Subasta iniciada con éxito', type: 'success' })
+      create.close()
       cargarDatos()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoading(false)
+      create.setPending(false)
     }
   }
 
@@ -189,35 +174,26 @@ export default function AuctionsPage() {
   }
 
   function toggleOferta(id) {
-    setOfferIds((prev) =>
-      prev.includes(id) ? prev.filter((offerId) => offerId !== id) : [...prev, id],
-    )
+    bid.setForm((f) => ({
+      ...f,
+      offerIds: f.offerIds.includes(id) ? f.offerIds.filter((x) => x !== id) : [...f.offerIds, id],
+    }))
   }
 
   async function handleOfertar() {
-    if (offerIds.length === 0) {
-      setSnack({
-        open: true,
-        message: 'Seleccioná al menos una figurita',
-        type: 'error',
-      })
+    if (bid.form.offerIds.length === 0) {
+      setSnack({ open: true, message: 'Seleccioná al menos una figurita', type: 'error' })
       return
     }
-
-    setLoading(true)
+    bid.setPending(true)
     try {
-      await ofertarSubasta(bidModal.id, offerIds)
-      setSnack({
-        open: true,
-        message: 'Oferta enviada con éxito',
-        type: 'success',
-      })
-      setBidModal(null)
-      setOfferIds([])
+      await ofertarSubasta(bid.open.id, bid.form.offerIds)
+      setSnack({ open: true, message: 'Oferta enviada con éxito', type: 'success' })
+      bid.close()
     } catch (error) {
       setSnack({ open: true, message: error.message, type: 'error' })
     } finally {
-      setLoading(false)
+      bid.setPending(false)
     }
   }
 
@@ -265,7 +241,7 @@ export default function AuctionsPage() {
           <h1 className="text-3xl font-bold text-on-surface m-0">Subastas</h1>
           <p className="mt-1 text-on-surface-variant text-sm">{subastas.length} subastas activas</p>
         </div>
-        <Button icon="add" onClick={() => setCreate(true)}>
+        <Button icon="add" onClick={() => create.openWith()}>
           Iniciar subasta
         </Button>
       </div>
@@ -375,7 +351,7 @@ export default function AuctionsPage() {
                 : 'No creaste ninguna subasta aún.'
             }
             action="Iniciar subasta"
-            onAction={() => setCreate(true)}
+            onAction={() => create.openWith()}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -386,10 +362,7 @@ export default function AuctionsPage() {
                 pubsMap={pubsMap}
                 user={user}
                 users={users}
-                onOfertar={(s) => {
-                  setBidModal(s)
-                  setOfferIds([])
-                }}
+                onOfertar={(s) => bid.openWith(s)}
                 onVerOfertas={abrirOfertas}
                 onCancelar={handleCancelarSubasta}
               />
@@ -400,16 +373,16 @@ export default function AuctionsPage() {
 
       {/* Bid Modal */}
       <Modal
-        open={!!bidModal}
-        onClose={() => setBidModal(null)}
+        open={!!bid.open}
+        onClose={bid.close}
         title={
-          bidModal && pubsMap[bidModal.figurita_id]
-            ? `Ofertar — ${pubsMap[bidModal.figurita_id].jugador}`
+          bid.open && pubsMap[bid.open.figurita_id]
+            ? `Ofertar — ${pubsMap[bid.open.figurita_id].jugador}`
             : 'Ofertar'
         }
         width={520}
       >
-        {bidModal && (
+        {bid.open && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-on-surface-variant">
               Seleccioná las figuritas de tu álbum que querés ofrecer a cambio:
@@ -425,12 +398,12 @@ export default function AuctionsPage() {
                 {miAlbum.map((fig) => (
                   <label
                     key={fig.id}
-                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${bid.form.offerIds.includes(fig.id) ? 'border-primary bg-primary-container/20' : 'border-outline-variant hover:bg-surface-container-low'}`}
                   >
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-primary"
-                      checked={offerIds.includes(fig.id)}
+                      checked={bid.form.offerIds.includes(fig.id)}
                       onChange={() => toggleOferta(fig.id)}
                     />
                     <div className="flex flex-col">
@@ -445,15 +418,15 @@ export default function AuctionsPage() {
             )}
 
             <div className="flex gap-2.5 justify-end mt-4 pt-4 border-t border-outline-variant">
-              <Button variant="text" onClick={() => setBidModal(null)} disabled={loading}>
+              <Button variant="text" onClick={bid.close} disabled={bid.pending}>
                 Cancelar
               </Button>
               <Button
                 icon="gavel"
                 onClick={handleOfertar}
-                disabled={loading || offerIds.length === 0}
+                disabled={bid.pending || bid.form.offerIds.length === 0}
               >
-                {loading ? 'Enviando...' : `Enviar oferta (${offerIds.length})`}
+                {bid.pending ? 'Enviando...' : `Enviar oferta (${bid.form.offerIds.length})`}
               </Button>
             </div>
           </div>
@@ -461,12 +434,7 @@ export default function AuctionsPage() {
       </Modal>
 
       {/* Create Modal */}
-      <Modal
-        open={createModal}
-        onClose={() => setCreate(false)}
-        title="Iniciar subasta"
-        width={480}
-      >
+      <Modal open={!!create.open} onClose={create.close} title="Iniciar subasta" width={480}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-on-surface-variant">
             Seleccioná una de tus publicaciones marcadas como "Subasta" para activarla.
@@ -481,30 +449,30 @@ export default function AuctionsPage() {
             <>
               <Input
                 label="Figurita a Subastar"
-                value={newAuction.figurita_id}
-                onChange={(v) => setNewAuction({ ...newAuction, figurita_id: v })}
+                value={create.form.figurita_id}
+                onChange={(v) => create.setForm({ ...create.form, figurita_id: v })}
                 options={opcionesSubasta}
               />
               <Input
                 label="Duración (horas)"
                 type="number"
-                value={newAuction.duracion}
-                onChange={(v) => setNewAuction({ ...newAuction, duracion: v })}
+                value={create.form.duracion}
+                onChange={(v) => create.setForm({ ...create.form, duracion: v })}
                 icon="timer"
               />
             </>
           )}
 
           <div className="flex gap-2.5 justify-end mt-2 pt-4 border-t border-outline-variant">
-            <Button variant="text" onClick={() => setCreate(false)} disabled={loading}>
+            <Button variant="text" onClick={create.close} disabled={create.pending}>
               Cancelar
             </Button>
             <Button
               icon="gavel"
               onClick={handleCreate}
-              disabled={loading || misPublicaciones.length === 0}
+              disabled={create.pending || misPublicaciones.length === 0}
             >
-              {loading ? 'Iniciando...' : 'Iniciar subasta'}
+              {create.pending ? 'Iniciando...' : 'Iniciar subasta'}
             </Button>
           </div>
         </div>
