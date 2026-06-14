@@ -1,13 +1,12 @@
+import { USERS, STORAGE_KEY_INDEX } from '../context/UserContext'
+
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 const DEFAULT_TIMEOUT_MS = 15_000
 
-/**
- * Read the current user's token from sessionStorage.
- * Returns an empty string when no token is available.
- * This helper keeps the storage access centralized so callers don't duplicate the key.
- */
 function token() {
-  return sessionStorage.getItem('figuswap-token') || ''
+  const saved = sessionStorage.getItem(STORAGE_KEY_INDEX)
+  const i = saved !== null ? parseInt(saved, 10) : 0
+  return USERS[i]?.token || ''
 }
 
 /**

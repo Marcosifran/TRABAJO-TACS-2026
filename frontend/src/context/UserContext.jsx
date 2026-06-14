@@ -1,8 +1,8 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
-const UserContext = createContext()
+export const STORAGE_KEY_INDEX = 'figuswap-user-index'
 
-const USERS = [
+export const USERS = [
   {
     nombre: 'Usuario 1',
     email: 'user1@figuswap',
@@ -17,25 +17,22 @@ const USERS = [
   },
 ]
 
+const UserContext = createContext()
+
 export function UserProvider({ children }) {
   const [index, setIndex] = useState(() => {
-    const saved = sessionStorage.getItem('figuswap-user-index')
-    const i = saved !== null ? parseInt(saved) : 0
-    // Síncrono: el token queda disponible antes de cualquier efecto hijo
-    sessionStorage.setItem('figuswap-token', USERS[i].token)
-    return i
+    const saved = sessionStorage.getItem(STORAGE_KEY_INDEX)
+    return saved !== null ? parseInt(saved, 10) : 0
   })
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_INDEX, String(index))
+  }, [index])
 
   const user = USERS[index]
 
-  function switchUser(i) {
-    sessionStorage.setItem('figuswap-user-index', i)
-    sessionStorage.setItem('figuswap-token', USERS[i].token)
-    setIndex(i)
-  }
-
   return (
-    <UserContext.Provider value={{ user, users: USERS, switchUser }}>
+    <UserContext.Provider value={{ user, users: USERS, switchUser: setIndex }}>
       {children}
     </UserContext.Provider>
   )

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
@@ -9,28 +9,29 @@ import { obtenerSugerencias } from '../api/faltantes'
 import { listarSubastas } from '../api/subastas'
 import { formatTiempoRestante, isAuctionActive } from '../utils/auctionTime'
 
-const STORAGE_KEY = 'figuswap-alertas-leidas'
+const storageKey = (userId) => `figuswap-alertas-leidas:user-${userId}`
 const FADE_MS = 400
 
-function loadLeidas() {
+function loadLeidas(userId) {
   try {
-    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+    return new Set(JSON.parse(localStorage.getItem(storageKey(userId)) || '[]'))
   } catch {
     return new Set()
   }
 }
-function saveLeidas(set) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]))
+function saveLeidas(set, userId) {
+  localStorage.setItem(storageKey(userId), JSON.stringify([...set]))
 }
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
-  const { users } = useUser()
+  const { user, users } = useUser()
+  const fadeTimers = useRef(new Map())
   const [propuestas, setPropuestas] = useState([])
   const [sugerencias, setSugerencias] = useState([])
   const [subastas, setSubastas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [leidas, setLeidas] = useState(loadLeidas)
+  const [leidas, setLeidas] = useState(() => loadLeidas(users.indexOf(user) + 1))
   const [fading, setFading] = useState(new Set())
 
   useEffect(() => {
@@ -61,21 +62,35 @@ export default function NotificationsPage() {
     cargar()
   }, [])
 
-  const dismiss = useCallback((id) => {
-    setFading((prev) => new Set([...prev, id]))
-    setTimeout(() => {
-      setLeidas((prev) => {
-        const next = new Set([...prev, id])
-        saveLeidas(next)
-        return next
-      })
-      setFading((prev) => {
-        const s = new Set(prev)
-        s.delete(id)
-        return s
-      })
-    }, FADE_MS)
-  }, [])
+  const userId = users.indexOf(user) + 1
+
+  useEffect(
+    () => () => {
+      fadeTimers.current.forEach(clearTimeout)
+    },
+    [],
+  )
+
+  const dismiss = useCallback(
+    (id) => {
+      setFading((prev) => new Set([...prev, id]))
+      const tid = setTimeout(() => {
+        setLeidas((prev) => {
+          const next = new Set([...prev, id])
+          saveLeidas(next, userId)
+          return next
+        })
+        setFading((prev) => {
+          const s = new Set(prev)
+          s.delete(id)
+          return s
+        })
+        fadeTimers.current.delete(id)
+      }, FADE_MS)
+      fadeTimers.current.set(id, tid)
+    },
+    [userId],
+  )
 
   function dismissAll() {
     const ids = [
@@ -84,14 +99,15 @@ export default function NotificationsPage() {
       ...subastas.map((s) => `auct-${s.id}`),
     ]
     setFading(new Set(ids))
-    setTimeout(() => {
+    const tid = setTimeout(() => {
       setLeidas((prev) => {
         const next = new Set([...prev, ...ids])
-        saveLeidas(next)
+        saveLeidas(next, userId)
         return next
       })
       setFading(new Set())
     }, FADE_MS)
+    fadeTimers.current.set('dismissAll', tid)
   }
 
   const propuestasVis = propuestas.filter((p) => !leidas.has(`trade-${p.id}`))
