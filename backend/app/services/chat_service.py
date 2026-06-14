@@ -1,6 +1,5 @@
 from app.repositories import intercambio_repo, mensaje_repo
 from app.domain.errors import DomainNotFoundError, DomainPermissionError
-from app.schemas.mensaje_sch import MensajeCreate, MensajeResponse
 
 def enviar_mensaje(intercambio_id: str, remitente_id: int, contenido: str) -> dict:
     intercambio = intercambio_repo.find_exchange_by_id(intercambio_id)
