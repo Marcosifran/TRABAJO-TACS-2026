@@ -11,12 +11,7 @@ import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import Icon from '../components/ui/Icon'
 import { useUser } from '../context/UserContext'
-import {
-  agregarAlAlbum,
-  publicarFigurita,
-  listarMisPublicaciones,
-  retirarPublicacion,
-} from '../api/publicaciones'
+import { agregarAlAlbum, publicarFigurita, retirarPublicacion } from '../api/publicaciones'
 import { registrarFaltante } from '../api/faltantes'
 import { getMaestroJugador } from '../api/maestro'
 
@@ -67,7 +62,10 @@ export default function CollectionPage() {
   const maestroTimer = useRef(null)
 
   const { data: albumRaw, isLoading: loading, mutate: mutateAlbum } = useSWR(['/album', userId])
-  const { data: publicaciones = [], mutate: mutatePubs } = useSWR(['/usuarios/publicaciones', userId])
+  const { data: publicaciones = [], mutate: mutatePubs } = useSWR([
+    '/usuarios/publicaciones',
+    userId,
+  ])
   const {
     data: faltantes = [],
     isLoading: loadingFalt,

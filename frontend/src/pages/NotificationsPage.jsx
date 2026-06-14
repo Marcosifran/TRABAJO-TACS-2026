@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import Icon from '../components/ui/Icon'
@@ -39,23 +39,29 @@ export default function NotificationsPage() {
   const { data: todasPubs = [] } = useSWR('/publicaciones?incluir_propias=true')
 
   const pubsMap = {}
-  todasPubs.forEach((p) => { pubsMap[p.id] = p })
+  todasPubs.forEach((p) => {
+    pubsMap[p.id] = p
+  })
 
   const loading = loadingTrades || loadingSugs || loadingSubs
 
   const propuestas = intercambiosData?.recibidos?.filter((i) => i.estado === 'pendiente') || []
   const sugerencias = sugerenciasData
-  const ahora = Date.now()
-  const subastas = subastasData.filter((s) => {
-    if (!isAuctionActive(s, ahora)) return false
-    const ms = new Date(s.fin).getTime() - ahora
-    return ms < 24 * 3600 * 1000
-  })
+  const subastas = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
+    const ahora = Date.now()
+    return subastasData.filter((s) => {
+      if (!isAuctionActive(s, ahora)) return false
+      return new Date(s.fin).getTime() - ahora < 24 * 3600 * 1000
+    })
+  }, [subastasData])
 
   // Limpia los timers de fade al desmontar
-  useRef((() => {
-    return () => fadeTimers.current.forEach(clearTimeout)
-  })())
+  useRef(
+    (() => {
+      return () => fadeTimers.current.forEach(clearTimeout)
+    })(),
+  )
 
   const dismiss = useCallback(
     (id) => {
@@ -246,7 +252,8 @@ export default function NotificationsPage() {
                           : `Subasta #${s.id}`}
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
-                        De {users[s.usuario_id - 1]?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra en {formatTiempoRestante(s.fin)}
+                        De {users[s.usuario_id - 1]?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra
+                        en {formatTiempoRestante(s.fin)}
                       </div>
                     </div>
                     <Button size="sm" variant="tonal" onClick={() => navigate('/subastas')}>

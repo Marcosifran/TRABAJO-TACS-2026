@@ -13,7 +13,6 @@ import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
 import Chip from '../components/ui/Chip'
 import {
-  listarIntercambios,
   responderIntercambio,
   calificarIntercambio,
   proponerIntercambio,
