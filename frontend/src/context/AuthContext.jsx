@@ -18,9 +18,23 @@ function readStoredUser() {
   }
 }
 
+// Lee una sesión consistente: solo es válida si están el token y el usuario.
+// Una sesión incompleta (p. ej. un token viejo previo a la migración a JWT,
+// sin usuario guardado) se descarta para no renderizar con user = null.
+function readSession() {
+  const storedToken = sessionStorage.getItem(TOKEN_KEY)
+  const storedUser = readStoredUser()
+  if (!storedToken || !storedUser) {
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
+    return { token: null, user: null }
+  }
+  return { token: storedToken, user: storedUser }
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) || null)
-  const [user, setUser] = useState(readStoredUser)
+  const [token, setToken] = useState(() => readSession().token)
+  const [user, setUser] = useState(() => readSession().user)
   // Lista de todos los usuarios, para resolver nombres a partir de ids en la UI.
   const [users, setUsers] = useState([])
 
@@ -50,6 +64,13 @@ export function AuthProvider({ children }) {
     setUser(null)
     setUsers([])
   }, [])
+
+  // Si una llamada a la API responde 401 (token expirado/inválido), cerramos la
+  // sesión; ProtectedLayout se encarga de redirigir al login en el próximo render.
+  useEffect(() => {
+    window.addEventListener('figuswap:unauthorized', logout)
+    return () => window.removeEventListener('figuswap:unauthorized', logout)
+  }, [logout])
 
   // Cuando hay sesión activa, traemos la lista de usuarios para los lookups por id.
   // Se reintenta al cambiar el token (login / cambio de sesión). Al cerrar sesión,
