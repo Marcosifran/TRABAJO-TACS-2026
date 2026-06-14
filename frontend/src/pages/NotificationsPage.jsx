@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useSWR from 'swr'
 import Icon from '../components/ui/Icon'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { useUser } from '../context/UserContext'
-import { listarIntercambios } from '../api/intercambios'
-import { obtenerSugerencias } from '../api/faltantes'
-import { listarSubastas } from '../api/subastas'
 import { formatTiempoRestante, isAuctionActive } from '../utils/auctionTime'
 
 const storageKey = (userId) => `figuswap-alertas-leidas:user-${userId}`
@@ -27,48 +25,42 @@ export default function NotificationsPage() {
   const navigate = useNavigate()
   const { user, users } = useUser()
   const fadeTimers = useRef(new Map())
-  const [propuestas, setPropuestas] = useState([])
-  const [sugerencias, setSugerencias] = useState([])
-  const [subastas, setSubastas] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [leidas, setLeidas] = useState(() => loadLeidas(users.indexOf(user) + 1))
-  const [fading, setFading] = useState(new Set())
-
-  useEffect(() => {
-    async function cargar() {
-      setLoading(true)
-      try {
-        const [intercambiosData, sugsData, subsData] = await Promise.all([
-          listarIntercambios(),
-          obtenerSugerencias(),
-          listarSubastas(),
-        ])
-        setPropuestas(intercambiosData.recibidos?.filter((i) => i.estado === 'pendiente') || [])
-        setSugerencias(sugsData || [])
-        const ahora = Date.now()
-        setSubastas(
-          (subsData || []).filter((s) => {
-            if (!isAuctionActive(s, ahora)) return false
-            const ms = new Date(s.fin).getTime() - ahora
-            return ms < 24 * 3600 * 1000
-          }),
-        )
-      } catch {
-        /* ignorar */
-      } finally {
-        setLoading(false)
-      }
-    }
-    cargar()
-  }, [])
-
   const userId = users.indexOf(user) + 1
 
-  useEffect(
-    () => () => {
-      fadeTimers.current.forEach(clearTimeout)
-    },
-    [],
+  const [leidas, setLeidas] = useState(() => loadLeidas(userId))
+  const [fading, setFading] = useState(new Set())
+
+  const { data: intercambiosData, isLoading: loadingTrades } = useSWR(['/intercambios/', userId])
+  const { data: sugerenciasData = [], isLoading: loadingSugs } = useSWR([
+    '/publicaciones/sugerencias',
+    userId,
+  ])
+  const { data: subastasData = [], isLoading: loadingSubs } = useSWR('/subastas')
+  const { data: todasPubs = [] } = useSWR('/publicaciones?incluir_propias=true')
+
+  const pubsMap = {}
+  todasPubs.forEach((p) => {
+    pubsMap[p.id] = p
+  })
+
+  const loading = loadingTrades || loadingSugs || loadingSubs
+
+  const propuestas = intercambiosData?.recibidos?.filter((i) => i.estado === 'pendiente') || []
+  const sugerencias = sugerenciasData
+  const subastas = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
+    const ahora = Date.now()
+    return subastasData.filter((s) => {
+      if (!isAuctionActive(s, ahora)) return false
+      return new Date(s.fin).getTime() - ahora < 24 * 3600 * 1000
+    })
+  }, [subastasData])
+
+  // Limpia los timers de fade al desmontar
+  useRef(
+    (() => {
+      return () => fadeTimers.current.forEach(clearTimeout)
+    })(),
   )
 
   const dismiss = useCallback(
@@ -255,10 +247,13 @@ export default function NotificationsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-on-surface">
-                        Subasta #{s.id} · Figurita #{s.figurita_id}
+                        {pubsMap[s.figurita_id]
+                          ? `#${pubsMap[s.figurita_id].numero} ${pubsMap[s.figurita_id].jugador} (${pubsMap[s.figurita_id].equipo})`
+                          : `Subasta #${s.id}`}
                       </div>
                       <div className="text-xs text-on-surface-variant mt-0.5">
-                        Cierra en {formatTiempoRestante(s.fin)}
+                        De {users[s.usuario_id - 1]?.nombre ?? `Usuario ${s.usuario_id}`} · Cierra
+                        en {formatTiempoRestante(s.fin)}
                       </div>
                     </div>
                     <Button size="sm" variant="tonal" onClick={() => navigate('/subastas')}>

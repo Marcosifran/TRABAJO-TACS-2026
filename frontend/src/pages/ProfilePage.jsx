@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import Card from '../components/ui/Card'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -7,37 +7,21 @@ import StarRating from '../components/ui/StarRating'
 import EmptyState from '../components/ui/EmptyState'
 import FiguritaCard from '../components/FiguritaCard'
 import { useUser } from '../context/UserContext'
-import { listarMisPublicaciones } from '../api/publicaciones'
-import { listarFaltantes, obtenerReputacion } from '../api/faltantes'
-import { listarIntercambios } from '../api/intercambios'
 
 export default function ProfilePage() {
   const { user, users } = useUser()
-  const [publicaciones, setPublicaciones] = useState([])
-  const [faltanCount, setFaltanCount] = useState(0)
-  const [intercambiosCount, setIntercambiosCount] = useState(0)
-  const [reputacion, setReputacion] = useState(null)
+  const userId = users.indexOf(user) + 1
 
-  useEffect(() => {
-    listarMisPublicaciones()
-      .then((data) => setPublicaciones(data))
-      .catch(() => {})
-    listarFaltantes()
-      .then((data) => setFaltanCount((data || []).length))
-      .catch(() => {})
-    listarIntercambios()
-      .then((data) => {
-        const aceptados = [...(data.enviados || []), ...(data.recibidos || [])].filter(
-          (i) => i.estado === 'aceptado',
-        ).length
-        setIntercambiosCount(aceptados)
-      })
-      .catch(() => {})
-    const userId = users.indexOf(user) + 1
-    obtenerReputacion(userId)
-      .then((data) => setReputacion(data))
-      .catch(() => {})
-  }, [user])
+  const { data: publicaciones = [] } = useSWR(['/usuarios/publicaciones', userId])
+  const { data: faltantesData = [] } = useSWR(['/usuarios/faltantes', userId])
+  const { data: intercambiosData } = useSWR(['/intercambios/', userId])
+  const { data: reputacion } = useSWR(`/usuarios/${userId}/reputacion`)
+
+  const faltanCount = faltantesData.length
+  const intercambiosCount = [
+    ...(intercambiosData?.enviados || []),
+    ...(intercambiosData?.recibidos || []),
+  ].filter((i) => i.estado === 'aceptado').length
 
   const STATS = [
     {

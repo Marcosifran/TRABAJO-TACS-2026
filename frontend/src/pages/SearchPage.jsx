@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useSWR from 'swr'
 import Input from '../components/ui/Input'
 import Chip from '../components/ui/Chip'
 import Icon from '../components/ui/Icon'
@@ -7,7 +8,6 @@ import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import { buscarPublicaciones } from '../api/publicaciones'
-import { listarSubastas } from '../api/subastas'
 import { isAuctionActive } from '../utils/auctionTime'
 
 const SELECCIONES = [
@@ -39,6 +39,7 @@ function pubToCard(pub) {
 
 export default function SearchPage() {
   const navigate = useNavigate()
+  const { data: subastasCache = [] } = useSWR('/subastas')
   const [query, setQuery] = useState('')
   const [selFilter, setSelFilter] = useState('Todas')
   const [catFilter, setCatFilter] = useState('Todas')
@@ -101,19 +102,14 @@ export default function SearchPage() {
     })
   }
 
-  async function handleSubasta(pub) {
-    try {
-      const subastas = await listarSubastas()
-      const activa = subastas.find(
-        (s) => s.figurita_id === pub.id && isAuctionActive(s, Date.now()),
-      )
-      if (activa) {
-        navigate('/subastas', { state: { subastaId: activa.id } })
-      } else {
-        setSnack({ open: true, message: 'No hay subasta activa para esta figurita', type: 'info' })
-      }
-    } catch {
-      setSnack({ open: true, message: 'Error al buscar la subasta', type: 'error' })
+  function handleSubasta(pub) {
+    const activa = subastasCache.find(
+      (s) => s.figurita_id === pub.id && isAuctionActive(s, Date.now()),
+    )
+    if (activa) {
+      navigate('/subastas', { state: { subastaId: activa.id } })
+    } else {
+      setSnack({ open: true, message: 'No hay subasta activa para esta figurita', type: 'info' })
     }
   }
 

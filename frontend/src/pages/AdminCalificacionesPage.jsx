@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useSWR from 'swr'
 import Card from '../components/ui/Card'
 import Icon from '../components/ui/Icon'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import { listarCalificaciones } from '../api/admin'
 
 function StarFilter({ value, onChange }) {
   return (
@@ -29,20 +29,12 @@ function StarFilter({ value, onChange }) {
 
 export default function AdminCalificacionesPage() {
   const navigate = useNavigate()
-  const [calificaciones, setCalificaciones] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { data: calificaciones = [], isLoading: loading } = useSWR('/admin/calificaciones')
 
   const [filtroCalificador, setFiltroCalificador] = useState('')
   const [filtroCalificado, setFiltroCalificado] = useState('')
   const [filtroPuntuacion, setFiltroPuntuacion] = useState(0)
   const [filtroComentario, setFiltroComentario] = useState(false)
-
-  useEffect(() => {
-    listarCalificaciones()
-      .then((data) => setCalificaciones(data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
 
   const calificadores = useMemo(
     () => [...new Set(calificaciones.map((c) => c.calificador_nombre))].sort(),
