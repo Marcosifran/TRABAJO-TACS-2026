@@ -179,7 +179,9 @@ export default function HomePage() {
                     tipo:
                       pub.tipo_intercambio === 'intercambio_directo' ? 'intercambio' : 'subasta',
                     cantidad: pub.cantidad_disponible,
-                    owner: users.find((u) => u.id === pub.usuario_id)?.nombre ?? `Usuario ${pub.usuario_id}`,
+                    owner:
+                      users.find((u) => u.id === pub.usuario_id)?.nombre ??
+                      `Usuario ${pub.usuario_id}`,
                   }}
                 />
               ))}

@@ -572,7 +572,11 @@ export default function TradesPage() {
       <Modal
         open={!!chatModal}
         onClose={() => setChatModal(null)}
-        title={chatModal ? `Chat con ${getNombre(chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)}` : 'Chat'}
+        title={
+          chatModal
+            ? `Chat con ${getNombre(chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)}`
+            : 'Chat'
+        }
         width={500}
       >
         {chatModal && (
