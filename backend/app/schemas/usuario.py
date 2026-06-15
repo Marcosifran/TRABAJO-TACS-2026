@@ -6,3 +6,4 @@ class UsuarioResponse(BaseModel):
     id: int
     nombre: str
     email: str
+    es_admin: bool = False

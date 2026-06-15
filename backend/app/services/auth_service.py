@@ -7,7 +7,14 @@ from app.domain.errors import DomainAuthError, DomainConflictError
 
 
 def _build_token_response(usuario: dict) -> TokenResponse:
-    access_token = create_access_token(subject=usuario["id"], email=usuario["email"])
+    access_token = create_access_token(
+        subject=usuario["id"],
+        email=usuario["email"],
+        extra_claims={
+            "nombre": usuario.get("nombre"),
+            "es_admin": usuario.get("es_admin", False),
+        },
+    )
     return TokenResponse(
         access_token=access_token,
         usuario=UsuarioResponse.model_validate(usuario),
