@@ -24,8 +24,9 @@ import { useAuth } from '../context/AuthContext'
 
 export default function TradesPage() {
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, users } = useAuth()
   const userId = user.id
+  const getNombre = (id) => users.find((u) => u.id === id)?.nombre ?? `Usuario ${id}`
 
   const [tab, setTab] = useState(location.state?.tab || 'recibidas')
   const [calificados, setCalificados] = useState(new Set())
@@ -76,6 +77,7 @@ export default function TradesPage() {
     try {
       await responderIntercambio(id, decision)
       setSnack({ open: true, message: `Intercambio ${decision} exitosamente`, type: 'success' })
+      if (chatModal?.id === id) setChatModal(null)
       mutateIntercambios()
     } catch (e) {
       setSnack({
@@ -354,15 +356,15 @@ export default function TradesPage() {
                     <Avatar
                       name={
                         tab === 'recibidas'
-                          ? `Usuario ${item.propuesto_por}`
-                          : `Usuario ${item.solicitado_a}`
+                          ? getNombre(item.propuesto_por)
+                          : getNombre(item.solicitado_a)
                       }
                       size={32}
                     />
-                    <span className="font-medium">
+                    <span className="font-medium truncate max-w-[160px]">
                       {tab === 'recibidas'
-                        ? `Usuario ${item.propuesto_por}`
-                        : `Usuario ${item.solicitado_a}`}
+                        ? getNombre(item.propuesto_por)
+                        : getNombre(item.solicitado_a)}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -377,7 +379,7 @@ export default function TradesPage() {
                     >
                       {item.estado}
                     </span>
-                    {(item.estado === 'pendiente' || item.estado === 'aceptado') && (
+                    {item.estado === 'pendiente' && (
                       <Button
                         variant="tonal"
                         size="sm"
@@ -393,7 +395,7 @@ export default function TradesPage() {
                 <div className="flex items-center gap-4 bg-surface-container/50 p-3 rounded-lg mb-4">
                   <div className="flex-1 text-center">
                     <div className="text-[10px] text-on-surface-variant uppercase font-bold mb-1">
-                      Te ofrece
+                      {tab === 'recibidas' ? 'Te ofrece' : 'Tú ofreces'}
                     </div>
                     <div className="font-bold text-primary">
                       #{item.figuritas_ofrecidas.join(', #')}
@@ -402,7 +404,7 @@ export default function TradesPage() {
                   <Icon name="swap_horiz" className="text-on-surface-variant" />
                   <div className="flex-1 text-center">
                     <div className="text-[10px] text-on-surface-variant uppercase font-bold mb-1">
-                      Tu Ofreces
+                      {tab === 'recibidas' ? 'Tú ofreces' : 'Te piden'}
                     </div>
                     <div className="font-bold text-secondary">#{item.figurita_solicitada}</div>
                   </div>
@@ -438,8 +440,8 @@ export default function TradesPage() {
                         id: item.id,
                         user:
                           tab === 'recibidas'
-                            ? `Usuario ${item.propuesto_por}`
-                            : `Usuario ${item.solicitado_a}`,
+                            ? getNombre(item.propuesto_por)
+                            : getNombre(item.solicitado_a),
                       })
                     }
                   >
@@ -570,7 +572,11 @@ export default function TradesPage() {
       <Modal
         open={!!chatModal}
         onClose={() => setChatModal(null)}
-        title={chatModal ? `Chat - Intercambio #${chatModal.id}` : 'Chat'}
+        title={
+          chatModal
+            ? `Chat con ${getNombre(chatModal.isReceived ? chatModal.propuesto_por : chatModal.solicitado_a)}`
+            : 'Chat'
+        }
         width={500}
       >
         {chatModal && (
@@ -613,7 +619,7 @@ export default function TradesPage() {
                       }`}
                     >
                       <div className="font-semibold text-[10px] opacity-75 mb-0.5">
-                        {isMe ? 'Tú' : `Usuario ${msg.remitente_id}`}
+                        {isMe ? 'Tú' : getNombre(msg.remitente_id)}
                       </div>
                       <div>{msg.contenido}</div>
                       <div className="text-[9px] opacity-60 text-right mt-1">

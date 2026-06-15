@@ -24,7 +24,7 @@ def token_user1():
     Es un JWT real generado en el momento, listo para usar como
     headers={"Authorization": token_user1}.
     """
-    return f"Bearer {create_access_token(subject=1, email='marcos@utn')}"
+    return f"Bearer {create_access_token(subject=1, email='marcos@utn', extra_claims={'es_admin': True})}"
 
 
 @pytest.fixture

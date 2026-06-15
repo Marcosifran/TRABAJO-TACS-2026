@@ -1,5 +1,4 @@
 from fastapi import Header, HTTPException, Query
-from app.repositories import usuario_repo
 from app.security import verify_access_token
 
 
@@ -53,7 +52,9 @@ def get_current_user(
     except (TypeError, ValueError):
         raise _unauthorized("Token inválido o inexistente")
 
-    usuario = usuario_repo.get_by_id(usuario_id)
-    if not usuario:
-        raise _unauthorized("Token inválido o inexistente")
-    return usuario
+    return {
+        "id": usuario_id,
+        "email": payload.get("email"),
+        "nombre": payload.get("nombre"),
+        "es_admin": payload.get("es_admin", False),
+    }
