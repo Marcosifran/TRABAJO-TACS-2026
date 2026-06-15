@@ -9,6 +9,7 @@ import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import { buscarPublicaciones } from '../api/publicaciones'
 import { isAuctionActive } from '../utils/auctionTime'
+import { useAuth } from '../context/AuthContext'
 
 const SELECCIONES = [
   'Argentina',
@@ -24,7 +25,7 @@ const SELECCIONES = [
 ]
 const CATEGORIAS = ['Escudo', 'Jugador', 'Estadio', 'Leyenda', 'Especial']
 
-function pubToCard(pub) {
+function pubToCard(pub, users = []) {
   return {
     id: pub.id,
     numero: pub.numero,
@@ -32,13 +33,14 @@ function pubToCard(pub) {
     jugador: pub.jugador,
     tipo: pub.tipo_intercambio === 'intercambio_directo' ? 'intercambio' : 'subasta',
     cantidad: pub.cantidad_disponible,
-    owner: `Usuario ${pub.usuario_id}`,
+    owner: users.find((u) => u.id === pub.usuario_id)?.nombre ?? `Usuario ${pub.usuario_id}`,
     _usuarioId: pub.usuario_id,
   }
 }
 
 export default function SearchPage() {
   const navigate = useNavigate()
+  const { users } = useAuth()
   const { data: subastasCache = [] } = useSWR('/subastas')
   const [query, setQuery] = useState('')
   const [selFilter, setSelFilter] = useState('Todas')
@@ -172,7 +174,7 @@ export default function SearchPage() {
       ) : results.length > 0 ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
           {results.map((pub) => {
-            const card = pubToCard(pub)
+            const card = pubToCard(pub, users)
             return (
               <FiguritaCard
                 key={pub.id}
