@@ -1,3 +1,4 @@
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.services import admin_service, stats_service
 from app.dependencies import get_current_user
@@ -18,9 +19,19 @@ router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(requir
         200: {"description": "Estadísticas globales de uso y actividad de la plataforma"},
     },
 )
-def obtener_estadisticas():
-    """Devuelve estadísticas globales: usuarios, figuritas, intercambios y subastas."""
-    return stats_service.obtener_estadisticas()
+def obtener_estadisticas(
+    desde: date | None = Query(None, description="Fecha inicio del período (YYYY-MM-DD)"),
+    hasta: date | None = Query(None, description="Fecha fin del período (YYYY-MM-DD)"),
+):
+    """
+    Devuelve estadísticas globales: usuarios, figuritas, intercambios y subastas.
+
+    Sin parámetros: retorna el caché actualizado en background.
+    Con desde/hasta: filtra datos crudos por fecha de creación del documento.
+    """
+    desde_dt = datetime(desde.year, desde.month, desde.day, tzinfo=timezone.utc) if desde else None
+    hasta_dt = datetime(hasta.year, hasta.month, hasta.day, tzinfo=timezone.utc) if hasta else None
+    return stats_service.obtener_estadisticas(desde=desde_dt, hasta=hasta_dt)
 
 
 @router.get(

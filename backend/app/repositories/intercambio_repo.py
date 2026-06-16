@@ -1,9 +1,21 @@
+import datetime as dt
 from bson import ObjectId
 from pymongo import ReturnDocument
 
 from app.core.database import get_db
 from app.domain.intercambio import Intercambio
 from app.schemas import IntercambioCreate, EstadoIntercambio
+
+
+def _oid_range(desde: dt.datetime | None, hasta: dt.datetime | None) -> dict:
+    if not desde and not hasta:
+        return {}
+    filtro: dict = {}
+    if desde:
+        filtro["$gte"] = ObjectId.from_datetime(desde)
+    if hasta:
+        filtro["$lt"] = ObjectId.from_datetime(hasta + dt.timedelta(days=1))
+    return {"_id": filtro}
 
 
 def _get_collection():
@@ -39,6 +51,14 @@ def create_exchange(intercambio: IntercambioCreate, propuesto_por: int, solicita
 
 def list_exchanges() -> list[Intercambio]:
     return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
+
+
+def list_exchanges_en_periodo(
+    desde: dt.datetime | None = None,
+    hasta: dt.datetime | None = None,
+) -> list[Intercambio]:
+    query = _oid_range(desde, hasta)
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0})]
 
 
 def find_exchange_by_id(intercambio_id: str) -> Intercambio | None:

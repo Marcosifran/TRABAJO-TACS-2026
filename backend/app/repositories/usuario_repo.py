@@ -1,3 +1,4 @@
+import datetime as dt
 from bson import ObjectId
 from app.core.config import settings
 from app.core.security_passwords import hash_password
@@ -20,6 +21,22 @@ _db_usuarios: list[dict] = [
     {"id": 1, "nombre": "marcos", "email": "marcos@utn", "password_hash": _seed_password_hash, "es_admin": True},
     {"id": 2, "nombre": "jeronimo", "email": "jeronimo@utn", "password_hash": _seed_password_hash, "es_admin": False},
 ]
+
+
+def count_en_periodo(
+    desde: dt.datetime | None = None,
+    hasta: dt.datetime | None = None,
+) -> int:
+    """Cuenta usuarios de MongoDB creados en el período (excluye los 2 seed en memoria)."""
+    filtro: dict = {}
+    if desde or hasta:
+        oid: dict = {}
+        if desde:
+            oid["$gte"] = ObjectId.from_datetime(desde)
+        if hasta:
+            oid["$lt"] = ObjectId.from_datetime(hasta + dt.timedelta(days=1))
+        filtro["_id"] = oid
+    return _get_usuarios_collection().count_documents(filtro)
 
 
 def get_all() -> list[dict]:

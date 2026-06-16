@@ -600,9 +600,63 @@ def guardar_snapshot_diario() -> None:
 
 # === Funciones públicas para consultar caché ===
 
-def obtener_estadisticas() -> dict:
-    """Retorna estadísticas globales desde caché"""
-    return _stats_cache["global"].copy()
+def obtener_estadisticas(
+    desde: datetime | None = None,
+    hasta: datetime | None = None,
+) -> dict:
+    """
+    Retorna estadísticas globales.
+
+    Sin filtro: devuelve el caché (actualizado en background por el scheduler).
+    Con desde/hasta: consulta datos crudos en MongoDB filtrados por fecha de creación.
+    """
+    if desde is None and hasta is None:
+        return _stats_cache["global"].copy()
+    return _calcular_estadisticas_en_periodo(desde, hasta)
+
+
+def _calcular_estadisticas_en_periodo(
+    desde: datetime | None,
+    hasta: datetime | None,
+) -> dict:
+    """Calcula estadísticas filtrando por fecha de creación (usa ObjectId como timestamp)."""
+    n_usuarios = usuario_repo.count_en_periodo(desde, hasta)
+    publicaciones = publicacion_repo.get_all_en_periodo(desde, hasta)
+    intercambios = intercambio_repo.list_exchanges_en_periodo(desde, hasta)
+    subastas = subasta_repo.get_all_en_periodo(desde, hasta)
+
+    estados = {e.value: 0 for e in EstadoIntercambio}
+    for i in intercambios:
+        e = i.estado.value
+        if e in estados:
+            estados[e] += 1
+
+    conteo_selecciones: dict[str, int] = {}
+    for p in publicaciones:
+        conteo_selecciones[p.equipo] = conteo_selecciones.get(p.equipo, 0) + 1
+    top_selecciones = sorted(
+        [{"seleccion": k, "cantidad": v} for k, v in conteo_selecciones.items()],
+        key=lambda x: x["cantidad"],
+        reverse=True,
+    )[:5]
+
+    return {
+        "usuarios": n_usuarios,
+        "figuritas_publicadas": len(publicaciones),
+        "intercambios_aceptados": estados.get(EstadoIntercambio.ACEPTADO.value, 0),
+        "subastas_activas": len(subastas),
+        "intercambios_por_estado": estados,
+        "top_selecciones": top_selecciones,
+        "periodo": {
+            "desde": desde.date().isoformat() if desde else None,
+            "hasta": hasta.date().isoformat() if hasta else None,
+        },
+        "_metadata": {
+            "ultimo_update": datetime.now(UTC).isoformat(),
+            "frecuencia_segundos": None,
+            "estado": "ok",
+        },
+    }
 
 
 def obtener_todas_estadisticas() -> dict:
