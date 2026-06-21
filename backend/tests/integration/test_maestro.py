@@ -114,6 +114,42 @@ class TestListarJugadores:
 
 
 # ────────────────────────────────────────────
+# GET /maestro/?jugador=... (autocompletado por nombre)
+# ────────────────────────────────────────────
+
+class TestBuscarPorNombre:
+
+    def test_coincidencia_parcial_case_insensitive(self, client, maestro_con_datos):
+        resp = client.get(ENDPOINT, params={"jugador": "mes"})
+        assert resp.status_code == 200
+        jugadores = resp.json()
+        assert [j["jugador"] for j in jugadores] == ["Lionel Messi"]
+
+    def test_prefijo_devuelve_varias_coincidencias(self, client, maestro_con_datos):
+        resp = client.get(ENDPOINT, params={"jugador": "a"})
+        assert resp.status_code == 200
+        nombres = {j["jugador"] for j in resp.json()}
+        assert {"Emiliano Martínez", "Julián Álvarez", "Alisson"} <= nombres
+
+    def test_acotado_por_equipo(self, client, maestro_con_datos):
+        resp = client.get(ENDPOINT, params={"jugador": "a", "equipo": "Brazil"})
+        assert resp.status_code == 200
+        jugadores = resp.json()
+        assert all(j["equipo"] == "Brazil" for j in jugadores)
+        assert {j["jugador"] for j in jugadores} == {"Alisson"}
+
+    def test_sin_coincidencias_devuelve_lista_vacia(self, client, maestro_con_datos):
+        resp = client.get(ENDPOINT, params={"jugador": "zzzz"})
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_respeta_el_limit(self, client, maestro_con_datos):
+        resp = client.get(ENDPOINT, params={"jugador": "a", "limit": 1})
+        assert resp.status_code == 200
+        assert len(resp.json()) == 1
+
+
+# ────────────────────────────────────────────
 # POST /maestro/refresh
 # ────────────────────────────────────────────
 

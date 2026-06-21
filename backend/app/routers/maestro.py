@@ -45,7 +45,9 @@ def obtener_jugador(numero: int):
     summary="Listar jugadores del maestro",
     description=(
         "Devuelve todos los jugadores del maestro. "
-        "Si se pasa el parámetro `equipo`, filtra solo los jugadores de ese equipo."
+        "Si se pasa `jugador`, busca por nombre (coincidencia parcial, case-insensitive) "
+        "para autocompletar, acotando por `equipo` si también se envía. "
+        "Si solo se pasa `equipo`, filtra los jugadores de ese equipo."
     ),
     responses={
         200: {"description": "Lista de jugadores"},
@@ -55,13 +57,24 @@ def listar_jugadores(
     equipo: str | None = Query(
         None,
         description="Nombre del equipo para filtrar (case-insensitive). Si se omite, devuelve todos.",
-    )
+    ),
+    jugador: str | None = Query(
+        None,
+        min_length=1,
+        description="Nombre del jugador para autocompletar (coincidencia parcial, case-insensitive).",
+    ),
+    limit: int = Query(
+        10,
+        ge=1,
+        le=50,
+        description="Cantidad máxima de sugerencias al buscar por nombre.",
+    ),
 ):
+    if jugador:
+        return maestro_service.buscar_por_nombre(jugador, equipo, limit)
     if equipo:
-        jugadores = maestro_service.get_por_equipo(equipo)
-    else:
-        jugadores = maestro_service.get_todos()
-    return jugadores
+        return maestro_service.get_por_equipo(equipo)
+    return maestro_service.get_todos()
 
 
 @router.post(

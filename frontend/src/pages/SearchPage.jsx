@@ -4,25 +4,15 @@ import useSWR from 'swr'
 import Input from '../components/ui/Input'
 import Chip from '../components/ui/Chip'
 import Icon from '../components/ui/Icon'
+import Autocomplete from '../components/ui/Autocomplete'
 import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import { buscarPublicaciones } from '../api/publicaciones'
+import { buscarJugadores, getJugadoresPorEquipo } from '../api/maestro'
 import { isAuctionActive } from '../utils/auctionTime'
 import { useAuth } from '../context/AuthContext'
 
-const SELECCIONES = [
-  'Argentina',
-  'Brasil',
-  'Francia',
-  'Alemania',
-  'España',
-  'Inglaterra',
-  'Portugal',
-  'México',
-  'USA',
-  'Canadá',
-]
 const CATEGORIAS = ['Escudo', 'Jugador', 'Estadio', 'Leyenda', 'Especial']
 
 function pubToCard(pub, users = []) {
@@ -38,38 +28,41 @@ function pubToCard(pub, users = []) {
   }
 }
 
+function jugadorLabel(j) {
+  return `${j.jugador} — ${j.equipo} (#${j.numero})`
+}
+
 export default function SearchPage() {
   const navigate = useNavigate()
   const { users } = useAuth()
   const { data: subastasCache = [] } = useSWR('/subastas')
-  const [query, setQuery] = useState('')
+  const { data: equiposData } = useSWR('/maestro/equipos')
+  const equipos = equiposData?.equipos ?? []
+
+  const [nameQuery, setNameQuery] = useState('')
+  const [countryQuery, setCountryQuery] = useState('')
   const [selFilter, setSelFilter] = useState('Todas')
   const [catFilter, setCatFilter] = useState('Todas')
   const [tipoFilter, setTipoFilter] = useState('todos')
+  // Jugador elegido desde cualquiera de los autocompletados (filtra por número).
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [snack, setSnack] = useState({ open: false, message: '', type: 'info' })
   const debounceRef = useRef(null)
 
-  const fetchResults = useCallback(async (q, sel, tipo) => {
+  const fetchResults = useCallback(async ({ player, rawQuery, sel, tipo }) => {
     setLoading(true)
     try {
       const params = {}
-      if (q) {
-        const num = parseInt(q)
-        if (!isNaN(num)) {
-          params.numero = num
-        } else {
-          const matchSeleccion = SELECCIONES.find(
-            (s) =>
-              s.toLowerCase().includes(q.toLowerCase()) ||
-              q.toLowerCase().includes(s.toLowerCase()),
-          )
-          if (matchSeleccion) params.equipo = matchSeleccion
-          else params.jugador = q
-        }
+      if (player) {
+        params.numero = player.numero
+      } else if (rawQuery) {
+        const num = parseInt(rawQuery)
+        if (!isNaN(num) && String(num) === rawQuery.trim()) params.numero = num
+        else params.jugador = rawQuery
       }
-      if (sel !== 'Todas') params.equipo = sel
+      if (!player && sel !== 'Todas') params.equipo = sel
       if (tipo !== 'todos')
         params.tipo_intercambio = tipo === 'intercambio' ? 'intercambio_directo' : 'subasta'
       const data = await buscarPublicaciones(params)
@@ -83,10 +76,37 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    const delay = query ? 300 : 0
-    debounceRef.current = setTimeout(() => fetchResults(query, selFilter, tipoFilter), delay)
+    const delay = nameQuery && !selectedPlayer ? 300 : 0
+    debounceRef.current = setTimeout(
+      () =>
+        fetchResults({
+          player: selectedPlayer,
+          rawQuery: nameQuery,
+          sel: selFilter,
+          tipo: tipoFilter,
+        }),
+      delay,
+    )
     return () => clearTimeout(debounceRef.current)
-  }, [query, selFilter, tipoFilter, fetchResults])
+  }, [nameQuery, selectedPlayer, selFilter, tipoFilter, fetchResults])
+
+  function handleSelectPlayer(j) {
+    setSelectedPlayer(j)
+    setNameQuery(j.jugador)
+    setCountryQuery('')
+  }
+
+  function clearSelection() {
+    setSelectedPlayer(null)
+    setNameQuery('')
+    setCountryQuery('')
+  }
+
+  function handleSelectCountry(value) {
+    setSelFilter(value)
+    setSelectedPlayer(null)
+    setCountryQuery('')
+  }
 
   function handleIntercambio(card) {
     navigate('/intercambios', {
@@ -115,30 +135,85 @@ export default function SearchPage() {
     }
   }
 
+  const equipoOptions = ['Todas', ...equipos].map((e) => ({ value: e, label: e }))
+
   return (
     <div className="p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-on-surface mb-4">Buscar Figuritas</h1>
 
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <Input
-            value={query}
-            onChange={setQuery}
-            icon="search"
-            placeholder="Buscar por jugador, número o selección..."
+      <div className="flex flex-col gap-3 mb-6">
+        {/* Búsqueda por nombre de jugador o número, con autocompletado del maestro */}
+        <div className="max-w-md">
+          <Autocomplete
+            value={nameQuery}
+            onChange={(v) => {
+              setNameQuery(v)
+              if (selectedPlayer) setSelectedPlayer(null)
+            }}
+            fetchSuggestions={(q) => buscarJugadores(q)}
+            getOptionKey={(j) => j.numero}
+            getOptionLabel={jugadorLabel}
+            renderOption={(j) => (
+              <span>
+                <span className="font-medium">{j.jugador}</span>
+                <span className="text-on-surface-variant">
+                  {' '}
+                  — {j.equipo} (#{j.numero})
+                </span>
+              </span>
+            )}
+            onSelect={handleSelectPlayer}
+            placeholder="Buscar por jugador o número..."
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Selección:</span>
-          {['Todas', ...SELECCIONES.slice(0, 6)].map((s) => (
-            <Chip key={s} selected={selFilter === s} onClick={() => setSelFilter(s)}>
-              {s}
-            </Chip>
-          ))}
+        {/* Búsqueda por país: elegir selección y luego jugador de ese país */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs-plus text-on-surface-variant font-medium">Selección:</span>
+          <div className="w-44">
+            <Input value={selFilter} onChange={handleSelectCountry} options={equipoOptions} />
+          </div>
+          {selFilter !== 'Todas' && (
+            <div className="w-64">
+              <Autocomplete
+                value={countryQuery}
+                onChange={setCountryQuery}
+                fetchSuggestions={(q) => buscarJugadores(q, selFilter)}
+                loadAll={() => getJugadoresPorEquipo(selFilter)}
+                autoOpenKey={selFilter}
+                getOptionKey={(j) => j.numero}
+                getOptionLabel={jugadorLabel}
+                renderOption={(j) => (
+                  <span>
+                    <span className="font-medium">{j.jugador}</span>
+                    <span className="text-on-surface-variant"> (#{j.numero})</span>
+                  </span>
+                )}
+                onSelect={handleSelectPlayer}
+                icon="person_search"
+                placeholder={`Jugador de ${selFilter}...`}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
+        {selectedPlayer && (
+          <div className="flex items-center gap-2">
+            <Chip selected icon="check">
+              {selectedPlayer.jugador} · {selectedPlayer.equipo} · #{selectedPlayer.numero}
+            </Chip>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-xs-plus text-on-surface-variant hover:text-on-surface flex items-center gap-1"
+            >
+              <Icon name="close" size={16} /> Limpiar
+            </button>
+          </div>
+        )}
+
+        {/* Filtros de categoría (pendientes) y tipo de intercambio */}
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs-plus text-on-surface-variant font-medium mr-1">Categoría:</span>
           {['Todas', ...CATEGORIAS].map((c) => (
             <Chip key={c} selected={catFilter === c} onClick={() => setCatFilter(c)} disabled>

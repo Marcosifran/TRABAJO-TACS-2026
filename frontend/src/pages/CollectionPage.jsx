@@ -10,10 +10,11 @@ import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import Icon from '../components/ui/Icon'
+import Autocomplete from '../components/ui/Autocomplete'
 import { useAuth } from '../context/AuthContext'
 import { agregarAlAlbum, publicarFigurita, retirarPublicacion } from '../api/publicaciones'
 import { registrarFaltante } from '../api/faltantes'
-import { getMaestroJugador } from '../api/maestro'
+import { getMaestroJugador, buscarJugadores, getJugadoresPorEquipo } from '../api/maestro'
 
 const SELECCIONES = [
   'Argentina',
@@ -31,12 +32,17 @@ const SELECCIONES = [
 ]
 const EMPTY_PUB = {
   numero: '',
-  equipo: SELECCIONES[0],
+  equipo: '',
   jugador: '',
   cantidad: '1',
   tipo: 'intercambio_directo',
+  buscarJugador: '',
 }
-const EMPTY_FALT = { numero: '', seleccion: SELECCIONES[0], jugador: '' }
+const EMPTY_FALT = { numero: '', seleccion: '', jugador: '', buscarJugador: '' }
+
+function jugadorLabel(j) {
+  return `${j.jugador} — ${j.equipo} (#${j.numero})`
+}
 
 function figToCard(fig, ownerName, pub) {
   return {
@@ -72,7 +78,25 @@ export default function CollectionPage() {
     mutate: mutateFaltantes,
   } = useSWR(['/usuarios/faltantes', userId])
 
+  const { data: equiposData } = useSWR('/maestro/equipos')
+  const equipos = equiposData?.equipos?.length ? equiposData.equipos : SELECCIONES
+  const equipoOptions = [
+    { value: '', label: 'Cualquiera' },
+    ...equipos.map((e) => ({ value: e, label: e })),
+  ]
+
   const album = albumRaw?.figuritas || albumRaw || []
+
+  // Completa número, equipo y jugador a partir de una entrada del maestro elegida en el autocompletado.
+  function fillFromJugador(modal, equipoKey, data) {
+    modal.setForm((f) => ({
+      ...f,
+      numero: String(data.numero),
+      [equipoKey]: data.equipo,
+      jugador: data.jugador,
+      buscarJugador: data.jugador,
+    }))
+  }
 
   async function handlePublish() {
     if (!pubModal.form.numero || !pubModal.form.jugador) {
@@ -115,6 +139,7 @@ export default function CollectionPage() {
       numero: fig.numero,
       equipo: fig.seleccion,
       jugador: fig.jugador,
+      buscarJugador: fig.jugador,
       cantidad: fig.cantidad,
       tipo: tipo || 'intercambio_directo',
       _figId: fig.id,
@@ -355,15 +380,49 @@ export default function CollectionPage() {
           <Input
             label="Selección / Equipo"
             icon="shield"
-            placeholder="Se completa al ingresar el número"
+            options={equipoOptions}
             value={pubModal.form.equipo}
-            onChange={() => {}}
-            disabled
+            onChange={(v) => pubModal.setForm((f) => ({ ...f, equipo: v }))}
+            disabled={!!pubModal.form._figId}
           />
+          {!pubModal.form._figId && (
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Buscar por jugador
+              </label>
+              <Autocomplete
+                value={pubModal.form.buscarJugador}
+                onChange={(v) => pubModal.setForm((f) => ({ ...f, buscarJugador: v }))}
+                fetchSuggestions={(q) => buscarJugadores(q, pubModal.form.equipo || undefined)}
+                getOptionKey={(j) => j.numero}
+                getOptionLabel={jugadorLabel}
+                renderOption={(j) => (
+                  <span>
+                    <span className="font-medium">{j.jugador}</span>
+                    <span className="text-on-surface-variant">
+                      {' '}
+                      — {j.equipo} (#{j.numero})
+                    </span>
+                  </span>
+                )}
+                onSelect={(j) => fillFromJugador(pubModal, 'equipo', j)}
+                loadAll={
+                  pubModal.form.equipo
+                    ? () => getJugadoresPorEquipo(pubModal.form.equipo)
+                    : undefined
+                }
+                autoOpenKey={pubModal.form.equipo}
+                icon="person_search"
+                placeholder={
+                  pubModal.form.equipo ? `Jugador de ${pubModal.form.equipo}...` : 'Ej: Messi'
+                }
+              />
+            </div>
+          )}
           <Input
             label="Jugador"
             icon="person"
-            placeholder="Se completa al ingresar el número"
+            placeholder="Se completa al elegir número o jugador"
             value={pubModal.form.jugador}
             onChange={() => {}}
             disabled
@@ -426,15 +485,46 @@ export default function CollectionPage() {
           <Input
             label="Selección / Equipo"
             icon="shield"
-            placeholder="Se completa al ingresar el número"
+            options={equipoOptions}
             value={faltModal.form.seleccion}
-            onChange={() => {}}
-            disabled
+            onChange={(v) => faltModal.setForm((f) => ({ ...f, seleccion: v }))}
           />
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              Buscar por jugador
+            </label>
+            <Autocomplete
+              value={faltModal.form.buscarJugador}
+              onChange={(v) => faltModal.setForm((f) => ({ ...f, buscarJugador: v }))}
+              fetchSuggestions={(q) => buscarJugadores(q, faltModal.form.seleccion || undefined)}
+              getOptionKey={(j) => j.numero}
+              getOptionLabel={jugadorLabel}
+              renderOption={(j) => (
+                <span>
+                  <span className="font-medium">{j.jugador}</span>
+                  <span className="text-on-surface-variant">
+                    {' '}
+                    — {j.equipo} (#{j.numero})
+                  </span>
+                </span>
+              )}
+              onSelect={(j) => fillFromJugador(faltModal, 'seleccion', j)}
+              loadAll={
+                faltModal.form.seleccion
+                  ? () => getJugadoresPorEquipo(faltModal.form.seleccion)
+                  : undefined
+              }
+              autoOpenKey={faltModal.form.seleccion}
+              icon="person_search"
+              placeholder={
+                faltModal.form.seleccion ? `Jugador de ${faltModal.form.seleccion}...` : 'Ej: Messi'
+              }
+            />
+          </div>
           <Input
             label="Jugador"
             icon="person"
-            placeholder="Se completa al ingresar el número"
+            placeholder="Se completa al elegir número o jugador"
             value={faltModal.form.jugador}
             onChange={() => {}}
             disabled

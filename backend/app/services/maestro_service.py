@@ -47,6 +47,10 @@ def get_por_equipo(equipo: str) -> list[dict]:
     return maestro_repo.get_by_team(equipo)
 
 
+def buscar_por_nombre(nombre: str, equipo: str | None = None, limit: int = 10) -> list[dict]:
+    return maestro_repo.search_by_name(nombre, equipo, limit)
+
+
 def get_todos() -> list[dict]:
     return maestro_repo.get_all()
 
