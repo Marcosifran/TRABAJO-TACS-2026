@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 import session
 from api_client import api_get, api_post, api_delete
 from handlers.helpers import require_auth, fmt_error
+from handlers.banderas import bandera
 
 
 async def _mostrar_album(update: Update, *, con_ids: bool):
@@ -15,13 +16,35 @@ async def _mostrar_album(update: Update, *, con_ids: bool):
     if not items:
         await update.message.reply_text("Tu album está vacío. Usá /agregar numero cantidad")
         return
-    lineas = ["📚 Tu album:"]
+
+    # Mapa figurita_personal_id -> tipo de publicación, para distinguir
+    # intercambio directo (🔄) de subasta (📣).
+    st_pub, pubs = await api_get("/usuarios/publicaciones", token=token)
+    tipos_por_figurita = (
+        {p["figurita_personal_id"]: p["tipo_intercambio"] for p in pubs}
+        if st_pub == 200 and isinstance(pubs, list)
+        else {}
+    )
+
+    # Agrupar por equipo (país), ordenado alfabéticamente
+    por_equipo: dict[str, list] = {}
     for f in items:
-        en_intercambio = " 🔄" if f.get("en_intercambio") else ""
-        linea = f"  #{f['numero']} {f['jugador']} ({f['equipo']}) x{f['cantidad']}{en_intercambio}"
-        if con_ids:
-            linea += f"\n  ID: {f['id']}"
-        lineas.append(linea)
+        por_equipo.setdefault(f["equipo"], []).append(f)
+
+    lineas = ["📚 Tu album:"]
+    for equipo in sorted(por_equipo):
+        flag = bandera(equipo)
+        encabezado = f"{flag} {equipo}".strip()
+        lineas.append(f"\n{encabezado}")
+        for f in sorted(por_equipo[equipo], key=lambda x: x["numero"]):
+            marcador = ""
+            if f.get("en_intercambio"):
+                tipo = tipos_por_figurita.get(f["id"])
+                marcador = " 📣" if tipo == "subasta" else " 🔄"
+            linea = f"  #{f['numero']} {f['jugador']} x{f['cantidad']}{marcador}"
+            if con_ids:
+                linea += f"\n  ID: {f['id']}"
+            lineas.append(linea)
     await update.message.reply_text("\n".join(lineas))
 
 
