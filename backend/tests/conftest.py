@@ -5,6 +5,7 @@ Configuración global de pytest — compartida entre tests unitarios y de integr
 import os
 import pytest
 from app.core.database import connect_to_mongo, close_mongo_connection, get_db
+from app.services import stats_service
 
 # DB separada de prod/dev para que el drop final no destruya datos reales.
 # Sobreescribir con TEST_MONGODB_URL / TEST_MONGODB_DB_NAME si se corre fuera de Docker.
@@ -45,6 +46,7 @@ _COLLECTIONS = [
     "maestro_figuritas",
     "mensajes",  # Colección para el chat de intercambios
     "usuarios",
+    "stats_historicos",  # Colección para estadísticas históricas
 ]
 
 
@@ -71,4 +73,5 @@ def limpiar_db(mongo_connection):
     db = get_db()
     for col in _COLLECTIONS:
         db[col].delete_many({})
+    stats_service.reiniciar_cache()
     yield

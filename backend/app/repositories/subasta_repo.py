@@ -69,6 +69,33 @@ def _expirar_vencidas() -> None:
     )
 
 
+def get_all_en_periodo(
+    desde: dt.datetime | None = None,
+    hasta: dt.datetime | None = None,
+) -> list[Subasta]:
+    _expirar_vencidas()
+    filtro: dict = {"estado": EstadoSubasta.ACTIVA.value}
+    if desde or hasta:
+        oid: dict = {}
+        if desde:
+            oid["$gte"] = ObjectId.from_datetime(desde)
+        if hasta:
+            oid["$lt"] = ObjectId.from_datetime(hasta + dt.timedelta(days=1))
+        filtro["_id"] = oid
+    return [_from_doc(doc) for doc in _get_collection().find(filtro, {"_id": 0})]
+
+
+def count_by_estado(estado: EstadoSubasta) -> int:
+    return _get_collection().count_documents({"estado": estado.value})
+
+
+def count_finalizadas_desde(desde: dt.datetime) -> int:
+    return _get_collection().count_documents({
+        "estado": EstadoSubasta.FINALIZADA.value,
+        "fin": {"$gte": desde},
+    })
+
+
 def get_all(limit: int = 50, offset: int = 0) -> list[Subasta]:
     _expirar_vencidas()
     return [_from_doc(doc) for doc in _get_collection().find({"estado": EstadoSubasta.ACTIVA.value}, {"_id": 0}).skip(offset).limit(limit)]

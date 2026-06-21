@@ -1,3 +1,5 @@
+from app.services import stats_service
+
 ENDPOINT_ADMIN_STATS = "/api/v1/admin/estadisticas"
 ENDPOINT_ALBUM = "/api/v1/album"
 ENDPOINT_PUBLICACIONES = "/api/v1/publicaciones"
@@ -43,7 +45,9 @@ class TestAdminEstadisticas:
             headers = {"Authorization": token_user1},
         )
         assert resp_pub.status_code == 201
-
+        
+        # Forzamos actualización de estadísticas para reflejar los cambios
+        stats_service.actualizar_global()  
         #uso el endpoint de administración
         resp_stats = client.get(ENDPOINT_ADMIN_STATS, headers={"Authorization":token_user1})
         assert resp_stats.status_code == 200
@@ -99,7 +103,8 @@ class TestAdminEstadisticas:
             headers={"Authorization":token_user1}
         )
         assert resp_sub.status_code == 201
-
+        # Forzamos actualización de estadísticas para reflejar los cambios
+        stats_service.actualizar_global() 
         #verifico que las estadísticas del admin reflejen la subasta activa
         resp_status = client.get(ENDPOINT_ADMIN_STATS, headers={"Authorization":token_user1})
         assert resp_status.status_code == 200

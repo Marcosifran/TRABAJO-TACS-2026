@@ -12,3 +12,4 @@ beautifulsoup4
 ruff
 mypy
 pytest-cov
+APScheduler

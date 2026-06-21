@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Any
 from bson import ObjectId
 from pymongo import ReturnDocument
@@ -5,6 +6,17 @@ from pymongo import ReturnDocument
 from app.core.database import get_db
 from app.domain.publicacion import Publicacion
 from app.schemas import PublicacionCreate, TipoIntercambio
+
+
+def _oid_range(desde: dt.datetime | None, hasta: dt.datetime | None) -> dict:
+    if not desde and not hasta:
+        return {}
+    filtro: dict = {}
+    if desde:
+        filtro["$gte"] = ObjectId.from_datetime(desde)
+    if hasta:
+        filtro["$lt"] = ObjectId.from_datetime(hasta + dt.timedelta(days=1))
+    return {"_id": filtro}
 
 
 def _get_collection():
@@ -26,6 +38,14 @@ def _from_doc(doc: dict) -> Publicacion:
 
 def get_all() -> list[Publicacion]:
     return [_from_doc(doc) for doc in _get_collection().find({}, {"_id": 0})]
+
+
+def get_all_en_periodo(
+    desde: dt.datetime | None = None,
+    hasta: dt.datetime | None = None,
+) -> list[Publicacion]:
+    query = _oid_range(desde, hasta)
+    return [_from_doc(doc) for doc in _get_collection().find(query, {"_id": 0})]
 
 
 def get_by_id(publicacion_id: str) -> Publicacion | None:

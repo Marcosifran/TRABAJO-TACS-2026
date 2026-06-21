@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import Card from '../components/ui/Card'
@@ -38,16 +39,77 @@ const PREVIEW_COUNT = 5
 
 export default function AdminPage() {
   const navigate = useNavigate()
-  const { data: stats, isLoading: loading } = useSWR('/admin/estadisticas')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
+
+  const statsKey = (() => {
+    const params = new URLSearchParams()
+    if (desde) params.set('desde', desde)
+    if (hasta) params.set('hasta', hasta)
+    const qs = params.toString()
+    return `/admin/estadisticas${qs ? `?${qs}` : ''}`
+  })()
+
+  const { data: stats, isLoading: loading } = useSWR(statsKey)
   const { data: calificaciones = [], isLoading: loadingCals } = useSWR('/admin/calificaciones')
 
   const totalIntercambios = stats
     ? Object.values(stats.intercambios_por_estado).reduce((a, b) => a + b, 0)
     : 0
 
+  const filtrando = desde || hasta
+  const ultimoUpdate = stats?._metadata?.ultimo_update
+    ? new Date(stats._metadata.ultimo_update).toLocaleString('es-AR')
+    : null
+
+  function limpiarFiltros() {
+    setDesde('')
+    setHasta('')
+  }
+
   return (
     <div className="p-8 max-w-[1000px]">
       <h1 className="text-3xl font-bold text-on-surface mb-6">Panel de Administración</h1>
+
+      {/* Filtro por período */}
+      <Card className="mb-6">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-on-surface-variant font-medium">Desde</label>
+            <input
+              type="date"
+              value={desde}
+              max={hasta || undefined}
+              onChange={(e) => setDesde(e.target.value)}
+              className="border border-outline/40 rounded-lg px-3 py-2 text-sm bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-on-surface-variant font-medium">Hasta</label>
+            <input
+              type="date"
+              value={hasta}
+              min={desde || undefined}
+              onChange={(e) => setHasta(e.target.value)}
+              className="border border-outline/40 rounded-lg px-3 py-2 text-sm bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+          {filtrando && (
+            <Button variant="text" size="sm" icon="close" onClick={limpiarFiltros}>
+              Limpiar filtro
+            </Button>
+          )}
+          <div className="ml-auto text-xs text-on-surface-variant self-end pb-2">
+            {filtrando ? (
+              <span className="flex items-center gap-1">
+                <Icon name="filter_alt" size={14} /> Datos en el período seleccionado
+              </span>
+            ) : ultimoUpdate ? (
+              <span>Última actualización: {ultimoUpdate}</span>
+            ) : null}
+          </div>
+        </div>
+      </Card>
 
       {/* Cards globales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
