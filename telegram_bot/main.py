@@ -8,7 +8,9 @@ from handlers.album import cmd_mi_album, cmd_mi_album_ids, cmd_agregar, cmd_elim
 from handlers.usuarios import cmd_faltantes, cmd_agregar_faltante, cmd_usuarios
 from handlers.publicaciones import (
     cmd_publicaciones,
+    cmd_publicaciones_id,
     cmd_mis_publicaciones,
+    cmd_mis_publicaciones_id,
     cmd_publicar,
     cmd_retirar,
     cmd_sugerencias,
@@ -47,7 +49,9 @@ COMANDOS = [
     BotCommand("faltantes",            "Ver mis faltantes"),
     BotCommand("agregar_faltante",     "Marcar faltante — /agregar_faltante numero"),
     BotCommand("publicaciones",        "Ver publicaciones de otros usuarios"),
+    BotCommand("publicaciones_id",     "Ver publicaciones de otros con IDs"),
     BotCommand("mis_publicaciones",    "Ver mis publicaciones"),
+    BotCommand("mis_publicaciones_id", "Ver mis publicaciones con IDs"),
     BotCommand("publicar",             "Publicar figurita — /publicar id tipo cantidad"),
     BotCommand("retirar",              "Retirar publicación — /retirar id"),
     BotCommand("sugerencias",          "Ver sugerencias que cubren mis faltantes"),
@@ -106,7 +110,9 @@ def main():
 
     # Publicaciones
     app.add_handler(CommandHandler("publicaciones",        cmd_publicaciones))
+    app.add_handler(CommandHandler("publicaciones_id",     cmd_publicaciones_id))
     app.add_handler(CommandHandler("mis_publicaciones",    cmd_mis_publicaciones))
+    app.add_handler(CommandHandler("mis_publicaciones_id", cmd_mis_publicaciones_id))
     app.add_handler(CommandHandler("publicar",             cmd_publicar))
     app.add_handler(CommandHandler("retirar",              cmd_retirar))
     app.add_handler(CommandHandler("sugerencias",          cmd_sugerencias))

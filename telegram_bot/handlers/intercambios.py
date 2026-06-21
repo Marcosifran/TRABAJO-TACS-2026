@@ -7,10 +7,11 @@ from handlers.helpers import require_auth, fmt_error
 
 def _fmt_intercambio(i: dict) -> str:
     estado = i["estado"].upper()
+    ofrecidas = " ".join(f"#{n}" for n in i["figuritas_ofrecidas"])
     return (
         f"  ID: {i['id']}\n"
         f"  De usuario {i['propuesto_por']} → a usuario {i['solicitado_a']}\n"
-        f"  Ofrece: {i['figuritas_ofrecidas']}  pide: #{i['figurita_solicitada']}\n"
+        f"  Ofrece: {ofrecidas}  pide: #{i['figurita_solicitada']}\n"
         f"  Estado: {estado}"
     )
 
@@ -22,11 +23,16 @@ async def cmd_intercambios(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if status != 200:
         await update.message.reply_text(f"❌ {fmt_error(data)}")
         return
-    if not data:
+    # El backend responde {"enviados": [...], "recibidos": [...]}
+    if isinstance(data, dict):
+        intercambios = list(data.get("enviados", [])) + list(data.get("recibidos", []))
+    else:
+        intercambios = data
+    if not intercambios:
         await update.message.reply_text("No tenés intercambios. Usá /proponer para iniciar uno.")
         return
     lineas = ["🔄 Tus intercambios:"]
-    for i in data:
+    for i in intercambios:
         lineas.append(_fmt_intercambio(i))
     await update.message.reply_text("\n".join(lineas))
 
