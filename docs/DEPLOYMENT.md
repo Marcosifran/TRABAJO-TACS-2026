@@ -65,14 +65,18 @@ nano .env
 Contenido mínimo requerido:
 
 ```env
-USER_1_TOKEN=<uuid-generado>
-USER_2_TOKEN=<uuid-generado>
+JWT_SECRET=<valor-largo-y-aleatorio>
+SEED_USER_PASSWORD=figuswap123
 
 MONGODB_URL=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=<AppName>
 MONGODB_DB_NAME=mundial_figuritas_db
 
 CORS_ORIGINS=["https://<dominio-backend>","https://<dominio-frontend>"]
+
+TELEGRAM_BOT_TOKEN=<token-de-botfather>
 ```
+
+> El token de Telegram se obtiene hablando con @BotFather en Telegram (`/newbot`).
 
 > Para generar UUIDs: `python3 -c "import uuid; print(uuid.uuid4())"`
 
@@ -87,8 +91,20 @@ services:
       - "8000:8000"
     env_file: .env
     restart: unless-stopped
+
+  telegram_bot:
+    build: ./telegram_bot
+    env_file: .env
+    environment:
+      - BACKEND_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    restart: unless-stopped
 EOF
 ```
+
+> El bot usa long polling (conexión saliente a `api.telegram.org`). No necesita
+> puerto expuesto, cambios en Nginx ni en el Security Group de AWS.
 
 ### 1.5 Levantar el backend
 
@@ -228,6 +244,17 @@ nano .env
 # (restart no alcanza, se necesita down + up)
 docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d
+```
+
+### Telegram Bot — nuevo código
+
+```bash
+# En el EC2
+cd /home/admin/TRABAJO-TACS-2026
+git pull origin main
+docker compose -f docker-compose.prod.yml up --build -d telegram_bot
+# Ver logs del bot
+docker compose -f docker-compose.prod.yml logs -f telegram_bot
 ```
 
 ### Frontend — nuevo código o variables de entorno
