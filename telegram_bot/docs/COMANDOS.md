@@ -3,8 +3,10 @@
 ## Inicio rápido
 
 1. Buscá el bot en Telegram
-2. Iniciá sesión: `/login email contraseña`
+2. Iniciá sesión: `/login email contraseña` (al loguearte ves tu ID de usuario y, si corresponde, el tag `(admin)`)
 3. Explorá tus figuritas: `/mi_album`
+
+> Las figuritas y publicaciones se muestran **agrupadas por país** (con la bandera del seleccionado) y el estado de cada una se indica con emojis: 🔄 intercambio directo, 📣 subasta. Los comandos terminados en `_ids` / `_id` agregan los identificadores internos que necesitás para acciones como `/retirar`.
 
 ---
 
@@ -25,11 +27,12 @@
 
 | Comando | Descripción | Ejemplo |
 |---|---|---|
-| `/mi_album` | Lista las figuritas de tu álbum con sus IDs | `/mi_album` |
+| `/mi_album` | Lista las figuritas de tu álbum agrupadas por país | `/mi_album` |
+| `/mi_album_ids` | Igual que `/mi_album`, pero muestra el ID interno de cada figurita | `/mi_album_ids` |
 | `/agregar numero cantidad` | Agrega una figurita al álbum (busca los datos en el maestro automáticamente) | `/agregar 10 2` |
 | `/eliminar_figurita id` | Elimina una figurita del álbum | `/eliminar_figurita abc123` |
 
-> El ID de cada figurita se muestra en `/mi_album`. Lo vas a necesitar para publicar.
+> El ID interno de cada figurita se muestra en `/mi_album_ids`. Lo vas a necesitar para `/eliminar_figurita` y para ofertar en subastas.
 
 ---
 
@@ -48,17 +51,19 @@ Las publicaciones son figuritas que ponés a disposición para intercambio direc
 
 | Comando | Descripción | Ejemplo |
 |---|---|---|
-| `/publicaciones` | Lista las publicaciones de otros usuarios | `/publicaciones` |
+| `/publicaciones` | Lista las publicaciones de otros usuarios (muestra el `ID Usuario` del dueño bajo cada figurita) | `/publicaciones` |
+| `/publicaciones_id` | Igual que `/publicaciones`, pero agrega el ID de cada publicación | `/publicaciones_id` |
 | `/mis_publicaciones` | Lista tus publicaciones activas | `/mis_publicaciones` |
-| `/publicar figurita_id tipo cantidad` | Publica una figurita de tu álbum | `/publicar abc123 directo 1` |
+| `/mis_publicaciones_id` | Igual que `/mis_publicaciones`, pero agrega el ID de cada publicación | `/mis_publicaciones_id` |
+| `/publicar numero tipo cantidad` | Publica una figurita de tu álbum (por su número) | `/publicar 10 directo 1` |
 | `/retirar id` | Retira una publicación | `/retirar xyz789` |
 | `/sugerencias` | Muestra publicaciones que cubren tus faltantes | `/sugerencias` |
 
 **Tipos de publicación:**
-- `directo` — intercambio directo con otro usuario
-- `subasta` — subasta pública
+- `directo` — intercambio directo con otro usuario (🔄)
+- `subasta` — subasta pública (📣)
 
-> El `figurita_id` se obtiene en `/mi_album`. El `id` de la publicación se obtiene en `/mis_publicaciones`.
+> `/publicar` usa el **número** de la figurita (el que ves en `/mi_album`), no su ID interno. El `id` de la publicación, para `/retirar`, se obtiene en `/mis_publicaciones_id`. El `ID Usuario` que aparece bajo cada publicación ajena es el que pasás a `/proponer`.
 
 ---
 
@@ -73,7 +78,8 @@ Las publicaciones son figuritas que ponés a disposición para intercambio direc
 | `/rechazar_intercambio id` | Rechaza un intercambio recibido | `/rechazar_intercambio abc123` |
 
 > Los números de figuritas ofrecidas se separan con coma y sin espacios: `10,15,20`.
-> Encontrá los IDs de usuario en `/usuarios` y los IDs de intercambio en `/intercambios`.
+> El `usuario_id` del destinatario aparece como `ID Usuario` bajo cada publicación en `/publicaciones`; los IDs de intercambio están en `/intercambios`.
+> Para proponer un intercambio directo, el destinatario tiene que haber publicado esa figurita como `directo` (`/publicar`).
 
 ---
 
@@ -88,8 +94,8 @@ Las publicaciones son figuritas que ponés a disposición para intercambio direc
 | `/ofertar subasta_id fig1 fig2 fig3` | Oferta con varias figuritas | `/ofertar abc123 id1 id2 id3` |
 | `/cancelar_subasta id` | Cancela una subasta propia | `/cancelar_subasta abc123` |
 
-> El `publicacion_id` se obtiene en `/mis_publicaciones`.
-> Los IDs de figuritas para ofertar se obtienen en `/mi_album`.
+> El `publicacion_id` se obtiene en `/mis_publicaciones_id`.
+> Los IDs de figuritas para ofertar se obtienen en `/mi_album_ids`.
 
 ---
 
@@ -104,20 +110,14 @@ Consultas de referencia sobre el catálogo oficial. No requieren sesión iniciad
 
 ---
 
-## 👥 Usuarios
+## 📊 Administración
+
+Solo disponible para usuarios con rol administrador. La restricción se valida en el backend:
+un usuario sin rol admin recibe `❌ Sin acceso a funcionalidades de admin`.
 
 | Comando | Descripción | Ejemplo |
 |---|---|---|
 | `/usuarios` | Lista todos los usuarios registrados con sus IDs | `/usuarios` |
-
----
-
-## 📊 Administración
-
-Solo disponible para usuarios con rol administrador.
-
-| Comando | Descripción | Ejemplo |
-|---|---|---|
 | `/estadisticas` | Muestra estadísticas generales del sistema | `/estadisticas` |
 
 ---
@@ -128,13 +128,13 @@ Solo disponible para usuarios con rol administrador.
 # 1. Iniciar sesión
 /login marcos@utn figuswap123
 
-# 2. Ver mis figuritas y anotar el ID de una duplicada
+# 2. Ver mis figuritas (agrupadas por país)
 /mi_album
 
-# 3. Publicarla para intercambio directo
-/publicar <figurita_id> directo 1
+# 3. Publicar una duplicada para intercambio directo (por su número)
+/publicar 10 directo 1
 
-# 4. Ver qué hay disponible de otros usuarios
+# 4. Ver qué hay disponible de otros usuarios (anotar el ID Usuario del dueño)
 /publicaciones
 
 # 5. Ver sugerencias que cubren mis faltantes

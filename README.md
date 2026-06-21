@@ -15,6 +15,7 @@ Proyecto diseñado bajo una arquitectura orientada a microservicios y completame
 
 - **Frontend:** React 19 + Vite (Node 20 LTS)
 - **Backend:** FastAPI (Python 3.12)
+- **Bot de Telegram:** python-telegram-bot (cliente alternativo a la WebApp)
 - **Persistencia:** MongoDB (PyMongo)
 - **Orquestación:** Docker Compose V2
 
@@ -41,7 +42,7 @@ Para ejecutar este proyecto de forma local, es necesario tener instalado el moto
    ```bash
    docker compose up --build
    ```
-   Este comando levanta el backend (puerto 8000), el frontend (puerto 5173) **y MongoDB** (puerto 27017) en contenedores. No se requiere ninguna instalación adicional.
+   Este comando levanta el backend (puerto 8000), el frontend (puerto 5173), **MongoDB** (puerto 27017) y el **bot de Telegram** en contenedores. No se requiere ninguna instalación adicional.
 
 4. Acceder a la aplicación:
    - Frontend: http://localhost:5173
@@ -90,6 +91,49 @@ curl -s -X POST http://localhost:8000/api/v1/auth/login \
 
 ---
 
+## Bot de Telegram
+
+Además de la WebApp, el proyecto incluye un **bot de Telegram** (carpeta `telegram_bot/`)
+que expone la misma funcionalidad desde un chat. El bot es un cliente del backend: se
+autentica con `/login` y reenvía cada acción a la API REST (`BACKEND_URL`, por defecto
+`http://backend:8000/api/v1` dentro de Docker Compose).
+
+### Puesta en marcha
+
+1. Crear un bot hablando con [@BotFather](https://t.me/BotFather) en Telegram: enviar
+   `/newbot`, seguir las instrucciones y copiar el token.
+2. Pegar el token en el `.env` de la raíz:
+   ```env
+   TELEGRAM_BOT_TOKEN=<token-del-bot>
+   ```
+3. Levantar el stack con `docker compose up --build`. El servicio `telegram_bot` arranca
+   automáticamente y queda escuchando mensajes (no expone puertos).
+
+> Sin `TELEGRAM_BOT_TOKEN` definido, el contenedor del bot falla al iniciar. El resto de
+> los servicios (backend, frontend, MongoDB) funcionan igual.
+
+### Comandos disponibles
+
+Empezá con `/start` para ver la ayuda dentro del chat. Antes de operar hay que iniciar
+sesión con `/login email contraseña` (sirven los usuarios sembrados).
+
+| Categoría      | Comandos |
+| -------------- | -------- |
+| **Sesión**     | `/login`, `/logout`, `/registro` |
+| **Álbum**      | `/mi_album`, `/mi_album_ids`, `/agregar`, `/eliminar_figurita` |
+| **Faltantes**  | `/faltantes`, `/agregar_faltante` |
+| **Publicaciones** | `/publicaciones`, `/publicaciones_id`, `/mis_publicaciones`, `/mis_publicaciones_id`, `/publicar`, `/retirar`, `/sugerencias` |
+| **Intercambios** | `/intercambios`, `/proponer`, `/aceptar_intercambio`, `/rechazar_intercambio` |
+| **Subastas**   | `/subastas`, `/mis_subastas`, `/crear_subasta`, `/ofertar`, `/cancelar_subasta` |
+| **Maestro**    | `/buscar`, `/equipos` |
+| **Admin**      | `/usuarios`, `/estadisticas` (requieren rol de administrador) |
+
+Las figuritas se muestran agrupadas por país (con la bandera del seleccionado) y el estado
+de cada una se indica con emojis: 🔄 en intercambio directo, 📣 en subasta. Los comandos
+`*_ids` agregan los identificadores internos necesarios para acciones como `/retirar`.
+
+---
+
 ## Configuración del archivo `.env`
 
 Copiar `.env.example` como `.env` en la raíz del proyecto y completar los valores:
@@ -106,6 +150,9 @@ MONGODB_DB_NAME=mundial_figuritas_db
 # Base de datos para tests (opcional; por defecto localhost)
 TEST_MONGODB_URL=<connection-string>
 TEST_MONGODB_DB_NAME=mundial_figuritas_test_db
+
+# Bot de Telegram (token de @BotFather; ver sección "Bot de Telegram")
+TELEGRAM_BOT_TOKEN=<token-del-bot>
 ```
 
 **Cómo generar el `JWT_SECRET`:**
