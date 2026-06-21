@@ -21,7 +21,7 @@ async def cmd_intercambios(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/intercambios/", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     # El backend responde {"enviados": [...], "recibidos": [...]}
     if isinstance(data, dict):
@@ -29,18 +29,18 @@ async def cmd_intercambios(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         intercambios = data
     if not intercambios:
-        await update.message.reply_text("No tenés intercambios. Usá /proponer para iniciar uno.")
+        await update.effective_message.reply_text("No tenés intercambios. Usá /proponer para iniciar uno.")
         return
     lineas = ["🔄 Tus intercambios:"]
     for i in intercambios:
         lineas.append(_fmt_intercambio(i))
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))
 
 
 @require_auth
 async def cmd_proponer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 3:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso: /proponer usuario_id num_ofrecida num_solicitada\n"
             "Ejemplo: /proponer 2 10 42\n\n"
             "Para ofrecer varias: /proponer 2 10,15,20 42\n"
@@ -52,7 +52,7 @@ async def cmd_proponer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ofrecidas = [int(n) for n in context.args[1].split(",")]
         solicitada = int(context.args[2])
     except ValueError:
-        await update.message.reply_text("❌ Los números deben ser enteros. Las ofrecidas se separan con coma (sin espacios).")
+        await update.effective_message.reply_text("❌ Los números deben ser enteros. Las ofrecidas se separan con coma (sin espacios).")
         return
 
     token = session.get_token(update.effective_user.id)
@@ -63,17 +63,17 @@ async def cmd_proponer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     status, data = await api_post("/intercambios/", body, token=token)
     if status == 201:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"✅ Intercambio propuesto.\nID: {data['id']}"
         )
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_aceptar_intercambio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Uso: /aceptar_intercambio id")
+        await update.effective_message.reply_text("Uso: /aceptar_intercambio id")
         return
     intercambio_id = context.args[0]
     token = session.get_token(update.effective_user.id)
@@ -83,15 +83,15 @@ async def cmd_aceptar_intercambio(update: Update, context: ContextTypes.DEFAULT_
         token=token,
     )
     if status == 200:
-        await update.message.reply_text("✅ Intercambio aceptado.")
+        await update.effective_message.reply_text("✅ Intercambio aceptado.")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_rechazar_intercambio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Uso: /rechazar_intercambio id")
+        await update.effective_message.reply_text("Uso: /rechazar_intercambio id")
         return
     intercambio_id = context.args[0]
     token = session.get_token(update.effective_user.id)
@@ -101,6 +101,6 @@ async def cmd_rechazar_intercambio(update: Update, context: ContextTypes.DEFAULT
         token=token,
     )
     if status == 200:
-        await update.message.reply_text("✅ Intercambio rechazado.")
+        await update.effective_message.reply_text("✅ Intercambio rechazado.")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")

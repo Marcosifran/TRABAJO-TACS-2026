@@ -77,8 +77,8 @@ async def post_init(application):
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logging.error("Excepción en handler:", exc_info=context.error)
-    if isinstance(update, Update) and update.message:
-        await update.message.reply_text(
+    if isinstance(update, Update) and update.effective_message:
+        await update.effective_message.reply_text(
             f"❌ Error interno: {context.error}\n"
             "Si el problema persiste, contactá al administrador."
         )

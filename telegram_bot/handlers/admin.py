@@ -10,10 +10,10 @@ async def cmd_estadisticas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/admin/estadisticas", token=token)
     if status == 403:
-        await update.message.reply_text("❌ Solo los administradores pueden ver estadísticas.")
+        await update.effective_message.reply_text("❌ Solo los administradores pueden ver estadísticas.")
         return
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
 
     lineas = ["📊 Estadísticas:"]
@@ -24,4 +24,4 @@ async def cmd_estadisticas(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 lineas.append(f"  {k}: {v}")
         else:
             lineas.append(f"  {key}: {val}")
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))

@@ -48,36 +48,38 @@ AYUDA = (
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(AYUDA)
+    await update.effective_message.reply_text(AYUDA)
 
 
 async def cmd_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 2:
-        await update.message.reply_text("Uso: /login email contraseña")
+        await update.effective_message.reply_text("Uso: /login email contraseña")
         return
     email, password = context.args[0], context.args[1]
     status, data = await api_post("/auth/login", {"email": email, "password": password})
     if status == 200:
         session.set_session(update.effective_user.id, data["access_token"], data["usuario"])
-        await update.message.reply_text(f"✅ Bienvenido, {data['usuario']['nombre']}!")
+        u = data["usuario"]
+        admin = " (admin)" if u.get("es_admin") else ""
+        await update.effective_message.reply_text(f"✅ Bienvenido, {u['nombre']} (ID {u['id']}){admin}!")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 async def cmd_logout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session.clear_session(update.effective_user.id)
-    await update.message.reply_text("👋 Sesión cerrada.")
+    await update.effective_message.reply_text("👋 Sesión cerrada.")
 
 
 async def cmd_registro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 3:
-        await update.message.reply_text("Uso: /registro nombre email contraseña")
+        await update.effective_message.reply_text("Uso: /registro nombre email contraseña")
         return
     nombre, email, password = context.args[0], context.args[1], context.args[2]
     status, data = await api_post("/auth/register", {"nombre": nombre, "email": email, "password": password})
     if status == 201:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"✅ Cuenta creada. Ahora iniciá sesión:\n/login {email} {password}"
         )
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")

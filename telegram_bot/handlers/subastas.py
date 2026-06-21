@@ -25,23 +25,23 @@ async def cmd_subastas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/subastas/", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     items = data.get("items", data) if isinstance(data, dict) else data
     activas = [s for s in items if s.get("estado") == "activa"]
     if not activas:
-        await update.message.reply_text("No hay subastas activas en este momento.")
+        await update.effective_message.reply_text("No hay subastas activas en este momento.")
         return
     lineas = ["🏷 Subastas activas:"]
     for s in activas[:10]:
         lineas.append(_fmt_subasta(s))
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))
 
 
 @require_auth
 async def cmd_crear_subasta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 2:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso: /crear_subasta publicacion_id horas\n"
             "Ejemplo: /crear_subasta abc123 24\n\n"
             "Encontrá la publicacion_id en /mis_publicaciones"
@@ -53,7 +53,7 @@ async def cmd_crear_subasta(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if horas < 1:
             raise ValueError
     except ValueError:
-        await update.message.reply_text("❌ horas debe ser un entero positivo.")
+        await update.effective_message.reply_text("❌ horas debe ser un entero positivo.")
         return
 
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -67,17 +67,17 @@ async def cmd_crear_subasta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     status, data = await api_post("/subastas/", body, token=token)
     if status == 201:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"✅ Subasta creada por {horas} hora(s).\nID: {data['id']}"
         )
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_ofertar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 2:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso: /ofertar subasta_id figurita_id [figurita_id2 ...]\n"
             "Ejemplo: /ofertar abc123 xyz456\n\n"
             "Encontrá los IDs en /mi_album y /subastas"
@@ -92,23 +92,23 @@ async def cmd_ofertar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         token=token,
     )
     if status == 201:
-        await update.message.reply_text(f"✅ Oferta enviada.\nID oferta: {data['id']}")
+        await update.effective_message.reply_text(f"✅ Oferta enviada.\nID oferta: {data['id']}")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_cancelar_subasta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Uso: /cancelar_subasta id")
+        await update.effective_message.reply_text("Uso: /cancelar_subasta id")
         return
     subasta_id = context.args[0]
     token = session.get_token(update.effective_user.id)
     status, data = await api_delete(f"/subastas/{subasta_id}", token=token)
     if status == 204:
-        await update.message.reply_text("✅ Subasta cancelada.")
+        await update.effective_message.reply_text("✅ Subasta cancelada.")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
@@ -116,12 +116,12 @@ async def cmd_mis_subastas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/usuarios/subastas", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     if not data:
-        await update.message.reply_text("No tenés subastas. Usá /crear_subasta para crear una.")
+        await update.effective_message.reply_text("No tenés subastas. Usá /crear_subasta para crear una.")
         return
     lineas = ["🏷 Mis subastas:"]
     for s in data:
         lineas.append(_fmt_subasta(s))
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))

@@ -10,11 +10,11 @@ async def _mostrar_album(update: Update, *, con_ids: bool):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/album/", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     items = data.get("items", data) if isinstance(data, dict) else data
     if not items:
-        await update.message.reply_text("Tu album está vacío. Usá /agregar numero cantidad")
+        await update.effective_message.reply_text("Tu album está vacío. Usá /agregar numero cantidad")
         return
 
     # Mapa figurita_personal_id -> tipo de publicación, para distinguir
@@ -45,7 +45,7 @@ async def _mostrar_album(update: Update, *, con_ids: bool):
             if con_ids:
                 linea += f"\n  ID: {f['id']}"
             lineas.append(linea)
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))
 
 
 @require_auth
@@ -61,13 +61,13 @@ async def cmd_mi_album_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_auth
 async def cmd_agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 2:
-        await update.message.reply_text("Uso: /agregar numero cantidad\nEjemplo: /agregar 10 2")
+        await update.effective_message.reply_text("Uso: /agregar numero cantidad\nEjemplo: /agregar 10 2")
         return
     try:
         numero = int(context.args[0])
         cantidad = int(context.args[1])
     except ValueError:
-        await update.message.reply_text("❌ numero y cantidad deben ser enteros.")
+        await update.effective_message.reply_text("❌ numero y cantidad deben ser enteros.")
         return
 
     token = session.get_token(update.effective_user.id)
@@ -75,7 +75,7 @@ async def cmd_agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Buscar datos del jugador en el maestro
     st_m, maestro = await api_get(f"/maestro/{numero}", token=token)
     if st_m != 200:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"❌ No se encontró la figurita #{numero} en el maestro.\n"
             "Verificá el número e intentá de nuevo."
         )
@@ -89,23 +89,23 @@ async def cmd_agregar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     status, data = await api_post("/album/", body, token=token)
     if status == 201:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"✅ Agregada: #{numero} {body['jugador']} ({body['equipo']}) x{cantidad}\n"
             f"ID: {data['id']}"
         )
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_eliminar_figurita(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Uso: /eliminar_figurita id\n(el ID lo ves en /mi_album)")
+        await update.effective_message.reply_text("Uso: /eliminar_figurita id\n(el ID lo ves en /mi_album)")
         return
     figurita_id = context.args[0]
     token = session.get_token(update.effective_user.id)
     status, data = await api_delete(f"/album/{figurita_id}", token=token)
     if status == 204:
-        await update.message.reply_text("✅ Figurita eliminada del album.")
+        await update.effective_message.reply_text("✅ Figurita eliminada del album.")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")

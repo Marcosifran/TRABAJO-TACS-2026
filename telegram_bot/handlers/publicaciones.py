@@ -52,13 +52,13 @@ async def _mostrar_publicaciones(update: Update, *, con_ids: bool):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/publicaciones/", token=token, params={"incluir_propias": "false"})
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     items = data.get("items", data) if isinstance(data, dict) else data
     if not items:
-        await update.message.reply_text("No hay publicaciones disponibles.")
+        await update.effective_message.reply_text("No hay publicaciones disponibles.")
         return
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         _render_publicaciones(
             items[:15],
             "📢 Publicaciones disponibles:",
@@ -72,12 +72,12 @@ async def _mostrar_mis_publicaciones(update: Update, *, con_ids: bool):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/usuarios/publicaciones", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     if not data:
-        await update.message.reply_text("No tenés publicaciones. Usá /publicar numero tipo cantidad")
+        await update.effective_message.reply_text("No tenés publicaciones. Usá /publicar numero tipo cantidad")
         return
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         _render_publicaciones(data, "📢 Mis publicaciones:", con_ids=con_ids)
     )
 
@@ -105,7 +105,7 @@ async def cmd_mis_publicaciones_id(update: Update, context: ContextTypes.DEFAULT
 @require_auth
 async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 3:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Uso: /publicar numero tipo cantidad\n"
             "tipo: directo | subasta\n"
             "Ejemplo: /publicar 1 directo 2\n\n"
@@ -117,12 +117,12 @@ async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         numero = int(context.args[0])
         cantidad = int(context.args[2])
     except ValueError:
-        await update.message.reply_text("❌ numero y cantidad deben ser enteros.")
+        await update.effective_message.reply_text("❌ numero y cantidad deben ser enteros.")
         return
 
     tipo = _TIPO_MAP.get(tipo_raw.lower())
     if not tipo:
-        await update.message.reply_text("❌ tipo debe ser 'directo' o 'subasta'.")
+        await update.effective_message.reply_text("❌ tipo debe ser 'directo' o 'subasta'.")
         return
 
     token = session.get_token(update.effective_user.id)
@@ -130,12 +130,12 @@ async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Resolver el numero de figurita al id interno del álbum del usuario
     st_a, album = await api_get("/album/", token=token)
     if st_a != 200:
-        await update.message.reply_text(f"❌ {fmt_error(album)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(album)}")
         return
     items = album.get("items", album) if isinstance(album, dict) else album
     figurita = next((f for f in items if f["numero"] == numero), None)
     if not figurita:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"❌ No tenés la figurita #{numero} en tu álbum. Agregala con /agregar {numero} 1"
         )
         return
@@ -147,25 +147,25 @@ async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     status, data = await api_post("/publicaciones/", body, token=token)
     if status == 201:
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"✅ Publicación creada.\nID: {data['id']}"
         )
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
 async def cmd_retirar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Uso: /retirar id\n(el ID lo ves en /mis_publicaciones)")
+        await update.effective_message.reply_text("Uso: /retirar id\n(el ID lo ves en /mis_publicaciones)")
         return
     pub_id = context.args[0]
     token = session.get_token(update.effective_user.id)
     status, data = await api_delete(f"/publicaciones/{pub_id}", token=token)
     if status == 204:
-        await update.message.reply_text("✅ Publicación retirada.")
+        await update.effective_message.reply_text("✅ Publicación retirada.")
     else:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
 
 
 @require_auth
@@ -173,10 +173,10 @@ async def cmd_sugerencias(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/publicaciones/sugerencias", token=token)
     if status != 200:
-        await update.message.reply_text(f"❌ {fmt_error(data)}")
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
     if not data:
-        await update.message.reply_text("No hay sugerencias para vos por ahora.")
+        await update.effective_message.reply_text("No hay sugerencias para vos por ahora.")
         return
     lineas = ["💡 Sugerencias de intercambio:"]
     for s in data[:10]:
@@ -186,4 +186,4 @@ async def cmd_sugerencias(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"  Ofrecida por: {s['ofrecida_por']}  cubre tu faltante #{s['cubre_tu_faltante']}\n"
             f"  Pub ID: {pub['id']}"
         )
-    await update.message.reply_text("\n".join(lineas))
+    await update.effective_message.reply_text("\n".join(lineas))

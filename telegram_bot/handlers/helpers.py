@@ -8,7 +8,7 @@ def require_auth(func):
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not session.is_logged_in(update.effective_user.id):
-            await update.message.reply_text("❌ No estás logueado. Usá /login email contraseña")
+            await update.effective_message.reply_text("❌ No estás logueado. Usá /login email contraseña")
             return
         return await func(update, context)
     return wrapper
