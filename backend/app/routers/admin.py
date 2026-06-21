@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
-from app.services import admin_service, stats_service
+from app.schemas import UsuarioResponse
+from app.services import admin_service, stats_service, usuario_service
 from app.dependencies import get_current_user
 
 
@@ -11,6 +12,18 @@ def require_admin(usuario: dict = Depends(get_current_user)) -> dict:
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
+
+
+@router.get(
+    "/usuarios",
+    response_model=list[UsuarioResponse],
+    responses={
+        200: {"description": "Listado completo de usuarios (solo administradores)"},
+        403: {"description": "Requiere rol de administrador"},
+    },
+)
+def listar_usuarios_admin():
+    return usuario_service.listar_usuarios()
 
 
 @router.get(
