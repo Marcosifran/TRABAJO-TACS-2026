@@ -49,7 +49,10 @@ async def cmd_usuarios(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("❌ Sin acceso a funcionalidades de admin")
         return
     token = session.get_token(update.effective_user.id)
-    status, data = await api_get("/usuarios", token=token)
+    status, data = await api_get("/admin/usuarios", token=token)
+    if status == 403:
+        await update.effective_message.reply_text("❌ Sin acceso a funcionalidades de admin")
+        return
     if status != 200:
         await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
         return
