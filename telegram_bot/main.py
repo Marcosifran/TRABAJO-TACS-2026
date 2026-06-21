@@ -4,7 +4,7 @@ from telegram import BotCommand, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 from handlers.auth import cmd_start, cmd_login, cmd_logout, cmd_registro
-from handlers.album import cmd_mi_album, cmd_agregar, cmd_eliminar_figurita
+from handlers.album import cmd_mi_album, cmd_mi_album_ids, cmd_agregar, cmd_eliminar_figurita
 from handlers.usuarios import cmd_faltantes, cmd_agregar_faltante, cmd_usuarios
 from handlers.publicaciones import (
     cmd_publicaciones,
@@ -40,7 +40,8 @@ COMANDOS = [
     BotCommand("login",                "Iniciar sesión — /login email contraseña"),
     BotCommand("logout",               "Cerrar sesión"),
     BotCommand("registro",             "Crear cuenta — /registro nombre email contraseña"),
-    BotCommand("mi_album",             "Ver mis figuritas (con IDs)"),
+    BotCommand("mi_album",             "Ver mis figuritas"),
+    BotCommand("mi_album_ids",         "Ver mis figuritas con IDs"),
     BotCommand("agregar",              "Agregar al álbum — /agregar numero cantidad"),
     BotCommand("eliminar_figurita",    "Eliminar del álbum — /eliminar_figurita id"),
     BotCommand("faltantes",            "Ver mis faltantes"),
@@ -94,6 +95,7 @@ def main():
 
     # Album
     app.add_handler(CommandHandler("mi_album",             cmd_mi_album))
+    app.add_handler(CommandHandler("mi_album_ids",         cmd_mi_album_ids))
     app.add_handler(CommandHandler("agregar",              cmd_agregar))
     app.add_handler(CommandHandler("eliminar_figurita",    cmd_eliminar_figurita))
 

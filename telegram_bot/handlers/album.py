@@ -5,8 +5,7 @@ from api_client import api_get, api_post, api_delete
 from handlers.helpers import require_auth, fmt_error
 
 
-@require_auth
-async def cmd_mi_album(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def _mostrar_album(update: Update, *, con_ids: bool):
     token = session.get_token(update.effective_user.id)
     status, data = await api_get("/album/", token=token)
     if status != 200:
@@ -19,11 +18,21 @@ async def cmd_mi_album(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lineas = ["📚 Tu album:"]
     for f in items:
         en_intercambio = " 🔄" if f.get("en_intercambio") else ""
-        lineas.append(
-            f"  #{f['numero']} {f['jugador']} ({f['equipo']}) x{f['cantidad']}{en_intercambio}\n"
-            f"  ID: {f['id']}"
-        )
+        linea = f"  #{f['numero']} {f['jugador']} ({f['equipo']}) x{f['cantidad']}{en_intercambio}"
+        if con_ids:
+            linea += f"\n  ID: {f['id']}"
+        lineas.append(linea)
     await update.message.reply_text("\n".join(lineas))
+
+
+@require_auth
+async def cmd_mi_album(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _mostrar_album(update, con_ids=False)
+
+
+@require_auth
+async def cmd_mi_album_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _mostrar_album(update, con_ids=True)
 
 
 @require_auth
