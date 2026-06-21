@@ -1,3 +1,5 @@
+import re
+
 from app.core.database import get_db
 
 
@@ -27,6 +29,13 @@ def get_by_team(equipo: str) -> list[dict]:
         .find({"equipo": {"$regex": f"^{equipo}$", "$options": "i"}}, {"_id": 0})
         .sort("numero_camiseta", 1)
     )
+
+
+def search_by_name(nombre: str, equipo: str | None = None, limit: int = 10) -> list[dict]:
+    query: dict = {"jugador": {"$regex": re.escape(nombre), "$options": "i"}}
+    if equipo:
+        query["equipo"] = {"$regex": f"^{re.escape(equipo)}$", "$options": "i"}
+    return list(_col().find(query, {"_id": 0}).sort("jugador", 1).limit(limit))
 
 
 def bulk_insert(jugadores: list[dict]) -> None:
