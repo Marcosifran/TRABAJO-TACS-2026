@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from bson import ObjectId
 from pymongo import ASCENDING
@@ -127,13 +127,8 @@ def limpiar_snapshots_antiguos(dias_retencion: int = 90) -> int:
         Cantidad de documentos eliminados
     """
     collection = _get_collection()
-    fecha_limite = datetime.utcnow()
-    fecha_limite = fecha_limite.replace(
-        day=fecha_limite.day - dias_retencion,
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0,
+    fecha_limite = (datetime.utcnow() - timedelta(days=dias_retencion)).replace(
+        hour=0, minute=0, second=0, microsecond=0
     )
 
     query = {"fecha": {"$lt": fecha_limite}}

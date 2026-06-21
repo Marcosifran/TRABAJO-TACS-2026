@@ -10,7 +10,7 @@ from app.repositories import (
     calificacion_repo,
     stats_repo,
 )
-from app.schemas import EstadoIntercambio
+from app.schemas import EstadoIntercambio, EstadoSubasta
 
 logger = logging.getLogger(__name__)
 
@@ -161,33 +161,18 @@ def _calcular_metricas_tendencias() -> dict:
         ahora = datetime.now(UTC)
         hace_24h = ahora - timedelta(hours=24)
 
-        intercambios = intercambio_repo.list_exchanges()
-        publicaciones = publicacion_repo.get_all()
-        subastas = subasta_repo.get_all()
+        intercambios_24h = intercambio_repo.list_exchanges_en_periodo(hace_24h, ahora)
+        figuritas_publicadas_24h = len(publicacion_repo.get_all_en_periodo(hace_24h, ahora))
+        nuevos_usuarios_24h = usuario_repo.count_en_periodo(hace_24h, ahora)
+        subastas_finalizadas_24h = subasta_repo.count_finalizadas_desde(hace_24h)
 
-        # Contar intercambios completados en 24h (por ahora, todos los aceptados como proxy)
         intercambios_completados_24h = sum(
-            1 for i in intercambios if i.estado.value == EstadoIntercambio.ACEPTADO.value
+            1 for i in intercambios_24h if i.estado.value == EstadoIntercambio.ACEPTADO.value
         )
 
-        # Contar figuritas publicadas en 24h (sin timestamp, contamos todas por ahora)
-        figuritas_publicadas_24h = len(publicaciones)
-
-        # Subastas finalizadas en 24h
-        subastas_finalizadas_24h = sum(
-            1 for s in subastas if s.estado == "finalizada"
-        )
-
-        # Nuevos usuarios en 24h (sin timestamp de creación, asumimos todos)
-        usuarios = usuario_repo.get_all()
-        nuevos_usuarios_24h = len(usuarios)
-
-        # Tasa de éxito
-        intercambios_totales = len(intercambios)
-        tasa_exito = (intercambios_completados_24h / intercambios_totales * 100) if intercambios_totales > 0 else 0.0
-
-        # Velocidad promedio (placeholder - sin timestamps en datos)
-        velocidad_promedio = 24.0  # horas default
+        total_24h = len(intercambios_24h)
+        tasa_exito = (intercambios_completados_24h / total_24h * 100) if total_24h > 0 else 0.0
+        velocidad_promedio = 24.0  # placeholder sin timestamps
 
         return {
             "nuevos_usuarios_24h": nuevos_usuarios_24h,
@@ -581,15 +566,17 @@ def actualizar_historico() -> None:
 def guardar_snapshot_diario() -> None:
     """Guarda snapshot diario en MongoDB"""
     try:
+        intercambios = intercambio_repo.list_exchanges()
+        subastas_activas = subasta_repo.get_all()
         datos_snapshot = {
             "usuarios_totales": len(usuario_repo.get_all()),
             "usuarios_nuevos": 0,  # sin timestamp de creación
             "figuritas_publicadas": len(publicacion_repo.get_all()),
             "figuritas_publicadas_hoy": 0,  # sin timestamp
-            "intercambios_aceptados": sum(1 for i in intercambio_repo.list_exchanges() if i.estado.value == EstadoIntercambio.ACEPTADO.value),
-            "intercambios_rechazados": sum(1 for i in intercambio_repo.list_exchanges() if i.estado.value == EstadoIntercambio.RECHAZADO.value),
-            "subastas_activas": len([s for s in subasta_repo.get_all() if s.estado == "activa"]),
-            "subastas_finalizadas": sum(1 for s in subasta_repo.get_all() if s.estado == "finalizada"),
+            "intercambios_aceptados": sum(1 for i in intercambios if i.estado.value == EstadoIntercambio.ACEPTADO.value),
+            "intercambios_rechazados": sum(1 for i in intercambios if i.estado.value == EstadoIntercambio.RECHAZADO.value),
+            "subastas_activas": len(subastas_activas),
+            "subastas_finalizadas": subasta_repo.count_by_estado(EstadoSubasta.FINALIZADA),
             "tasa_exito_intercambios": _stats_cache["tendencias"].get("tasa_exito_intercambios", 0.0),
             "velocidad_promedio_horas": _stats_cache["tendencias"].get("velocidad_promedio_intercambio_horas", 0.0),
         }
@@ -677,3 +664,47 @@ def obtener_estadisticas_historico(periodo: str = "ultimos_7d") -> dict:
         "timeline": historico["timeline"],
         "_metadata": historico["_metadata"],
     }
+
+
+def reiniciar_cache() -> None:
+    """Reinicia el caché a valores iniciales. Solo para uso en tests."""
+    _stats_cache["global"].update({
+        "usuarios": 0, "figuritas_publicadas": 0, "intercambios_aceptados": 0,
+        "subastas_activas": 0, "intercambios_por_estado": {}, "top_selecciones": [],
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 300},
+    })
+    _stats_cache["tendencias"].update({
+        "nuevos_usuarios_24h": 0, "intercambios_completados_24h": 0,
+        "subastas_finalizadas_24h": 0, "figuritas_publicadas_24h": 0,
+        "velocidad_promedio_intercambio_horas": 0.0, "tasa_exito_intercambios": 0.0,
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 1800},
+    })
+    _stats_cache["figuritas"].update({
+        "top_10_mas_demandadas": [], "top_10_mas_publicadas": [],
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 1800},
+    })
+    _stats_cache["usuarios"].update({
+        "top_10_mas_activos": [], "usuarios_inactivos_7d": 0,
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 1800},
+    })
+    _stats_cache["mercado"].update({
+        "salud_general": "moderada", "volumen_intercambios_7d": 0,
+        "volumen_ofertas_subastas_7d": 0, "equipos_con_mas_movimiento": [],
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 3600},
+    })
+    _stats_cache["reputacion"].update({
+        "promedio_global": 0.0,
+        "distribucion": {"oro": 0, "plata": 0, "bronce": 0, "nuevo": 0},
+        "usuarios_top_reputacion": [],
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 1800},
+    })
+    _stats_cache["performance"].update({
+        "tiempo_promedio_respuesta_horas": 0.0,
+        "tiempo_promedio_intercambio_completacion_dias": 0.0, "tasa_abandono": 0.0,
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 3600},
+    })
+    _stats_cache["historico"].update({
+        "periodos": {"ultimas_24h": {}, "ultimos_7d": {}, "ultimos_30d": {}, "ultimos_90d": {}},
+        "timeline": [],
+        "_metadata": {"ultimo_update": None, "frecuencia_segundos": 3600},
+    })

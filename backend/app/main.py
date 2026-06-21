@@ -120,6 +120,8 @@ async def lifespan(app: FastAPI):
     stats_service.actualizar_usuarios()
     stats_service.actualizar_reputacion()
     stats_service.actualizar_performance()
+    stats_service.actualizar_mercado()
+    stats_service.actualizar_historico()
     yield
     _detener_scheduler()
     close_mongo_connection()
