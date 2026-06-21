@@ -15,7 +15,7 @@ from app.schemas import EstadoIntercambio, EstadoSubasta
 logger = logging.getLogger(__name__)
 
 # Caché persistente en memoria
-_stats_cache = {
+_stats_cache: dict[str, Any] = {
     "global": {
         "usuarios": 0,
         "figuritas_publicadas": 0,
@@ -105,7 +105,7 @@ _stats_cache = {
 }
 
 
-def _actualizar_metadata(grupo: str, frecuencia_seg: int, error: Exception = None) -> None:
+def _actualizar_metadata(grupo: str, frecuencia_seg: int, error: Exception | None = None) -> None:
     """Actualiza el _metadata de un grupo de métricas"""
     estado = "error" if error else "ok"
     if error:
@@ -319,11 +319,8 @@ def _calcular_metricas_mercado() -> dict:
             equipo = p.equipo
             movimiento_por_equipo[equipo] = movimiento_por_equipo.get(equipo, 0) + 1
 
-        equipos_movimiento = sorted(
-            [{"equipo": eq, "intercambios": count} for eq, count in movimiento_por_equipo.items()],
-            key=lambda x: x["intercambios"],
-            reverse=True,
-        )[:5]
+        filas_equipos: list[dict[str, Any]] = [{"equipo": eq, "intercambios": count} for eq, count in movimiento_por_equipo.items()]
+        equipos_movimiento = sorted(filas_equipos, key=lambda x: x["intercambios"], reverse=True)[:5]
 
         # Salud general (score 0-100)
         aceptados = sum(1 for i in intercambios if i.estado.value == EstadoIntercambio.ACEPTADO.value)
@@ -356,7 +353,7 @@ def _calcular_metricas_reputacion() -> dict:
         usuarios = usuario_repo.get_all()
 
         # Agrupar por usuario calificado
-        reputacion_por_usuario: dict[int, dict] = {}
+        reputacion_por_usuario: dict[int, list[float]] = {}
         for c in calificaciones:
             uid = c["calificado_id"]
             if uid not in reputacion_por_usuario:
@@ -621,11 +618,8 @@ def _calcular_estadisticas_en_periodo(
     conteo_selecciones: dict[str, int] = {}
     for p in publicaciones:
         conteo_selecciones[p.equipo] = conteo_selecciones.get(p.equipo, 0) + 1
-    top_selecciones = sorted(
-        [{"seleccion": k, "cantidad": v} for k, v in conteo_selecciones.items()],
-        key=lambda x: x["cantidad"],
-        reverse=True,
-    )[:5]
+    filas_sel: list[dict[str, Any]] = [{"seleccion": k, "cantidad": v} for k, v in conteo_selecciones.items()]
+    top_selecciones = sorted(filas_sel, key=lambda x: x["cantidad"], reverse=True)[:5]
 
     return {
         "usuarios": n_usuarios,
