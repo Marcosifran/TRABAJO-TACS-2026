@@ -17,8 +17,17 @@ def _tipo_emoji(tipo: str) -> str:
     return "📣" if tipo == "subasta" else "🔄"
 
 
-def _render_publicaciones(items: list[dict], header: str, *, con_ids: bool) -> str:
-    """Agrupa publicaciones por país (con bandera) y muestra el tipo como emoji."""
+def _render_publicaciones(
+    items: list[dict],
+    header: str,
+    *,
+    con_ids: bool,
+    con_dueno: bool = False,
+) -> str:
+    """Agrupa publicaciones por país (con bandera) y muestra el tipo como emoji.
+
+    Si `con_dueno`, agrega bajo cada figurita el ID del usuario dueño.
+    """
     por_equipo: dict[str, list] = {}
     for p in items:
         por_equipo.setdefault(p["equipo"], []).append(p)
@@ -34,6 +43,8 @@ def _render_publicaciones(items: list[dict], header: str, *, con_ids: bool) -> s
             if con_ids:
                 linea += f"\n  ID: {p['id']}"
             lineas.append(linea)
+            if con_dueno:
+                lineas.append(f"    ID Usuario: {p['usuario_id']}")
     return "\n".join(lineas)
 
 
@@ -48,7 +59,12 @@ async def _mostrar_publicaciones(update: Update, *, con_ids: bool):
         await update.message.reply_text("No hay publicaciones disponibles.")
         return
     await update.message.reply_text(
-        _render_publicaciones(items[:15], "📢 Publicaciones disponibles:", con_ids=con_ids)
+        _render_publicaciones(
+            items[:15],
+            "📢 Publicaciones disponibles:",
+            con_ids=con_ids,
+            con_dueno=True,
+        )
     )
 
 
@@ -59,7 +75,7 @@ async def _mostrar_mis_publicaciones(update: Update, *, con_ids: bool):
         await update.message.reply_text(f"❌ {fmt_error(data)}")
         return
     if not data:
-        await update.message.reply_text("No tenés publicaciones. Usá /publicar figurita_id tipo cantidad")
+        await update.message.reply_text("No tenés publicaciones. Usá /publicar numero tipo cantidad")
         return
     await update.message.reply_text(
         _render_publicaciones(data, "📢 Mis publicaciones:", con_ids=con_ids)
@@ -90,17 +106,18 @@ async def cmd_mis_publicaciones_id(update: Update, context: ContextTypes.DEFAULT
 async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 3:
         await update.message.reply_text(
-            "Uso: /publicar figurita_id tipo cantidad\n"
+            "Uso: /publicar numero tipo cantidad\n"
             "tipo: directo | subasta\n"
-            "Ejemplo: /publicar abc123 directo 2\n\n"
-            "Encontrá el figurita_id en /mi_album"
+            "Ejemplo: /publicar 1 directo 2\n\n"
+            "El numero es el de la figurita en /mi_album"
         )
         return
-    figurita_id, tipo_raw = context.args[0], context.args[1]
+    tipo_raw = context.args[1]
     try:
+        numero = int(context.args[0])
         cantidad = int(context.args[2])
     except ValueError:
-        await update.message.reply_text("❌ cantidad debe ser un entero.")
+        await update.message.reply_text("❌ numero y cantidad deben ser enteros.")
         return
 
     tipo = _TIPO_MAP.get(tipo_raw.lower())
@@ -109,8 +126,22 @@ async def cmd_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     token = session.get_token(update.effective_user.id)
+
+    # Resolver el numero de figurita al id interno del álbum del usuario
+    st_a, album = await api_get("/album/", token=token)
+    if st_a != 200:
+        await update.message.reply_text(f"❌ {fmt_error(album)}")
+        return
+    items = album.get("items", album) if isinstance(album, dict) else album
+    figurita = next((f for f in items if f["numero"] == numero), None)
+    if not figurita:
+        await update.message.reply_text(
+            f"❌ No tenés la figurita #{numero} en tu álbum. Agregala con /agregar {numero} 1"
+        )
+        return
+
     body = {
-        "figurita_personal_id": figurita_id,
+        "figurita_personal_id": figurita["id"],
         "tipo": tipo,
         "cantidad_disponible": cantidad,
     }

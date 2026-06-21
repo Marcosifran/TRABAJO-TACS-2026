@@ -23,7 +23,7 @@ AYUDA = (
     "  /publicaciones_id — con IDs\n"
     "  /mis_publicaciones\n"
     "  /mis_publicaciones_id — con IDs\n"
-    "  /publicar figurita_id tipo cantidad\n"
+    "  /publicar numero tipo cantidad\n"
     "    (tipo: directo | subasta)\n"
     "  /retirar id\n"
     "  /sugerencias\n\n"
