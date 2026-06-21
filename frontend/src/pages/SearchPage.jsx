@@ -9,7 +9,7 @@ import EmptyState from '../components/ui/EmptyState'
 import Snackbar from '../components/ui/Snackbar'
 import FiguritaCard from '../components/FiguritaCard'
 import { buscarPublicaciones } from '../api/publicaciones'
-import { buscarJugadores } from '../api/maestro'
+import { buscarJugadores, getJugadoresPorEquipo } from '../api/maestro'
 import { isAuctionActive } from '../utils/auctionTime'
 import { useAuth } from '../context/AuthContext'
 
@@ -170,6 +170,8 @@ export default function SearchPage() {
                 value={countryQuery}
                 onChange={setCountryQuery}
                 fetchSuggestions={(q) => buscarJugadores(q, selFilter)}
+                loadAll={() => getJugadoresPorEquipo(selFilter)}
+                autoOpenKey={selFilter}
                 getOptionKey={(j) => j.numero}
                 getOptionLabel={jugadorLabel}
                 renderOption={(j) => (

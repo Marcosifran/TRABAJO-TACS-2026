@@ -11,6 +11,10 @@ import Icon from './Icon'
  * - getOptionKey(item) => string|number: key de React por opción.
  * - renderOption(item) => node (opcional): render personalizado de la opción.
  * - onSelect(item): se invoca al elegir una sugerencia.
+ * - loadAll() => Promise<item[]> (opcional): lista completa a mostrar al enfocar
+ *   el campo vacío (ej: todos los jugadores de un país ya elegido).
+ * - autoOpenKey (opcional): cuando cambia a un valor truthy, abre automáticamente
+ *   el desplegable con `loadAll()` (ej: el país recién seleccionado).
  * - placeholder, icon, disabled, minChars (default 1), debounceMs (default 300).
  */
 export default function Autocomplete({
@@ -21,6 +25,8 @@ export default function Autocomplete({
   getOptionKey = (o, i) => i,
   renderOption,
   onSelect,
+  loadAll,
+  autoOpenKey,
   placeholder,
   icon = 'search',
   disabled = false,
@@ -35,21 +41,29 @@ export default function Autocomplete({
   const containerRef = useRef(null)
   const skipNextFetch = useRef(false)
 
-  const runFetch = useCallback(
-    async (q) => {
-      setLoading(true)
-      try {
-        const data = await fetchSuggestions(q)
-        setOptions(Array.isArray(data) ? data : [])
-        setOpen(true)
-      } catch {
-        setOptions([])
-      } finally {
-        setLoading(false)
-      }
-    },
-    [fetchSuggestions],
-  )
+  const run = useCallback(async (fn) => {
+    setLoading(true)
+    try {
+      const data = await fn()
+      setOptions(Array.isArray(data) ? data : [])
+      setOpen(true)
+    } catch {
+      setOptions([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Refs para que el efecto de búsqueda no se re-ejecute en cada render
+  // (fetchSuggestions/loadAll suelen recrearse como arrow inline en el padre).
+  const loadAllRef = useRef(loadAll)
+  loadAllRef.current = loadAll
+  const fetchRef = useRef(fetchSuggestions)
+  fetchRef.current = fetchSuggestions
+
+  const showAll = useCallback(() => {
+    if (loadAllRef.current) run(() => loadAllRef.current())
+  }, [run])
 
   useEffect(() => {
     if (skipNextFetch.current) {
@@ -57,14 +71,26 @@ export default function Autocomplete({
       return
     }
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!value || value.trim().length < minChars) {
-      setOptions([])
-      setOpen(false)
+    const q = value.trim()
+    if (q.length < minChars) {
+      // Campo vacío/corto: mostrar el plantel completo si hay loadAll, si no cerrar.
+      if (q.length === 0 && loadAllRef.current) showAll()
+      else {
+        setOptions([])
+        setOpen(false)
+      }
       return
     }
-    debounceRef.current = setTimeout(() => runFetch(value.trim()), debounceMs)
+    debounceRef.current = setTimeout(() => run(() => fetchRef.current(q)), debounceMs)
     return () => clearTimeout(debounceRef.current)
-  }, [value, minChars, debounceMs, runFetch])
+  }, [value, minChars, debounceMs, run, showAll])
+
+  // Al elegir un país (autoOpenKey cambia), mostrar todo su plantel.
+  const prevKey = useRef(autoOpenKey)
+  useEffect(() => {
+    if (autoOpenKey && autoOpenKey !== prevKey.current) showAll()
+    prevKey.current = autoOpenKey
+  }, [autoOpenKey, showAll])
 
   // Cerrar al hacer click fuera del componente.
   useEffect(() => {
@@ -112,6 +138,7 @@ export default function Autocomplete({
         onFocus={() => {
           setFocused(true)
           if (options.length > 0) setOpen(true)
+          else if (!value.trim()) showAll()
         }}
         onBlur={() => setFocused(false)}
         className={baseClass}
