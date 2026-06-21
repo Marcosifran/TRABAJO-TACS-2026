@@ -78,7 +78,13 @@ export default function SearchPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const delay = nameQuery && !selectedPlayer ? 300 : 0
     debounceRef.current = setTimeout(
-      () => fetchResults({ player: selectedPlayer, rawQuery: nameQuery, sel: selFilter, tipo: tipoFilter }),
+      () =>
+        fetchResults({
+          player: selectedPlayer,
+          rawQuery: nameQuery,
+          sel: selFilter,
+          tipo: tipoFilter,
+        }),
       delay,
     )
     return () => clearTimeout(debounceRef.current)
@@ -150,7 +156,10 @@ export default function SearchPage() {
             renderOption={(j) => (
               <span>
                 <span className="font-medium">{j.jugador}</span>
-                <span className="text-on-surface-variant"> — {j.equipo} (#{j.numero})</span>
+                <span className="text-on-surface-variant">
+                  {' '}
+                  — {j.equipo} (#{j.numero})
+                </span>
               </span>
             )}
             onSelect={handleSelectPlayer}
