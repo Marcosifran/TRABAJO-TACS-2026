@@ -5,7 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.core.config import settings
 from app.core.exceptions import register_exceptions_handlers
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.routers import auth, album, publicaciones, usuarios, intercambios, subastas, admin, maestro, partidos
+from app.routers import auth, album, publicaciones, usuarios, intercambios, subastas, admin, maestro, partidos, estadisticas
 from app.services import maestro_service, partidos_service, stats_service
 
 _scheduler = None
@@ -151,7 +151,8 @@ app.include_router(intercambios.router, prefix="/api/v1")
 app.include_router(subastas.router, prefix="/api/v1")
 app.include_router(admin.router,    prefix="/api/v1")
 app.include_router(maestro.router,  prefix="/api/v1")
-app.include_router(partidos.router, prefix="/api/v1")
+app.include_router(partidos.router,     prefix="/api/v1")
+app.include_router(estadisticas.router, prefix="/api/v1")
 
 # Endpoint root para chequear estado del server.
 @app.get("/")
