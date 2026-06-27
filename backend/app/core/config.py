@@ -22,6 +22,10 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # API key de football-data.org para obtener los partidos del Mundial 2026.
+    # Registro gratuito en https://www.football-data.org/
+    football_data_api_key: str = ""
+
     # Configuración moderna de Pydantic v2
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

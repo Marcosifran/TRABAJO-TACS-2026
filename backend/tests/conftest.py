@@ -47,6 +47,7 @@ _COLLECTIONS = [
     "mensajes",  # Colección para el chat de intercambios
     "usuarios",
     "stats_historicos",  # Colección para estadísticas históricas
+    "partidos",
 ]
 
 
