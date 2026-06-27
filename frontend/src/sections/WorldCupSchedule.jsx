@@ -77,6 +77,10 @@ export default function WorldCupSchedule() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const esEnVivo = (estado) => ['IN_PLAY', 'LIVE', 'PAUSED'].includes(estado)
+  const esEntretiempo = (estado) => estado === 'HALFTIME'
+  const hayEnVivo = partidos.some((p) => esEnVivo(p.estado) || esEntretiempo(p.estado))
+
   // Auto-scroll al primer partido de hoy (o al próximo si no hay hoy)
   useEffect(() => {
     if (!partidos.length || !scrollRef.current) return
@@ -106,6 +110,17 @@ export default function WorldCupSchedule() {
       cancelled = true
     }
   }, [])
+
+  // Polling cada 60 s mientras hay partidos en vivo
+  useEffect(() => {
+    if (!hayEnVivo) return
+    const intervalo = setInterval(() => {
+      getPartidos()
+        .then(setPartidos)
+        .catch(() => {})
+    }, 60_000)
+    return () => clearInterval(intervalo)
+  }, [hayEnVivo])
 
   function scroll(dir) {
     scrollRef.current?.scrollBy({ left: dir * 680, behavior: 'smooth' })
@@ -164,15 +179,35 @@ export default function WorldCupSchedule() {
             return (
               <div
                 key={p.id}
-                className={`shrink-0 w-52 rounded-2xl border border-outline-variant p-3.5 flex flex-col gap-2 transition-opacity ${pasado ? 'opacity-50' : 'bg-surface-container-low'}`}
+                className={`shrink-0 w-52 rounded-2xl border p-3.5 flex flex-col gap-2 transition-opacity ${
+                  esEnVivo(p.estado) || esEntretiempo(p.estado)
+                    ? 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-950/20'
+                    : pasado
+                      ? 'border-outline-variant opacity-50'
+                      : 'border-outline-variant bg-surface-container-low'
+                }`}
                 style={{ scrollSnapAlign: 'start' }}
               >
-                {/* Fase badge */}
-                <span
-                  className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full self-start ${bg} ${text}`}
-                >
-                  {p.fase}
-                </span>
+                {/* Fase badge + estado en vivo */}
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${bg} ${text}`}
+                  >
+                    {p.fase}
+                  </span>
+                  {esEnVivo(p.estado) && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      En vivo
+                    </span>
+                  )}
+                  {esEntretiempo(p.estado) && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Entretiempo
+                    </span>
+                  )}
+                </div>
 
                 {/* Fecha y hora */}
                 <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
