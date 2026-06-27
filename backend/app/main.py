@@ -88,11 +88,11 @@ def _inicializar_scheduler():
         replace_existing=True,
     )
 
-    # Refrescar partidos cada 5 minutos para capturar resultados y estado en vivo
+    # Refrescar partidos cada minuto para capturar goles y estado en vivo
     _scheduler.add_job(
         partidos_service.refresh,
         "interval",
-        minutes=5,
+        minutes=1,
         id="partidos_refresh",
         replace_existing=True,
     )
