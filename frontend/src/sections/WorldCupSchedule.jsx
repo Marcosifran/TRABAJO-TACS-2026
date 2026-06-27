@@ -80,7 +80,9 @@ export default function WorldCupSchedule() {
   // Auto-scroll al primer partido de hoy (o al próximo si no hay hoy)
   useEffect(() => {
     if (!partidos.length || !scrollRef.current) return
-    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    const hoy = new Date().toLocaleDateString('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    })
     const idx = partidos.findIndex((p) => p.fecha >= hoy)
     if (idx > 0) {
       // w-52 = 208px + gap-3 = 12px
@@ -192,7 +194,9 @@ export default function WorldCupSchedule() {
                       </div>
                     )}
                   </div>
-                  <div className="font-semibold text-sm text-on-surface truncate">{p.visitante}</div>
+                  <div className="font-semibold text-sm text-on-surface truncate">
+                    {p.visitante}
+                  </div>
                 </div>
 
                 {/* Estadio */}
