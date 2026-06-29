@@ -27,6 +27,8 @@ from handlers.subastas import (
     cmd_ofertar,
     cmd_cancelar_subasta,
     cmd_mis_subastas,
+    cmd_ofertas_subasta,
+    cmd_responder_oferta,
 )
 from handlers.maestro import cmd_buscar, cmd_equipos
 from handlers.admin import cmd_estadisticas
@@ -63,6 +65,8 @@ COMANDOS = [
     BotCommand("mis_subastas",         "Ver mis subastas"),
     BotCommand("crear_subasta",        "Crear subasta — /crear_subasta publicacion_id horas"),
     BotCommand("ofertar",              "Ofertar en subasta — /ofertar subasta_id figurita_id"),
+    BotCommand("ofertas_subasta",      "Ver ofertas recibidas — /ofertas_subasta subasta_id"),
+    BotCommand("responder_oferta",     "Aceptar/rechazar oferta — /responder_oferta subasta_id oferta_id aceptar|rechazar"),
     BotCommand("cancelar_subasta",     "Cancelar subasta — /cancelar_subasta id"),
     BotCommand("buscar",               "Buscar figurita en maestro — /buscar numero"),
     BotCommand("equipos",              "Listar equipos del álbum"),
@@ -127,6 +131,8 @@ def main():
     app.add_handler(CommandHandler("subastas",             cmd_subastas))
     app.add_handler(CommandHandler("crear_subasta",        cmd_crear_subasta))
     app.add_handler(CommandHandler("ofertar",              cmd_ofertar))
+    app.add_handler(CommandHandler("ofertas_subasta",      cmd_ofertas_subasta))
+    app.add_handler(CommandHandler("responder_oferta",     cmd_responder_oferta))
     app.add_handler(CommandHandler("cancelar_subasta",     cmd_cancelar_subasta))
     app.add_handler(CommandHandler("mis_subastas",         cmd_mis_subastas))
 

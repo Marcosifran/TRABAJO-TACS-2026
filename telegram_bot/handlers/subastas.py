@@ -2,7 +2,7 @@ import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
 import session
-from api_client import api_get, api_post, api_delete
+from api_client import api_get, api_post, api_patch, api_delete
 from handlers.helpers import require_auth, fmt_error
 
 
@@ -125,3 +125,69 @@ async def cmd_mis_subastas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for s in data:
         lineas.append(_fmt_subasta(s))
     await update.effective_message.reply_text("\n".join(lineas))
+
+
+@require_auth
+async def cmd_ofertas_subasta(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.effective_message.reply_text(
+            "Uso: /ofertas_subasta subasta_id\n"
+            "Ejemplo: /ofertas_subasta abc123\n\n"
+            "Encontrá el ID en /mis_subastas"
+        )
+        return
+    subasta_id = context.args[0]
+    token = session.get_token(update.effective_user.id)
+    status, data = await api_get(f"/subastas/{subasta_id}/ofertas", token=token)
+    if status != 200:
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
+        return
+    items = data.get("items", data) if isinstance(data, dict) else data
+    if not items:
+        await update.effective_message.reply_text("Esta subasta no tiene ofertas todavía.")
+        return
+    lineas = [f"📋 Ofertas para subasta {subasta_id}:"]
+    for o in items:
+        detalle = o.get("ofrecidas_detalle", [])
+        if detalle:
+            figuritas = ", ".join(f"#{f['numero']} {f['jugador']} ({f['equipo']})" for f in detalle)
+        else:
+            figuritas = ", ".join(o.get("ofrecidas", [])) or "—"
+        lineas.append(
+            f"\n  ID oferta: {o['id']}\n"
+            f"  Oferente: usuario {o.get('usuario_id', '?')}\n"
+            f"  Figuritas ofrecidas: {figuritas}"
+        )
+    lineas.append("\nUsá /responder_oferta para aceptar o rechazar.")
+    await update.effective_message.reply_text("\n".join(lineas))
+
+
+@require_auth
+async def cmd_responder_oferta(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) < 3:
+        await update.effective_message.reply_text(
+            "Uso: /responder_oferta subasta_id oferta_id aceptar|rechazar\n"
+            "Ejemplo: /responder_oferta abc123 xyz456 aceptar\n\n"
+            "Encontrá los IDs en /ofertas_subasta"
+        )
+        return
+    subasta_id = context.args[0]
+    oferta_id = context.args[1]
+    decision = context.args[2].lower()
+    if decision not in ("aceptar", "rechazar"):
+        await update.effective_message.reply_text("❌ La decisión debe ser 'aceptar' o 'rechazar'.")
+        return
+    estado = "aceptada" if decision == "aceptar" else "rechazada"
+    token = session.get_token(update.effective_user.id)
+    status, data = await api_patch(
+        f"/subastas/{subasta_id}/ofertas/{oferta_id}",
+        {"estado": estado},
+        token=token,
+    )
+    if status in (200, 204):
+        if decision == "aceptar":
+            await update.effective_message.reply_text("✅ Oferta aceptada. ¡Intercambio realizado!")
+        else:
+            await update.effective_message.reply_text("✅ Oferta rechazada.")
+    else:
+        await update.effective_message.reply_text(f"❌ {fmt_error(data)}")
