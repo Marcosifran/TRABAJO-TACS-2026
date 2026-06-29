@@ -14,16 +14,6 @@ const FEATURES = [
   { icon: 'gavel', label: 'Subastas' },
 ]
 
-const DEMO_USERS = [
-  { email: 'marcos@utn', nombre: 'Marcos', rol: 'Admin', rolColor: 'text-primary' },
-  {
-    email: 'jeronimo@utn',
-    nombre: 'Jerónimo',
-    rol: 'Usuario',
-    rolColor: 'text-on-surface-variant',
-  },
-]
-
 function fraseUsuarios(n) {
   if (n <= 1) return 'Sé el primer coleccionista'
   if (n < 10) return `${n} coleccionistas pioneros`
@@ -83,19 +73,6 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate(destino, { replace: true })
-    } catch (err) {
-      setError(err?.message || 'No se pudo iniciar sesión')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function loginRapido(demoEmail) {
-    setError(null)
-    setLoading(true)
-    try {
-      await login(demoEmail, 'figuswap123')
       navigate(destino, { replace: true })
     } catch (err) {
       setError(err?.message || 'No se pudo iniciar sesión')
@@ -192,27 +169,6 @@ export default function LoginPage() {
               {loading ? 'Ingresando…' : 'Ingresar'}
             </Button>
           </form>
-
-          {/* Acceso rápido demo */}
-          <div className="mt-5 pt-4 border-t border-outline-variant">
-            <p className="text-xs text-on-surface-variant text-center mb-2.5">
-              Acceso rápido · demo
-            </p>
-            <div className="flex gap-2">
-              {DEMO_USERS.map((u) => (
-                <button
-                  key={u.email}
-                  type="button"
-                  onClick={() => loginRapido(u.email)}
-                  disabled={loading}
-                  className="flex-1 rounded-xl border border-outline-variant bg-surface-container-low hover:bg-surface-variant transition-colors p-2.5 text-left cursor-pointer disabled:opacity-50"
-                >
-                  <div className="text-xs font-semibold text-on-surface">{u.nombre}</div>
-                  <div className={`text-[10px] font-medium ${u.rolColor}`}>{u.rol}</div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <p className="text-sm text-on-surface-variant text-center mt-5">
             ¿No tenés cuenta?{' '}
